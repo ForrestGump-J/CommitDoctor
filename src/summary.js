@@ -2,6 +2,7 @@
 const { addDays, daysBetween, localDate, localTime } = require('./time');
 const { predictDeadline } = require('./predict');
 const { currentScope, IN_SCOPE } = require('./scope');
+const { classify } = require('./intent');
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const hourLabel = (h) => `${String(h).padStart(2, '0')}:00`;
@@ -23,7 +24,11 @@ function buildSummary(db, config, date) {
   const hourly = Array(24).fill(0);
   const byPerson = new Map();
   let merges = 0;
+  const intents = {};
   for (const r of rows) {
+    // NLP: what kind of work each commit message describes (src/intent.js).
+    const it = r.is_merge ? 'merge' : classify(r.message).intent;
+    intents[it] = (intents[it] || 0) + 1;
     hourly[r.committed_hour] += 1;
     if (r.is_merge) merges += 1;
     let p = byPerson.get(r.contributor);
@@ -98,9 +103,23 @@ function buildSummary(db, config, date) {
     hourly,
     contributors,
     comparison,
+    intents,
   };
   summary.headline = writeHeadline(summary);
   return summary;
+}
+
+const INTENT_WORD = { feature: 'feature work', fix: 'fixes', docs: 'documentation', refactor: 'refactoring', test: 'tests', chore: 'maintenance', merge: 'merges' };
+const INTENT_COUNT = { feature: 'feature', fix: 'fix', docs: 'docs change', refactor: 'refactor', test: 'test change', chore: 'chore', merge: 'merge' };
+const countIntent = (k, v) => (k === 'fix' ? `${v} fix${v === 1 ? '' : 'es'}` : plural(v, INTENT_COUNT[k] || k));
+
+/** " Mostly fixes (3 of 5)." — the dominant commit intent, when there is one. */
+function describeIntents(intents, total) {
+  const [top, n] = Object.entries(intents).sort((a, b) => b[1] - a[1])[0] || [];
+  if (!top || total < 2) return '';
+  if (n === total) return ` All ${INTENT_WORD[top]}.`;
+  if (n / total > 0.5) return ` Mostly ${INTENT_WORD[top]} (${n} of ${total}).`;
+  return ` Mixed work: ${Object.entries(intents).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => countIntent(k, v)).join(', ')}.`;
 }
 
 /** One plain sentence or two: the "doctor's note" for the day. */
@@ -123,6 +142,7 @@ function writeHeadline(s) {
     ? ` ${top.name} was most active with ${top.commits}.`
     : ` All by ${top.name}.`;
   text += ` Activity peaked around ${hourLabel(s.peak_hour)}.`;
+  text += describeIntents(s.intents || {}, s.total_commits);
   return text;
 }
 

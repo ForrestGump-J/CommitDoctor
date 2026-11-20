@@ -412,6 +412,14 @@
     }).join('');
   }
 
+  // NLP label from src/intent.js; low-confidence guesses are marked with "?".
+  function intentTag(it) {
+    if (!it) return '';
+    const sure = it.confidence >= 0.35;
+    const title = `Commit intent: ${it.intent}, ${Math.round(it.confidence * 100)}% confidence`;
+    return `<span class="tag intent intent-${esc(it.intent)}${sure ? '' : ' unsure'}" title="${esc(title)}">${esc(it.intent)}${sure ? '' : '?'}</span>`;
+  }
+
   function renderCommits() {
     const list = state.commits;
     $('#commits').innerHTML = list.length
@@ -420,7 +428,7 @@
           const sha = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(c.short_sha)}</a>` : esc(c.short_sha);
           const first = String(c.message).split('\n')[0] || '(no message)';
           return `<li><span class="c-time">${esc(c.time)}</span>
-            <div><span class="c-msg">${esc(first)}</span>${c.is_merge ? '<span class="tag">merge</span>' : ''}
+            <div><span class="c-msg">${esc(first)}</span>${c.is_merge ? '<span class="tag">merge</span>' : intentTag(c.intent)}
             <span class="c-meta">${esc(c.contributor)}${c.branch ? ` on ${esc(c.branch)}` : ''}, ${sha}</span></div></li>`;
         }).join('')
       : '<li class="empty" style="display:block;border:0">No commits on this day.</li>';

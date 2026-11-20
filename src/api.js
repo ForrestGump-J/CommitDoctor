@@ -1,4 +1,5 @@
 'use strict';
+const { classify } = require('./intent');
 const crypto = require('crypto');
 const express = require('express');
 const { localDate, localTime, addDays, daysBetween, isDateStr } = require('./time');
@@ -185,6 +186,7 @@ function createApiRouter({ db, config, mailer = null }) {
         branch: r.branch,
         url: r.url,
         is_merge: Boolean(r.is_merge),
+        intent: r.is_merge ? null : classify(r.message),
         committed_at: r.committed_at,
         time: localTime(r.committed_at, tz),
         // files_*: known for every commit. lines_*: null unless this commit came

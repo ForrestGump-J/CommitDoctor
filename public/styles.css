@@ -343,3 +343,12 @@ td.wrap { white-space: normal; min-width: 12rem; }
 
 .lines .add { color: #1a7f4b; }
 .lines .del { color: #b42318; }
+
+/* commit-intent tags (NLP) */
+.tag.intent-feature { color: #1d5fb8; background: rgba(29, 95, 184, .12); }
+.tag.intent-fix { color: #b42318; background: rgba(180, 35, 24, .11); }
+.tag.intent-docs { color: #7a4fb5; background: rgba(122, 79, 181, .12); }
+.tag.intent-refactor { color: #9a6200; background: rgba(154, 98, 0, .13); }
+.tag.intent-test { color: #1a7f4b; background: rgba(26, 127, 75, .12); }
+.tag.intent-chore { color: #5b6470; background: rgba(91, 100, 112, .13); }
+.tag.intent.unsure { opacity: .65; border: 1px dashed currentColor; }

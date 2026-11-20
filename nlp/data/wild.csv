@@ -1,0 +1,37 @@
+source,label,text,note
+comdoc,feature,"Added, Plus and Minus features for commits",
+comdoc,feature,"Changed overall rate to earlier rate for faster reaction time to activity drops, added lines added and deleted",ambiguous: change + addition
+comdoc,feature,added connected indicator,
+comdoc,chore,Merged email and latest build,merge
+comdoc,feature,Merge <user>'s email notification system,merge; name masked
+comdoc,feature,75% completion,vague
+comdoc,chore,Ignore .env.example,
+comdoc,chore,"Deleted .env.example. i aint taking no risk, hell naw",slang
+comdoc,chore,Merge branch 'main' of <url>,merge
+comdoc,feature,Made and debugged email notif system. Hoping it works,abbreviation; hedging
+comdoc,chore,Latest updates,vague
+comdoc,feature,"missing email, notifications, deadline refinement",telegraphic
+comdoc,feature,build deadline prediction next,"""build"" is also a chore type"
+comdoc,fix,"Broken version to fix v1, db needs to accept past version of code",
+comdoc,chore,Initial commit of project,
+comdoc,chore,first commit,
+comdoc,feature,"Scope dashboard, flags and notifications per tracked repo; merge upstream pace changes",
+express,test,skip QUERY method test (#5628),
+express,test,Remove duplicate tests in res.location and res.jsonp (#6996),
+express,refactor,Polish HTML structure of the response in the res.redirect() function (#5167),
+express,docs,Update Security.md,
+express,chore,Upgrade `content-disposition` (#7233),
+express,chore,remove examples from the ignore,
+express,refactor,Refactor: simplify `acceptsLanguages` implementation using spread operator (#6137),
+express,docs,Add note on how to update docs for new release (#5541),
+express,chore,remove minor version pinning from ci (#5722),
+express,fix,Ignore `expires` and `maxAge` in `res.clearCookie()` (#5792),
+express,fix,Fix routing requests without method,
+express,fix,Fix handling very large stacks of sync middleware,
+express,chore,Replace Appveyor windows testing with GHA (#5599),
+express,chore,Remove unused `depd` dependency,
+express,fix,call callback once on listen error,
+express,docs,improve step update documentation,
+express,fix,Improved fix for open redirect allow list bypass,
+express,docs,update history.md for acceptParams change (#6177),
+express,fix,Use object with null prototype for settings closes #4835,
