@@ -58,10 +58,16 @@
   // --- header ------------------------------------------------------------------
   function renderStatus() {
     const o = state.overview;
-    let s = 'idle';
-    let t = 'Waiting for the first push';
-    if (!o.secret_configured) { s = 'warn'; t = 'Webhook secret missing, so deliveries are rejected'; }
-    else if (o.last_push_at) { s = 'ok'; t = `Last push ${ago(o.last_push_at)}`; }
+    const st = o.settings || {};
+    const w = o.webhook || {};
+    const sync = w.sync || {};
+    $('#patient-name').textContent = st.tracked_repo || (st.untracked ? 'Tracking off' : 'No repository');
+    let s = 'warn';
+    let t = 'Not connected';
+    if (!st.tracked_repo) { s = 'idle'; t = st.untracked ? 'Paused' : 'Choose a repository'; }
+    else if (w.state === 'connected') { s = 'ok'; t = w.last_ok_event === 'push' ? `Live, last push ${ago(w.last_ok_at)}` : 'Live'; }
+    else if (sync.at && !sync.error) { s = 'ok'; t = `Synced ${ago(sync.at)}`; }
+    else if (sync.error) { s = 'warn'; t = 'Sync failed'; }
     $('#status').dataset.state = s;
     $('#status-text').textContent = t;
   }
@@ -72,11 +78,12 @@
   function renderNote() {
     const { overview: o, summary: s, date } = state;
     const nothingYet = o.totals.commits === 0;
-    $('#repo').textContent = `${o.repo || 'No repository yet'} (times shown in ${o.timezone})`;
+    $('#repo').textContent = `${o.repo || (o.totals.commits ? 'All repositories' : 'No repository yet')}, times in ${o.timezone}`;
     $('#day-title').textContent = dayLong(date);
 
     const trackInput = $('#repo-input');
     if (document.activeElement !== trackInput) trackInput.value = (o.settings && o.settings.tracked_repo) || '';
+    renderRepoSwitch();
     renderHookSetup();
 
     const deadlineInput = $('#deadline-input');
@@ -85,7 +92,7 @@
     $('#deadline-clear-btn').hidden = !deadline;
 
     $('#headline').innerHTML = nothingYet
-      ? 'No commits recorded yet. Point a GitHub webhook at <code>/webhook/github</code>, add a polled repo below, or run <code>npm run seed</code> to load demo data.'
+      ? 'No commits recorded yet. Open <button type="button" class="text-btn headline-btn" id="headline-setup">Setup</button> and choose a repository to follow.'
       : esc(s.headline);
 
     let text = '';
@@ -110,7 +117,7 @@
   function renderPollList() {
     const list = state.pollRepos;
     const host = $('#poll-list');
-    if (!list.length) { host.innerHTML = '<li class="empty">No polled repos yet.</li>'; return; }
+    if (!list.length) { host.innerHTML = '<li class="empty">No private repos added.</li>'; return; }
     host.innerHTML = list.map((r) => {
       let status;
       if (r.last_error) status = `<span class="pill-bad" title="${esc(r.last_error)}">error</span>`;
@@ -151,7 +158,7 @@
       await refresh({ force: true });
     } catch (err) {
       if (err.status === 401) {
-        const t = window.prompt('This server needs an admin token to add a polled repo. Enter it:');
+        const t = window.prompt('This server needs an admin token to add a private repo. Enter it:');
         if (t) { state.token = t; btn.disabled = false; return addPolledRepo(); }
       } else {
         hint.hidden = false;
@@ -168,7 +175,7 @@
       await loadPollList();
     } catch (err) {
       if (err.status === 401) {
-        const t = window.prompt('This server needs an admin token to remove a polled repo. Enter it:');
+        const t = window.prompt('This server needs an admin token to remove a private repo. Enter it:');
         if (t) { state.token = t; return removePolledRepo(id); }
       } else {
         window.alert(err.body && err.body.error ? err.body.error : err.message);
@@ -181,7 +188,7 @@
   function renderSubscribers() {
     const list = state.subscribers;
     const host = $('#sub-list');
-    if (!list.length) { host.innerHTML = '<li class="empty">Nobody yet.</li>'; return; }
+    if (!list.length) { host.innerHTML = '<li class="empty">Nobody gets alerts yet.</li>'; return; }
     host.innerHTML = list.map((s) => `<li>
       <div>${esc(s.name)}<small>${esc(s.email)}</small></div>
       <button type="button" class="text-btn sub-remove" data-id="${s.id}" aria-label="Remove ${esc(s.name)}">Remove</button>
@@ -245,41 +252,26 @@
     'on-pace': 'On pace',
     'at-risk': 'At risk',
     behind: 'Behind pace',
-    'deadline-passed': 'Deadline passed',
+    'deadline-passed': 'Past deadline',
     'insufficient-data': 'Not enough history yet',
     'no-deadline': null,
   };
-  const PRED_COLOR = {
-    'on-pace': '#3ecf6e',
-    'at-risk': '#e0a92c',
-    behind: '#e05a4e',
-    'deadline-passed': '#8a8f98',
-    'insufficient-data': '#8a8f98',
-  };
-
   function renderPrediction() {
     const p = state.prediction;
     const el = $('#prediction');
     if (!p || p.status === 'no-deadline') { el.hidden = true; return; }
     el.hidden = false;
     el.dataset.status = p.status;
-    const color = PRED_COLOR[p.status] || '#8a8f98';
-    const label = PRED_LABEL[p.status] || p.status;
-    const dot = `<span aria-hidden="true" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px"></span>`;
-    const strong = `<strong style="color:${color}">${esc(label)}</strong>`;
-
-    if (p.status === 'insufficient-data') {
-      el.innerHTML = `${dot}${strong} — deadline in ${p.days_remaining} day(s).`;
-      return;
+    const label = `<strong>${esc(PRED_LABEL[p.status] || p.status)}</strong>`;
+    const days = (n) => plural(Math.abs(n), 'day');
+    let text;
+    if (p.status === 'insufficient-data') text = `The deadline is in ${days(p.days_remaining)}. A pace estimate needs a few more days of commits.`;
+    else if (p.status === 'deadline-passed') text = `The deadline was ${days(p.days_remaining)} ago.`;
+    else {
+      const trend = p.recent_commit_rate >= p.earlier_commit_rate ? 'at or above' : 'below';
+      text = `${p.recent_commit_rate} commits a day over the last ${days(p.window_days)}, ${trend} the ${p.earlier_commit_rate} a day before that. ${days(p.days_remaining)} left.`;
     }
-    if (p.status === 'deadline-passed') {
-      el.innerHTML = `${dot}${strong} (${Math.abs(p.days_remaining)} day(s) ago).`;
-      return;
-    }
-    const paceNote = p.recent_commit_rate >= p.earlier_commit_rate
-      ? `averaging ${p.recent_commit_rate} commits/day over the last ${p.window_days} day(s), matching or beating the ${p.earlier_commit_rate}/day before that`
-      : `averaging ${p.recent_commit_rate} commits/day over the last ${p.window_days} day(s), down from ${p.earlier_commit_rate}/day before that`;
-    el.innerHTML = `${dot}${strong} — ${paceNote}. ${p.days_remaining} day(s) left until the deadline.`;
+    el.innerHTML = `${label}<span>${esc(text)}</span>`;
   }
 
   async function loadPrediction() {
@@ -335,10 +327,13 @@
     const days = state.trend;
     if (!days.length) return;
     const W = Math.max(320, host.clientWidth);
-    const H = 214;
+    // Beside the readouts (wide screens), grow to their height so the paper has no empty band.
+    const besideReadouts = window.matchMedia('(min-width: 881px)').matches;
+    const fit = besideReadouts ? $('#vitals').offsetHeight - $('.trace-key').offsetHeight : 0;
+    const H = Math.max(256, Math.min(420, fit));
     const slot = W / days.length;
-    const y0 = 138;
-    const maxH = y0 - 34;
+    const y0 = H - 80;
+    const maxH = y0 - 38;
     const max = Math.max(4, ...days.map((d) => d.commits));
     const narrow = slot < 34;
 
@@ -349,8 +344,9 @@
       const h = day.commits ? Math.max(12, (day.commits / max) * maxH) : 0;
       if (!h) { path += ` L${(cx + slot / 2).toFixed(1)} ${y0}`; return; }
       const p = (dx, dy) => ` L${(cx + dx * slot).toFixed(1)} ${(y0 + dy).toFixed(1)}`;
-      path += p(-0.3, 0) + p(-0.22, -h * 0.14) + p(-0.14, 0) + p(-0.07, h * 0.1) + p(0, -h) +
-              p(0.07, h * 0.24) + p(0.13, 0) + p(0.25, -h * 0.18) + p(0.34, 0) + p(0.5, 0);
+      // P wave, Q dip, R spike, S dip, T wave. Dips are capped so they never reach the date labels.
+      path += p(-0.3, 0) + p(-0.22, -Math.min(h * 0.14, 16)) + p(-0.14, 0) + p(-0.07, Math.min(h * 0.1, 10)) + p(0, -h) +
+              p(0.07, Math.min(h * 0.24, 24)) + p(0.13, 0) + p(0.25, -Math.min(h * 0.18, 20)) + p(0.34, 0) + p(0.5, 0);
       peaks.push({ i, cx, y: y0 - h, n: day.commits });
     });
 
@@ -378,9 +374,9 @@
       const sel = day.date === state.date;
       const name = day.is_today ? 'Today' : dayShort(day.date);
       parts.push(`<g class="${sel ? 'is-selected' : ''}">
-        <text class="day-num" x="${cx.toFixed(1)}" y="188">${Number(day.date.slice(8))}</text>
-        ${narrow ? '' : `<text class="day-name" x="${cx.toFixed(1)}" y="203">${esc(name)}</text>`}
-        ${day.saved ? `<circle class="saved-dot" cx="${cx.toFixed(1)}" cy="170" r="2.6"/>` : ''}
+        <text class="day-num" x="${cx.toFixed(1)}" y="${H - 28}">${Number(day.date.slice(8))}</text>
+        ${narrow ? '' : `<text class="day-name" x="${cx.toFixed(1)}" y="${H - 12}">${esc(name)}</text>`}
+        ${day.saved ? `<circle class="saved-dot" cx="${cx.toFixed(1)}" cy="${H - 48}" r="2.8"/>` : ''}
       </g>`);
     });
 
@@ -407,7 +403,7 @@
     $('#who').innerHTML = list.map((c) => {
       const span = c.first_time === c.last_time ? c.first_time : `${c.first_time} to ${c.last_time}`;
       const alias = c.display_name && c.display_name !== c.name ? `<small>${esc(c.display_name)}</small>` : '';
-      const lines = c.lines_changed == null ? '<small> lines not available </small>' : `<small class="lines"><span class="add">+${c.lines_added}</span> <span class = "del">&minus;${c.lines_deleted}</span> (${c.lines_changed} changed)</small>`;
+      const lines = c.lines_changed == null ? '' : `<small class="lines"><span class="add">+${c.lines_added}</span> <span class="del">&minus;${c.lines_deleted}</span> (${c.lines_changed} changed)</small>`;
       return `<div class="who-row">
         <div class="who-name">${esc(c.name)}${alias}<small>${esc(span)}</small>${lines}</div>
         <div class="bar" role="img" aria-label="${esc(c.name)}: ${plural(c.commits, 'commit')}"><span style="width:${(c.commits / max) * 100}%"></span></div>
@@ -433,23 +429,26 @@
   function renderVitals() {
     const s = state.summary;
     const c = s.comparison;
-    let pace = ['Nothing to compare', ''];
+    let pace = { value: '—', note: 'No earlier days to compare', trend: '' };
     if (c.trend !== 'no-baseline') {
-      const base = `${c.baseline_days}-day average: ${c.average} a day`;
-      pace = c.delta_pct == null ? ['Above average', base] : [`${c.delta_pct > 0 ? '+' : ''}${c.delta_pct}%`, base];
+      const note = `vs. ${c.average} a day over ${c.baseline_days} days`;
+      pace = c.delta_pct == null
+        ? { value: 'Above', note, trend: 'up' }
+        : { value: `${c.delta_pct > 0 ? '+' : ''}${c.delta_pct}%`, note, trend: c.delta_pct > 0 ? 'up' : c.delta_pct < 0 ? 'down' : '' };
     }
-    const rows = [
-      ['Commits', s.total_commits, ''],
-      ['Contributors', s.contributor_count, ''],
-      ['Vs. recent days', pace[0], pace[1]],
-      ['Busiest hour', s.peak_hour == null ? 'None' : hh(s.peak_hour), s.peak_hour == null ? '' : plural(s.hourly[s.peak_hour], 'commit')],
-      ['First commit', s.first_commit_time || 'None', ''],
-      ['Last commit', s.last_commit_time || 'None', ''],
-      ['Merge commits', s.merge_commits, ''],
-    ];
-    $('#vitals').innerHTML = rows
-      .map(([k, v, note]) => `<div><dt>${esc(k)}</dt><span class="lead"></span><dd>${esc(v)}${note ? `<small>${esc(note)}</small>` : ''}</dd></div>`)
-      .join('');
+    const readout = (cls, label, value, note = '', trend = '') => `<div class="readout ${cls}"${trend ? ` data-trend="${trend}"` : ''}>
+      <dt>${esc(label)}</dt><dd>${esc(value)}${note ? `<small>${esc(note)}</small>` : ''}</dd></div>`;
+    const span = s.first_commit_time
+      ? (s.first_commit_time === s.last_commit_time ? s.first_commit_time : `${s.first_commit_time} to ${s.last_commit_time}`)
+      : '—';
+    $('#vitals').innerHTML = [
+      readout('readout-main', 'Commits', s.total_commits),
+      readout('', 'Contributors', s.contributor_count),
+      readout('', 'Vs. recent days', pace.value, pace.note, pace.trend),
+      readout('', 'Busiest hour', s.peak_hour == null ? '—' : hh(s.peak_hour), s.peak_hour == null ? '' : plural(s.hourly[s.peak_hour], 'commit')),
+      readout('readout-minor', 'Active', span),
+      readout('readout-minor', 'Merges', s.merge_commits),
+    ].join('');
   }
 
   const FLAG_LABEL = {
@@ -485,10 +484,10 @@
   function renderAll() {
     renderStatus();
     renderNote();
+    renderVitals();
     renderTrace();
     renderWho();
     renderCommits();
-    renderVitals();
     renderFlags();
     renderHours();
   }
@@ -571,12 +570,44 @@
     try {
       await withAdmin(() => api('/api/settings', { method: 'POST', token: state.token, body: { tracked_repo: value } }), 'change settings');
       state.hookOpen = true;
+      state.autoSynced = true;
       await refresh({ force: true });
+      await syncRepo();
       watchConnection();
     } catch (err) {
       if (err.status !== 401) window.alert(err.body && err.body.error ? err.body.error : err.message);
     }
     btn.disabled = false;
+  }
+
+  function renderRepoSwitch() {
+    const st = state.overview.settings || {};
+    const current = st.tracked_repo;
+    const others = (st.known_repos || []).filter((r) => r !== current);
+    const sel = $('#repo-switch');
+    sel.hidden = others.length === 0;
+    if (document.activeElement !== sel) {
+      sel.innerHTML = `<option value="">${current ? 'Switch to…' : 'Track a recent repo…'}</option>` +
+        others.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    }
+    $('#untrack-btn').hidden = !current;
+    $('#untrack-btn').parentElement.hidden = sel.hidden && !current;
+    $('#untracked-hint').hidden = !(st.untracked);
+    $('#track-btn').textContent = current ? 'Switch' : 'Track';
+  }
+
+  async function untrackRepo() {
+    const repo = state.overview.settings && state.overview.settings.tracked_repo;
+    if (!repo) return;
+    if (!window.confirm(`Stop tracking ${repo}? Commits already recorded stay on the dashboard, but new pushes are ignored until you track a repo again.`)) return;
+    try {
+      await withAdmin(() => api('/api/settings', { method: 'POST', token: state.token, body: { tracked_repo: null } }), 'change settings');
+      stopWatching();
+      $('#repo-input').value = '';
+      await refresh({ force: true });
+    } catch (err) {
+      if (err.status !== 401) window.alert(err.body && err.body.error ? err.body.error : err.message);
+    }
   }
 
   // --- webhook setup panel -----------------------------------------------------------
@@ -592,25 +623,51 @@
     box.hidden = !repo;
     if (!repo) return;
 
-    const w = o.webhook || { state: 'waiting' };
-    const connected = w.state === 'connected';
-    if (connected) stopWatching();
     const status = $('#hook-status');
-    status.dataset.state = w.state;
+    if (!o.webhook) {
+      // Dashboard is newer than the running server; it can't report status yet.
+      status.innerHTML = '<span class="hook-row" data-state="failing"><span class="dot" aria-hidden="true"></span><span>The server is running an older version. Restart it (<code>npm start</code>) to see connection status.</span></span>';
+      return;
+    }
+    const w = o.webhook;
+    const sync = w.sync || {};
+    const live = w.state === 'connected';
+    const synced = Boolean(sync.at && !sync.error);
+    if (live) stopWatching();
     const r = `<code>${esc(repo)}</code>`;
-    const text = {
+
+    // Row 1: the repo itself, pulled through GitHub's API right after tracking.
+    let syncState;
+    let syncText;
+    if (state.syncing) { syncState = 'waiting'; syncText = `Pulling recent commits from ${r}…`; }
+    else if (sync.error) { syncState = 'failing'; syncText = `Couldn't pull ${r}: ${esc(sync.error)}`; }
+    else if (sync.at) {
+      syncState = 'connected';
+      syncText = `Synced ${r} ${esc(ago(sync.at))}: ${sync.added ? `${plural(sync.added, 'new commit')} pulled` : 'already up to date'}.`;
+      if (sync.interval_min) syncText += ` Re-syncs every ${sync.interval_min} min.`;
+    } else { syncState = 'waiting'; syncText = `${r} hasn't been pulled yet.`; }
+    const syncBtn = state.syncing ? '' : ' <button type="button" class="text-btn" id="hook-sync">Sync now</button>';
+
+    // Row 2: live updates, which still need GitHub's webhook to reach this server.
+    const liveText = {
       connected: w.last_ok_event === 'push'
-        ? `Connected to ${r}. Last push ${esc(ago(w.last_ok_at))}.`
-        : `Connected to ${r}. GitHub pinged ${esc(ago(w.last_ok_at))}; push a commit to see it here.`,
-      waiting: `Waiting for GitHub to send a delivery for ${r}…`,
-      failing: `GitHub reached this server, but the delivery was rejected: ${esc(w.detail || 'unknown error')}. Check the secret and content type, then click Redeliver on GitHub.`,
-      other_repo: `GitHub is sending from <code>${esc(w.repo_seen)}</code>, but you're tracking ${r}. Track <button type="button" class="text-btn" id="hook-track-seen" data-repo="${esc(w.repo_seen)}">${esc(w.repo_seen)}</button> instead, or add the webhook to ${r}.`,
+        ? `Live updates on. Last push ${esc(ago(w.last_ok_at))}.`
+        : `Live updates on. GitHub pinged ${esc(ago(w.last_ok_at))}.`,
+      waiting: synced
+        ? `Live updates: no webhook delivery yet. ${sync.interval_min ? `New commits are pulled automatically every ${sync.interval_min} min` : 'New commits appear when you click Sync now'}, or instantly once the webhook below reaches this server.`
+        : 'Live updates: waiting for GitHub\'s webhook…',
+      failing: `Live updates: GitHub's delivery was rejected (${esc(w.detail || 'unknown error')}). Check the secret and content type, then click Redeliver on GitHub.`,
+      other_repo: `Live updates: nothing received from ${r} yet. The last delivery to this server (${esc(ago(w.at))}) came from <code>${esc(w.repo_seen)}</code>. If you added the webhook to ${r}, check its Recent Deliveries on GitHub: the Payload URL must reach this server (a smee/ngrok tunnel has to be running).`,
     }[w.state];
-    const checking = state.watchUntil && !connected ? ' <span class="hook-checking">checking…</span>' : '';
-    const toggle = connected ? ` <button type="button" class="text-btn" id="hook-toggle">${state.hookOpen ? 'Hide setup' : 'Show setup'}</button>` : '';
-    const recheck = connected ? '' : ' <button type="button" class="text-btn" id="hook-recheck">Check now</button>';
-    status.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${text}${checking}${recheck}${toggle}</span>`;
-    $('#hook-steps').hidden = connected && !state.hookOpen;
+    const checking = state.watchUntil && !live ? ' <span class="hook-checking">checking…</span>' : '';
+    const toggle = live ? ` <button type="button" class="text-btn" id="hook-toggle">${state.hookOpen ? 'Hide setup' : 'Show setup'}</button>` : '';
+    const liveState = w.state === 'waiting' && synced ? 'idle' : w.state;
+
+    const row = (st, text) => `<span class="hook-row" data-state="${st}"><span class="dot" aria-hidden="true"></span><span>${text}</span></span>`;
+    status.innerHTML = row(syncState, syncText + syncBtn) + row(liveState, liveText + checking + toggle);
+    $('#hook-steps').hidden = live && !state.hookOpen;
+    // A repo tracked before syncing existed (or by another tab) gets pulled once on load.
+    if (!sync.at && !state.syncing && !state.autoSynced) { state.autoSynced = true; setTimeout(() => syncRepo({ auto: true }), 0); }
 
     const urlInput = $('#hook-url-input');
     if (!urlInput.value) urlInput.value = loadUrl() || (isLocal() ? '' : `${window.location.origin}/webhook/github`);
@@ -639,28 +696,23 @@
     }
   }
 
-  async function connectHook() {
-    const btn = $('#hook-connect-btn');
-    const tokenInput = $('#hook-token-input');
-    const payloadUrl = $('#hook-url-input').value.trim();
-    const token = tokenInput.value.trim();
-    const repo = state.overview.settings && state.overview.settings.tracked_repo;
-    if (!payloadUrl) { $('#hook-url-input').focus(); return; }
-    if (!token) { tokenInput.focus(); return; }
-    btn.disabled = true;
-    btn.textContent = 'Creating…';
+  // Pull the tracked repo's recent commits through GitHub's API right now
+  // (public repos only; private ones belong under Private repos).
+  async function syncRepo({ auto = false } = {}) {
+    state.syncing = true;
+    renderHookSetup();
+    const call = () => api('/api/webhook-setup/sync', {
+      method: 'POST', token: state.token, body: {},
+    });
     try {
-      const r = await withAdmin(() => api('/api/webhook-setup/connect', { method: 'POST', token: state.token, body: { repo, token, payload_url: payloadUrl } }), 'create the webhook');
-      tokenInput.value = '';
-      $('#hook-status').textContent = r.created
-        ? 'Webhook created on GitHub. Waiting for its first ping…'
-        : 'Existing webhook updated. Waiting for its ping…';
-      watchConnection();
+      // Don't pop an admin-token prompt for the automatic on-load sync.
+      await (auto ? call() : withAdmin(call, 'sync the repository'));
     } catch (err) {
-      if (err.status !== 401) window.alert(err.body && err.body.error ? err.body.error : err.message);
+      // The server saves sync failures, so the indicator shows them after the refresh.
+      if (err.status !== 422) console.error(err);
     }
-    btn.disabled = false;
-    btn.textContent = 'Create webhook on GitHub';
+    state.syncing = false;
+    await refresh({ force: true }).catch(showError);
   }
 
   // Re-check every few seconds after a Track click so the indicator flips to
@@ -706,12 +758,34 @@
           .map((r) => `<tr><td>${esc(stamp(r.run_at))}</td><td>${esc(r.date)}</td><td>${esc(r.trigger)}</td><td>${pill(r.outcome)}</td><td>${r.total_commits}</td></tr>`)
           .join('')}</tbody></table>`
       : '<p class="empty">No summaries generated yet.</p>';
+    const sentPill = (st) => `<span class="${st === 'sent' ? 'pill-ok' : st === 'failed' ? 'pill-bad' : ''}">${esc(st)}</span>`;
+    const notes = (a.notifications || []).length
+      ? `<table><thead><tr><th>Time</th><th>Kind</th><th>Result</th><th>Delivered</th><th>Subject</th></tr></thead><tbody>${a.notifications
+          .map((n) => `<tr><td>${esc(stamp(n.created_at))}</td><td>${esc(n.kind)}</td><td>${sentPill(n.status)}</td><td>${n.delivered} of ${n.recipients}</td><td class="wrap">${esc(n.subject || '')}${n.error ? `<br><span class="muted">${esc(n.error)}</span>` : ''}</td></tr>`)
+          .join('')}</tbody></table>`
+      : '<p class="empty">No emails sent yet.</p>';
     $('#log-body').innerHTML = `<div><h3>Webhook deliveries</h3><div class="tbl-wrap">${deliveries}</div></div>
-      <div><h3>Summary runs</h3><div class="tbl-wrap">${runs}</div></div>`;
+      <div><h3>Summary runs</h3><div class="tbl-wrap">${runs}</div></div>
+      <div><h3>Emails</h3><div class="tbl-wrap">${notes}</div></div>`;
+  }
+
+  // --- setup sheet ----------------------------------------------------------------
+  function openSetup() {
+    const sheet = $('#setup');
+    if (sheet.open) return;
+    sheet.showModal();
+    const first = !(state.overview && state.overview.settings && state.overview.settings.tracked_repo);
+    if (first) $('#repo-input').focus();
   }
 
   // --- wiring --------------------------------------------------------------------
   function bind() {
+    $('#open-setup').addEventListener('click', openSetup);
+    $('#headline').addEventListener('click', (e) => { if (e.target.id === 'headline-setup') openSetup(); });
+    $('#patient').addEventListener('click', openSetup);
+    $('#close-setup').addEventListener('click', () => $('#setup').close());
+    // A click on the backdrop lands on the dialog element itself.
+    $('#setup').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
     $('#prev').addEventListener('click', () => select(shift(state.date, -1)));
     $('#next').addEventListener('click', () => select(shift(state.date, 1)));
     $('#today').addEventListener('click', () => select(state.overview.today));
@@ -719,15 +793,19 @@
     $('#save-btn').addEventListener('click', saveNow);
     $('#track-btn').addEventListener('click', trackRepo);
     $('#repo-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); trackRepo(); } });
-    $('#hook-connect-btn').addEventListener('click', connectHook);
-    $('#hook-token-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); connectHook(); } });
+    $('#untrack-btn').addEventListener('click', untrackRepo);
+    $('#repo-switch').addEventListener('change', (e) => {
+      if (!e.target.value) return;
+      $('#repo-input').value = e.target.value;
+      e.target.blur();
+      trackRepo();
+    });
     $('#hook-url-input').addEventListener('input', (e) => {
       saveUrl(e.target.value.trim());
       $('#hook-f-url').textContent = e.target.value.trim() || '(fill in step 1)';
     });
     $('#hook-setup').addEventListener('click', (e) => {
-      if (e.target.id === 'hook-recheck') { watchConnection(); refresh({ force: true }).catch(showError); }
-      if (e.target.id === 'hook-track-seen') { $('#repo-input').value = e.target.dataset.repo; trackRepo(); }
+      if (e.target.id === 'hook-sync') syncRepo();
       if (e.target.id === 'hook-toggle') { state.hookOpen = !state.hookOpen; renderHookSetup(); }
       if (e.target.id === 'hook-secret-unlock') {
         const t = window.prompt('Enter the admin token:');
@@ -772,7 +850,12 @@
   }
 
   bind();
-  refresh({ force: true }).catch(showError);
+  refresh({ force: true })
+    .then(() => {
+      const o = state.overview;
+      if (window.location.hash === '#setup' || (!o.settings.tracked_repo && o.totals.commits === 0)) openSetup();
+    })
+    .catch(showError);
   loadPollList();
   loadPrediction();
   loadSubscribers();

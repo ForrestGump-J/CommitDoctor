@@ -4,17 +4,18 @@ const path = require('path');
 // Node's built-in SQLite (Node 22.13+). No native compilation, nothing extra to install.
 const { DatabaseSync } = require('node:sqlite');
 
-// Eight tables:
+// Nine tables:
 //   commits          the raw material (one row per unique commit SHA)
-//   summaries        one saved summary per day (JSON snapshot)
+//   summaries        one saved summary per repo per day (JSON snapshot)
 //   webhook_events   every delivery GitHub sent us, accepted or not
 //   summary_runs     every attempt to generate a summary, saved or skipped
-//   subscribers      notification recipients (storage + CRUD only for now)
+//   subscribers      people who receive email notifications
 //   project_settings single row holding the user-entered project deadline and
 //                    the single push-webhook repo (the original tracking path)
 //   flags            discrete rolling-baseline deviations, one row per flag per day
 //   tracked_repos    repos tracked by polling GitHub's API with a per-repo token
 //                    (the newer path; works for private repos, no public webhook needed)
+//   notifications    every email notification attempt, and what not to send twice
 // webhook_events and summary_runs are the prototype's own activity log (research question 4).
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS commits (
@@ -47,12 +48,16 @@ CREATE TABLE IF NOT EXISTS commits (
 );
 CREATE INDEX IF NOT EXISTS idx_commits_date ON commits(committed_date);
 
+-- One saved summary per repo per day. repo is the lowercased tracked repo, or
+-- '' for the combined "all repos" view used when nothing is tracked.
 CREATE TABLE IF NOT EXISTS summaries (
-  date          TEXT PRIMARY KEY,
+  repo          TEXT NOT NULL DEFAULT '',
+  date          TEXT NOT NULL,
   total_commits INTEGER NOT NULL,
   data          TEXT    NOT NULL,
   trigger       TEXT    NOT NULL,
-  generated_at  TEXT    NOT NULL
+  generated_at  TEXT    NOT NULL,
+  PRIMARY KEY (repo, date)
 );
 
 CREATE TABLE IF NOT EXISTS webhook_events (
@@ -69,6 +74,7 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 
 CREATE TABLE IF NOT EXISTS summary_runs (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo          TEXT NOT NULL DEFAULT '',
   date          TEXT NOT NULL,
   trigger       TEXT NOT NULL,
   outcome       TEXT NOT NULL,
@@ -92,8 +98,15 @@ CREATE TABLE IF NOT EXISTS project_settings (
   id            INTEGER PRIMARY KEY CHECK (id = 1),
   deadline_date TEXT,
   tracked_repo  TEXT,
+  -- 1 after the user clicks Untrack: pushes are ignored and GITHUB_REPO is not
+  -- used as a fallback until a repo is tracked again.
+  untracked     INTEGER NOT NULL DEFAULT 0,
   -- Auto-generated webhook secret, used only when GITHUB_WEBHOOK_SECRET is empty.
   webhook_secret TEXT,
+  -- Result of the last one-off pull of the tracked repo through GitHub's API.
+  last_sync_at   TEXT,
+  last_sync_error TEXT,
+  last_sync_added INTEGER,
   updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
@@ -101,12 +114,30 @@ CREATE TABLE IF NOT EXISTS project_settings (
 -- inactivity, etc). Regenerated each time that day's summary is generated/saved.
 CREATE TABLE IF NOT EXISTS flags (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo       TEXT NOT NULL DEFAULT '',
   date       TEXT NOT NULL,
   type       TEXT NOT NULL,
   detail     TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_flags_date ON flags(date);
+
+-- Every notification attempt (sent, failed, or skipped for lack of recipients).
+-- A 'sent' row for (repo, kind, dedupe_key) means "don't send this again", which
+-- keeps deadline reminders to once per tier per deadline even across restarts.
+CREATE TABLE IF NOT EXISTS notifications (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo        TEXT NOT NULL DEFAULT '',
+  kind        TEXT NOT NULL,
+  dedupe_key  TEXT NOT NULL,
+  subject     TEXT,
+  status      TEXT NOT NULL,
+  recipients  INTEGER NOT NULL DEFAULT 0,
+  delivered   INTEGER NOT NULL DEFAULT 0,
+  error       TEXT,
+  created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_key ON notifications(repo, kind, dedupe_key);
 
 -- Repos tracked by polling the GitHub REST API with a per-repo personal access
 -- token (encrypted at rest — see src/crypto.js), instead of a public webhook.
@@ -139,6 +170,27 @@ function migrate(db) {
   addColumn('commits', 'lines_added', 'INTEGER');
   addColumn('commits', 'lines_deleted', 'INTEGER');
   addColumn('project_settings', 'webhook_secret', 'TEXT');
+  addColumn('summary_runs', 'repo', "TEXT NOT NULL DEFAULT ''");
+  addColumn('flags', 'repo', "TEXT NOT NULL DEFAULT ''");
+  // summaries used to be keyed by date alone. SQLite can't change a primary key
+  // in place, so rebuild it; old rows were combined across repos, so they keep
+  // repo = '' (the "all repos" view).
+  if (!columnExists('summaries', 'repo')) {
+    transaction(db, () => db.exec(`
+      ALTER TABLE summaries RENAME TO summaries_old;
+      CREATE TABLE summaries (
+        repo TEXT NOT NULL DEFAULT '', date TEXT NOT NULL, total_commits INTEGER NOT NULL,
+        data TEXT NOT NULL, trigger TEXT NOT NULL, generated_at TEXT NOT NULL, PRIMARY KEY (repo, date)
+      );
+      INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at)
+        SELECT '', date, total_commits, data, trigger, generated_at FROM summaries_old;
+      DROP TABLE summaries_old;
+    `))();
+  }
+  addColumn('project_settings', 'untracked', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('project_settings', 'last_sync_at', 'TEXT');
+  addColumn('project_settings', 'last_sync_error', 'TEXT');
+  addColumn('project_settings', 'last_sync_added', 'INTEGER');
 }
 
 function openDb(file) {

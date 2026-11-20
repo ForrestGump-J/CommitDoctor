@@ -1,6 +1,7 @@
 'use strict';
 const { addDays, daysBetween, localDate, localTime } = require('./time');
 const { predictDeadline } = require('./predict');
+const { currentScope, IN_SCOPE } = require('./scope');
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const hourLabel = (h) => `${String(h).padStart(2, '0')}:00`;
@@ -12,9 +13,10 @@ const hourLabel = (h) => `${String(h).padStart(2, '0')}:00`;
  */
 function buildSummary(db, config, date) {
   const tz = config.timezone;
+  const scope = currentScope(db, config);
   const rows = db
-    .prepare('SELECT * FROM commits WHERE committed_date = ? ORDER BY committed_at')
-    .all(date);
+    .prepare(`SELECT * FROM commits WHERE committed_date = ? AND ${IN_SCOPE} ORDER BY committed_at`)
+    .all({ scope }, date);
   const total = rows.length;
 
   // --- who, how many, when -------------------------------------------------
@@ -31,7 +33,7 @@ function buildSummary(db, config, date) {
     }
     p.commits += 1;
     if (r.is_merge) p.merges += 1;
-    if (r.lines_added != null && r.lines_deleted != null){
+    if (r.lines_added != null && r.lines_deleted != null) {
       p.lines_added += r.lines_added;
       p.lines_deleted += r.lines_deleted;
       p.lines_known = true;
@@ -61,7 +63,7 @@ function buildSummary(db, config, date) {
   // never reaching back before the first commit ever recorded (otherwise a new
   // installation would look permanently "busy" against empty history).
   const n = config.summary.comparisonDays;
-  const firstDate = db.prepare('SELECT MIN(committed_date) AS d FROM commits').get().d;
+  const firstDate = db.prepare(`SELECT MIN(committed_date) AS d FROM commits WHERE ${IN_SCOPE}`).get({ scope }).d;
   let start = addDays(date, -n);
   if (firstDate && firstDate > start) start = firstDate;
   const baselineDays = Math.max(0, daysBetween(start, date));
@@ -69,8 +71,8 @@ function buildSummary(db, config, date) {
   let comparison = { baseline_days: 0, average: null, delta_pct: null, trend: 'no-baseline' };
   if (baselineDays > 0) {
     const sum = db
-      .prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date < ?')
-      .get(start, date).c;
+      .prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date < ? AND ${IN_SCOPE}`)
+      .get({ scope }, start, date).c;
     const average = sum / baselineDays;
     let trend = 'steady';
     if (average === 0) trend = total > 0 ? 'above' : 'steady';
@@ -154,11 +156,11 @@ function detectFlags(db, config, date, summaryData) {
   const quiet = db
     .prepare(
       `SELECT contributor, MAX(committed_date) AS last_date FROM commits
-       WHERE committed_date <= ?
+       WHERE committed_date <= ? AND ${IN_SCOPE}
        GROUP BY contributor
        HAVING last_date <= ?`
     )
-    .all(date, cutoff);
+    .all({ scope: currentScope(db, config) }, date, cutoff);
   for (const row of quiet) {
     const idleDays = daysBetween(row.last_date, date);
     flags.push({
@@ -187,23 +189,26 @@ function detectDeadlineFlag(db, config, date) {
   return [{ type: p.status === 'behind' ? 'deadline_behind' : 'deadline_at_risk', detail }];
 }
 
-/** Replaces the stored flags for a day with freshly detected ones. Returns how many. */
-function saveFlags(db, config, date, data) {
-  db.prepare('DELETE FROM flags WHERE date = ?').run(date);
-  const insertFlag = db.prepare('INSERT INTO flags (date, type, detail) VALUES (?, ?, ?)');
+/** Replaces the stored flags for a repo's day with freshly detected ones. Returns how many. */
+function saveFlags(db, config, scope, date, data) {
+  db.prepare('DELETE FROM flags WHERE repo = ? AND date = ?').run(scope, date);
+  const insertFlag = db.prepare('INSERT INTO flags (repo, date, type, detail) VALUES (?, ?, ?, ?)');
   const flags = [...detectFlags(db, config, date, data), ...detectDeadlineFlag(db, config, date)];
-  for (const f of flags) insertFlag.run(date, f.type, f.detail);
+  for (const f of flags) insertFlag.run(scope, date, f.type, f.detail);
   return flags.length;
 }
+
 // --- saving ----------------------------------------------------------------
 
 function generateSummary(db, config, date, trigger, { force = false } = {}) {
-  const total = db.prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date = ?').get(date).c;
-  const logRun = db.prepare('INSERT INTO summary_runs (date, trigger, outcome, total_commits) VALUES (?, ?, ?, ?)');
+  const scope = currentScope(db, config);
+  const total = db.prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date = ? AND ${IN_SCOPE}`).get({ scope }, date).c;
+  const insertRun = db.prepare('INSERT INTO summary_runs (repo, date, trigger, outcome, total_commits) VALUES (?, ?, ?, ?, ?)');
+  const logRun = { run: (...args) => insertRun.run(scope, ...args) };
 
   if (total === 0) {
     // No summary to save, but a silent day can still be worth flagging.
-    const flagCount = saveFlags(db, config, date, buildSummary(db, config, date));
+    const flagCount = saveFlags(db, config, scope, date, buildSummary(db, config, date));
     logRun.run(date, trigger, 'skipped', 0);
     return { saved: false, flagged: flagCount > 0, reason: 'No commits on this day.' };
   }
@@ -215,13 +220,13 @@ function generateSummary(db, config, date, trigger, { force = false } = {}) {
   const data = buildSummary(db, config, date);
   const generatedAt = new Date().toISOString();
   db.prepare(
-    `INSERT INTO summaries (date, total_commits, data, trigger, generated_at) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(date) DO UPDATE SET total_commits = excluded.total_commits, data = excluded.data,
+    `INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(repo, date) DO UPDATE SET total_commits = excluded.total_commits, data = excluded.data,
        trigger = excluded.trigger, generated_at = excluded.generated_at`
-  ).run(date, total, JSON.stringify(data), trigger, generatedAt);
+  ).run(scope, date, total, JSON.stringify(data), trigger, generatedAt);
 
-  saveFlags(db, config, date, data);
-  
+  saveFlags(db, config, scope, date, data);
+
   logRun.run(date, trigger, 'saved', total);
   return { saved: true, summary: { ...data, source: 'saved', trigger, generated_at: generatedAt } };
 }
@@ -234,7 +239,7 @@ function generateSummary(db, config, date, trigger, { force = false } = {}) {
 function getSummary(db, config, date, now = Date.now()) {
   const today = localDate(now, config.timezone);
   if (date < today) {
-    const row = db.prepare('SELECT * FROM summaries WHERE date = ?').get(date);
+    const row = db.prepare('SELECT * FROM summaries WHERE repo = ? AND date = ?').get(currentScope(db, config), date);
     if (row) return { ...JSON.parse(row.data), source: 'saved', trigger: row.trigger, generated_at: row.generated_at };
   }
   return { ...buildSummary(db, config, date), source: 'live', trigger: null, generated_at: null };
@@ -243,15 +248,16 @@ function getSummary(db, config, date, now = Date.now()) {
 /** Days that have commits but were never summarized (e.g. the server was off at midnight). */
 function catchUp(db, config, now = Date.now()) {
   const today = localDate(now, config.timezone);
+  const scope = currentScope(db, config);
   const missing = db
     .prepare(
       `SELECT DISTINCT committed_date AS d FROM commits
-       WHERE committed_date < ?
-         AND committed_date NOT IN (SELECT date FROM summaries)
-         AND committed_date NOT IN (SELECT date FROM summary_runs WHERE outcome = 'skipped')
+       WHERE committed_date < @today AND ${IN_SCOPE}
+         AND committed_date NOT IN (SELECT date FROM summaries WHERE repo = @scope)
+         AND committed_date NOT IN (SELECT date FROM summary_runs WHERE outcome = 'skipped' AND repo = @scope)
        ORDER BY d`
     )
-    .all(today)
+    .all({ scope, today })
     .map((r) => r.d);
   return missing.map((d) => ({ date: d, ...generateSummary(db, config, d, 'catchup') }));
 }
@@ -260,13 +266,14 @@ function catchUp(db, config, now = Date.now()) {
 function getTrend(db, config, days = 14, now = Date.now()) {
   const today = localDate(now, config.timezone);
   const start = addDays(today, -(days - 1));
+  const scope = currentScope(db, config);
   const counts = new Map(
     db
-      .prepare('SELECT committed_date AS d, COUNT(*) AS c, COUNT(DISTINCT contributor) AS p FROM commits WHERE committed_date >= ? GROUP BY committed_date')
-      .all(start)
+      .prepare(`SELECT committed_date AS d, COUNT(*) AS c, COUNT(DISTINCT contributor) AS p FROM commits WHERE committed_date >= ? AND ${IN_SCOPE} GROUP BY committed_date`)
+      .all({ scope }, start)
       .map((r) => [r.d, r])
   );
-  const saved = new Set(db.prepare('SELECT date FROM summaries WHERE date >= ?').all(start).map((r) => r.date));
+  const saved = new Set(db.prepare('SELECT date FROM summaries WHERE repo = ? AND date >= ?').all(scope, start).map((r) => r.date));
   return Array.from({ length: days }, (_, i) => {
     const date = addDays(start, i);
     const r = counts.get(date);

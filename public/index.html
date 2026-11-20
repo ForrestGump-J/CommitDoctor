@@ -15,11 +15,17 @@
   <a class="skip" href="#summary">Skip to summary</a>
 
   <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M1 13h6l2-7 4 13 2-6h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Commit Doctor</span>
+    <div class="top-inner">
+      <div class="brand">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M1 13h6l2-7 4 13 2-6h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Commit Doctor</span>
+      </div>
+      <button type="button" class="patient" id="patient" aria-haspopup="dialog" aria-controls="setup">
+        <span class="patient-name" id="patient-name">No repository</span>
+        <span class="status" id="status" role="status"><span class="dot" aria-hidden="true"></span><span id="status-text">Connecting…</span></span>
+      </button>
+      <button type="button" class="btn" id="open-setup" aria-haspopup="dialog" aria-controls="setup">Setup</button>
     </div>
-    <p class="status" id="status" role="status"><span class="dot" aria-hidden="true"></span><span id="status-text">Connecting…</span></p>
   </header>
 
   <main>
@@ -28,70 +34,26 @@
         <div>
           <p class="repo" id="repo">Repository</p>
           <h1 id="day-title">Today</h1>
-          <div class="repo-track">
-            <input type="text" id="repo-input" placeholder="owner/name or GitHub URL" aria-label="GitHub repository to track via webhook (owner/name or GitHub URL)">
-            <button type="button" id="track-btn">Track via webhook</button>
-          </div>
-          <div class="hook-setup" id="hook-setup" hidden>
-            <p class="hook-status" id="hook-status" role="status"></p>
-            <div class="hook-steps" id="hook-steps">
-              <p class="hook-label">1. Public URL of this server</p>
-              <input type="url" id="hook-url-input" placeholder="https://your-host.example/webhook/github" aria-label="Payload URL GitHub should send pushes to">
-              <p class="track-hint" id="hook-url-hint" hidden></p>
-
-              <p class="hook-label">2a. Easiest: let Commit Doctor create the webhook</p>
-              <div class="repo-track">
-                <input type="password" id="hook-token-input" placeholder="GitHub token (used once, not saved)" aria-label="GitHub token with webhook permission" autocomplete="off">
-                <button type="button" id="hook-connect-btn">Create webhook on GitHub</button>
-              </div>
-              <p class="track-hint">Needs a token with webhook access:
-                <a id="hook-token-link" href="https://github.com/settings/tokens/new?scopes=admin:repo_hook&amp;description=Commit%20Doctor%20webhook" target="_blank" rel="noopener">make a classic token with <code>admin:repo_hook</code></a>,
-                or a fine-grained one with <em>Webhooks: read and write</em>.</p>
-
-              <p class="hook-label">2b. Or add it yourself on <a id="hook-gh-link" href="#" target="_blank" rel="noopener">GitHub &rsaquo; Add webhook</a> and paste:</p>
-              <dl class="hook-fields">
-                <dt>Payload URL</dt><dd><code id="hook-f-url">(fill in step 1)</code> <button type="button" class="text-btn copy-btn" data-copy="hook-f-url">Copy</button></dd>
-                <dt>Content type</dt><dd><code>application/json</code></dd>
-                <dt>Secret</dt><dd><code id="hook-f-secret">…</code> <button type="button" class="text-btn copy-btn" data-copy="hook-f-secret">Copy</button></dd>
-                <dt>Events</dt><dd>Just the push event</dd>
-              </dl>
-            </div>
-          </div>
-          <div class="repo-track">
-            <label for="deadline-input" class="sr-only">Project deadline</label>
-            <input type="date" id="deadline-input" aria-label="Project deadline">
-            <button type="button" id="deadline-btn">Set deadline</button>
-            <button type="button" id="deadline-clear-btn" class="text-btn" hidden>Clear</button>
-          </div>
-          <p class="prediction" id="prediction" hidden></p>
         </div>
         <div class="daynav" role="group" aria-label="Choose a day">
           <button type="button" id="prev" aria-label="Previous day">‹</button>
           <input type="date" id="date-input" aria-label="Day">
           <button type="button" id="next" aria-label="Next day">›</button>
-          <button type="button" id="today" class="text-btn">Today</button>
+          <button type="button" id="today" class="daynav-today">Today</button>
         </div>
       </div>
       <p class="headline" id="headline" aria-live="polite"></p>
       <p class="provenance"><span id="provenance"></span> <button type="button" id="save-btn" class="text-btn" hidden>Save summary now</button></p>
+      <p class="prediction" id="prediction" hidden></p>
     </section>
 
-    <section class="poll-repos" aria-labelledby="poll-title">
-      <h2 id="poll-title">Polled repos (public or private, via token)</h2>
-      <p class="muted">No public webhook needed. Commit Doctor checks these repos on a timer using a personal access token stored per repo.</p>
-      <div class="poll-add">
-        <input type="text" id="poll-repo-input" placeholder="owner/name" aria-label="Repository to poll (owner/name)">
-        <input type="password" id="poll-token-input" placeholder="Personal access token" aria-label="Personal access token" autocomplete="off">
-        <button type="button" id="poll-add-btn">Add</button>
-      </div>
-      <p class="track-hint" id="poll-hint" hidden></p>
-      <ul class="poll-list" id="poll-list"></ul>
-    </section>
-
-    <section class="trace" aria-labelledby="trace-title">
+    <section class="monitor" aria-labelledby="trace-title">
       <h2 id="trace-title" class="sr-only">Commits per day, last 14 days</h2>
-      <div id="trace"></div>
-      <p class="trace-key">Spike height is the number of commits that day. Select a day to read its summary. A dot under the date means a summary was saved.</p>
+      <div class="monitor-trace">
+        <div id="trace"></div>
+        <p class="trace-key">Each spike is one day; its height is that day's commits. Select a day to read it. A dot under the date means its summary was saved.</p>
+      </div>
+      <dl class="readouts" id="vitals" aria-label="Readings for the selected day"></dl>
     </section>
 
     <div class="cols">
@@ -107,24 +69,9 @@
       </div>
 
       <aside class="col-side">
-        <section aria-labelledby="vitals-title">
-          <h2 id="vitals-title">Vitals</h2>
-          <dl class="vitals" id="vitals"></dl>
-        </section>
         <section aria-labelledby="flags-title">
           <h2 id="flags-title">Flags</h2>
           <ul class="flag-list" id="flags"></ul>
-        </section>
-        <section aria-labelledby="subs-title">
-          <h2 id="subs-title">Notify</h2>
-          <p class="muted sub-note">People who will get deadline reminders and flag alerts by email.</p>
-          <ul class="sub-list" id="sub-list"></ul>
-          <form class="sub-add" id="sub-form">
-            <input type="text" id="sub-name" placeholder="Name" aria-label="Subscriber name" autocomplete="off">
-            <input type="email" id="sub-email" placeholder="Email" aria-label="Subscriber email" autocomplete="off">
-            <button type="submit" id="sub-add-btn">Add</button>
-          </form>
-          <p class="track-hint" id="sub-hint" hidden></p>
         </section>
         <section aria-labelledby="hours-title">
           <h2 id="hours-title">Hour by hour</h2>
@@ -134,10 +81,90 @@
     </div>
 
     <details class="log" id="log">
-      <summary>System log: webhook deliveries and summary runs</summary>
+      <summary>System log</summary>
+      <p class="muted log-note">Every webhook delivery, summary run and email, newest first.</p>
       <div class="log-body" id="log-body"><p class="muted">Open to load.</p></div>
     </details>
   </main>
+
+  <dialog class="sheet" id="setup" aria-labelledby="setup-title">
+    <div class="sheet-head">
+      <h2 id="setup-title">Setup</h2>
+      <button type="button" class="sheet-close" id="close-setup" aria-label="Close setup">×</button>
+    </div>
+
+    <section class="sheet-sec" aria-labelledby="track-title">
+      <h3 id="track-title">Repository</h3>
+      <p class="muted sheet-note">Commit Doctor follows one repository at a time. Its recent commits are pulled right away, then kept current.</p>
+      <div class="field-row">
+        <input type="text" id="repo-input" placeholder="owner/name or GitHub URL" aria-label="Repository to track (owner/name or GitHub URL)">
+        <button type="button" class="btn btn-primary" id="track-btn">Track</button>
+      </div>
+      <div class="field-row field-row-quiet">
+        <label for="repo-switch" class="sr-only">Switch to a repository seen before</label>
+        <select id="repo-switch" hidden></select>
+        <button type="button" id="untrack-btn" class="text-btn" hidden>Untrack</button>
+      </div>
+      <p class="hint" id="untracked-hint" hidden>Tracking is off, so new pushes are ignored. Commits already recorded stay on the dashboard.</p>
+
+      <div class="hook-setup" id="hook-setup" hidden>
+        <div class="hook-status" id="hook-status" role="status"></div>
+        <div class="hook-steps" id="hook-steps">
+          <p class="hook-intro">For instant updates, have GitHub send each push here:</p>
+          <ol class="steps">
+            <li>
+              <p class="step-title">Public URL of this server</p>
+              <input type="url" id="hook-url-input" class="input-wide" placeholder="https://your-host.example/webhook/github" aria-label="Payload URL GitHub should send pushes to">
+              <p class="hint" id="hook-url-hint" hidden></p>
+            </li>
+            <li>
+              <p class="step-title">Add it on <a id="hook-gh-link" href="#" target="_blank" rel="noopener">GitHub’s Add webhook page</a></p>
+              <dl class="hook-fields">
+                <dt>Payload URL</dt><dd><code id="hook-f-url">(fill in step 1)</code> <button type="button" class="text-btn copy-btn" data-copy="hook-f-url">Copy</button></dd>
+                <dt>Content type</dt><dd><code>application/json</code></dd>
+                <dt>Secret</dt><dd><code id="hook-f-secret">…</code> <button type="button" class="text-btn copy-btn" data-copy="hook-f-secret">Copy</button></dd>
+                <dt>Events</dt><dd>Just the push event</dd>
+              </dl>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet-sec" aria-labelledby="deadline-title">
+      <h3 id="deadline-title">Deadline</h3>
+      <p class="muted sheet-note">Used to judge whether the current pace will make it.</p>
+      <div class="field-row">
+        <input type="date" id="deadline-input" aria-label="Project deadline">
+        <button type="button" class="btn" id="deadline-btn">Set deadline</button>
+        <button type="button" id="deadline-clear-btn" class="text-btn" hidden>Clear</button>
+      </div>
+    </section>
+
+    <section class="sheet-sec" aria-labelledby="poll-title">
+      <h3 id="poll-title">Private repos</h3>
+      <p class="muted sheet-note">For private repos, or when GitHub can’t reach this server. Checked every few minutes with a personal access token, stored encrypted.</p>
+      <div class="field-stack">
+        <input type="text" id="poll-repo-input" placeholder="owner/name" aria-label="Repository to check (owner/name)">
+        <input type="password" id="poll-token-input" placeholder="Personal access token" aria-label="Personal access token" autocomplete="off">
+        <button type="button" class="btn" id="poll-add-btn">Add repo</button>
+      </div>
+      <p class="hint" id="poll-hint" hidden></p>
+      <ul class="plain-list poll-list" id="poll-list"></ul>
+    </section>
+
+    <section class="sheet-sec" aria-labelledby="subs-title">
+      <h3 id="subs-title">Email alerts</h3>
+      <p class="muted sheet-note">These people get deadline reminders and flag alerts.</p>
+      <ul class="plain-list sub-list" id="sub-list"></ul>
+      <form class="field-stack" id="sub-form">
+        <input type="text" id="sub-name" placeholder="Name" aria-label="Name" autocomplete="off">
+        <input type="email" id="sub-email" placeholder="Email" aria-label="Email" autocomplete="off">
+        <button type="submit" class="btn" id="sub-add-btn">Add person</button>
+      </form>
+      <p class="hint" id="sub-hint" hidden></p>
+    </section>
+  </dialog>
 
   <script src="app.js"></script>
 </body>

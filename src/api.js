@@ -2,12 +2,13 @@
 const crypto = require('crypto');
 const express = require('express');
 const { localDate, localTime, addDays, daysBetween, isDateStr } = require('./time');
-const { getSummary, generateSummary, getTrend } = require('./summary');
+const { getSummary, generateSummary, getTrend, catchUp } = require('./summary');
 const { predictDeadline } = require('./predict');
 const { checkDeadlineUrgency } = require('./notify');
 const { encryptToken } = require('./crypto');
 const { testRepoAccess, pollOneRepo } = require('./poller');
-const { connectWebhook } = require('./hooks');
+const { syncTrackedRepo } = require('./hooks');
+const { currentScope, IN_SCOPE } = require('./scope');
 
 const clamp = (v, lo, hi, dflt) => {
   const n = parseInt(v, 10);
@@ -38,14 +39,23 @@ function createApiRouter({ db, config, mailer = null }) {
     return next();
   };
 
+  // Repos the server has seen, for the dashboard's "switch repo" list.
+  const knownRepos = db.prepare(
+    `SELECT lower(repo) AS repo FROM commits
+     UNION SELECT lower(repo) FROM webhook_events WHERE repo IS NOT NULL AND status != 'rejected'
+     ORDER BY repo`
+  );
   const readSettings = () => {
-    const row = db.prepare('SELECT deadline_date, tracked_repo, updated_at FROM project_settings WHERE id = 1').get();
+    const row = db.prepare('SELECT deadline_date, tracked_repo, untracked, updated_at FROM project_settings WHERE id = 1').get();
     const today = localDate(Date.now(), tz);
     const days_remaining = row && row.deadline_date ? daysBetween(today, row.deadline_date) : null;
+    const untracked = Boolean(row && row.untracked);
     return {
       deadline_date: row ? row.deadline_date : null,
       days_remaining,
-      tracked_repo: (row && row.tracked_repo) || config.repo || null,
+      tracked_repo: untracked ? null : (row && row.tracked_repo) || config.repo || null,
+      untracked,
+      known_repos: knownRepos.all().map((r) => r.repo),
       updated_at: row ? row.updated_at : null,
     };
   };
@@ -61,10 +71,21 @@ function createApiRouter({ db, config, mailer = null }) {
     `SELECT event, received_at FROM webhook_events
      WHERE status = 'accepted' AND event IN ('ping', 'push') AND lower(repo) = ? ORDER BY id DESC LIMIT 1`
   );
+  const lastSync = db.prepare('SELECT last_sync_at, last_sync_error, last_sync_added FROM project_settings WHERE id = 1');
   function webhookStatus(trackedRepo) {
     const last = lastEvent.get();
     const ok = trackedRepo ? lastOkFor.get(trackedRepo) : null;
-    const base = { last_ok_event: ok ? ok.event : null, last_ok_at: ok ? ok.received_at : null };
+    const sync = lastSync.get() || {};
+    const base = {
+      last_ok_event: ok ? ok.event : null,
+      last_ok_at: ok ? ok.received_at : null,
+      sync: {
+        at: sync.last_sync_at || null,
+        error: sync.last_sync_error || null,
+        added: sync.last_sync_added,
+        interval_min: config.syncIntervalMs ? Math.round(config.syncIntervalMs / 60_000) : null,
+      },
+    };
     if (!last) return { state: 'waiting', ...base };
     if (last.status === 'rejected') return { state: 'failing', detail: last.detail, at: last.received_at, ...base };
     const lastRepo = (last.repo || '').toLowerCase();
@@ -78,14 +99,15 @@ function createApiRouter({ db, config, mailer = null }) {
 
   // Everything the dashboard header needs in one call.
   router.get('/overview', (_req, res) => {
+    const scope = currentScope(db, config);
     const totals = db
       .prepare(
         `SELECT COUNT(*) AS commits, COUNT(DISTINCT contributor) AS contributors,
                 COUNT(DISTINCT committed_date) AS days, MIN(committed_date) AS first_date
-         FROM commits`
+         FROM commits WHERE ${IN_SCOPE}`
       )
-      .get();
-    const latestCommit = db.prepare('SELECT repo FROM commits ORDER BY committed_at DESC LIMIT 1').get();
+      .get({ scope });
+    const latestCommit = db.prepare(`SELECT repo FROM commits WHERE ${IN_SCOPE} ORDER BY committed_at DESC LIMIT 1`).get({ scope });
     const lastPush = db
       .prepare("SELECT received_at FROM webhook_events WHERE status = 'accepted' AND event = 'push' ORDER BY id DESC LIMIT 1")
       .get();
@@ -93,7 +115,7 @@ function createApiRouter({ db, config, mailer = null }) {
       .prepare("SELECT received_at, repo FROM webhook_events WHERE status = 'accepted' AND event = 'ping' ORDER BY id DESC LIMIT 1")
       .get();
     const settings = readSettings();
-    const lastSaved = db.prepare('SELECT date FROM summaries ORDER BY date DESC LIMIT 1').get();
+    const lastSaved = db.prepare('SELECT date FROM summaries WHERE repo = ? ORDER BY date DESC LIMIT 1').get(scope);
     const activityCounts = db
       .prepare(
         `SELECT (SELECT COUNT(*) FROM webhook_events) AS webhook_events_count,
@@ -103,7 +125,9 @@ function createApiRouter({ db, config, mailer = null }) {
     res.json({
       today: localDate(Date.now(), tz),
       timezone: tz,
-      repo: (latestCommit && latestCommit.repo) || config.repo || null,
+      // The repo the dashboard is showing; null means all repos combined.
+      repo: scope || null,
+      latest_commit_repo: latestCommit ? latestCommit.repo : null,
       rules: { min_commits: config.summary.minCommits, comparison_days: config.summary.comparisonDays },
       secret_configured: Boolean(config.webhookSecret),
       totals,
@@ -122,8 +146,8 @@ function createApiRouter({ db, config, mailer = null }) {
 
   router.get('/summaries', (req, res) => {
     const rows = db
-      .prepare('SELECT date, total_commits, trigger, generated_at, data FROM summaries ORDER BY date DESC LIMIT ?')
-      .all(clamp(req.query.limit, 1, 100, 30));
+      .prepare('SELECT date, total_commits, trigger, generated_at, data FROM summaries WHERE repo = ? ORDER BY date DESC LIMIT ?')
+      .all(currentScope(db, config), clamp(req.query.limit, 1, 100, 30));
     res.json(
       rows.map((r) => ({
         date: r.date,
@@ -149,8 +173,8 @@ function createApiRouter({ db, config, mailer = null }) {
     const date = req.query.date || localDate(Date.now(), tz);
     if (!isDateStr(date)) return res.status(400).json({ error: 'date must look like 2026-09-20.' });
     const rows = db
-      .prepare('SELECT * FROM commits WHERE committed_date = ? ORDER BY committed_at DESC LIMIT ?')
-      .all(date, clamp(req.query.limit, 1, 500, 200));
+      .prepare(`SELECT * FROM commits WHERE committed_date = ? AND ${IN_SCOPE} ORDER BY committed_at DESC LIMIT ?`)
+      .all({ scope: currentScope(db, config) }, date, clamp(req.query.limit, 1, 500, 200));
     return res.json(
       rows.map((r) => ({
         sha: r.sha,
@@ -197,7 +221,7 @@ function createApiRouter({ db, config, mailer = null }) {
       return res.status(400).json({ error: 'Send deadline_date and/or tracked_repo (either may be null to clear it).' });
     }
 
-    const current = db.prepare('SELECT deadline_date, tracked_repo FROM project_settings WHERE id = 1').get();
+    const current = db.prepare('SELECT deadline_date, tracked_repo, untracked FROM project_settings WHERE id = 1').get();
     let deadline_date = current.deadline_date;
     let tracked_repo = current.tracked_repo;
 
@@ -216,16 +240,22 @@ function createApiRouter({ db, config, mailer = null }) {
       tracked_repo = value;
     }
 
+    // Clearing tracked_repo is an explicit Untrack: pushes are ignored from then on,
+    // rather than falling back to "accept any repository".
+    const untracked = hasRepo ? (tracked_repo === null ? 1 : 0) : current.untracked;
     db.prepare(
-      `UPDATE project_settings SET deadline_date = ?, tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
-    ).run(deadline_date, tracked_repo);
+      `UPDATE project_settings SET deadline_date = ?, tracked_repo = ?, untracked = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
+    ).run(deadline_date, tracked_repo, untracked);
+    if (hasRepo && tracked_repo !== current.tracked_repo) {
+      db.prepare('UPDATE project_settings SET last_sync_at = NULL, last_sync_error = NULL, last_sync_added = NULL WHERE id = 1').run();
+      // Daily summaries are saved per repo; fill in the newly selected repo's missed days.
+      catchUp(db, config);
+    }
     return res.status(200).json(readSettings());
   });
 
   // --- Webhook setup helpers for the dashboard: the values to paste into GitHub,
-  // and a one-click "create it for me" that uses a token once and forgets it. ---
-
-  const URL_RE = /^https?:\/\/[^\s/]+(\/\S*)?$/i;
+  // and an immediate pull of the tracked repo so it doesn't wait for a push. ---
 
   router.get('/webhook-setup', requireAdmin, (_req, res) => {
     res.json({
@@ -237,32 +267,14 @@ function createApiRouter({ db, config, mailer = null }) {
     });
   });
 
-  router.post('/webhook-setup/connect', requireAdmin, async (req, res) => {
-    const body = req.body || {};
-    const repo = String(body.repo || '').trim().toLowerCase();
-    const token = String(body.token || '').trim();
-    const payloadUrl = String(body.payload_url || '').trim();
-    if (!REPO_RE.test(repo)) return res.status(400).json({ error: 'repo must look like owner/name.' });
-    if (!token) return res.status(400).json({ error: 'A GitHub token is required to create the webhook.' });
-    if (!URL_RE.test(payloadUrl)) return res.status(400).json({ error: 'payload_url must be a full http(s) URL.' });
-    if (/^https?:\/\/(localhost|127\.|\[::1\])/i.test(payloadUrl)) {
-      return res.status(400).json({ error: 'GitHub cannot reach localhost. Use a public URL (for example from ngrok or smee.io).' });
-    }
-
-    let hook;
-    try {
-      hook = await connectWebhook({ repo, token, payloadUrl, secret: config.webhookSecret });
-    } catch (err) {
-      const hint = err.status === 404 || err.status === 403
-        ? ' The token needs admin access to the repo (classic: admin:repo_hook; fine-grained: Webhooks read and write).'
-        : '';
-      return res.status(422).json({ error: `GitHub refused: ${err.message}${hint}` });
-    }
-
-    db.prepare(
-      `UPDATE project_settings SET tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
-    ).run(repo);
-    return res.status(hook.created ? 201 : 200).json({ ok: true, hook_id: hook.id, created: hook.created, settings: readSettings() });
+  // Pull the tracked repo's recent commits now via GitHub's API (token optional
+  // for public repos), so tracking shows data without waiting for a push.
+  router.post('/webhook-setup/sync', requireAdmin, async (req, res) => {
+    const repo = readSettings().tracked_repo;
+    if (!repo) return res.status(400).json({ error: 'Track a repository first.' });
+    const token = String((req.body && req.body.token) || '').trim();
+    const result = await syncTrackedRepo({ db, config, repo, token });
+    return res.status(result.ok ? 200 : 422).json(result.ok ? result : { error: result.error });
   });
 
   // --- Tracked repos (polled via GitHub's API using a per-repo token; works for
@@ -375,11 +387,12 @@ function createApiRouter({ db, config, mailer = null }) {
 
   router.get('/flags', (req, res) => {
     const limit = clamp(req.query.limit, 1, 200, 30);
+    const scope = currentScope(db, config);
     if (req.query.date) {
       if (!isDateStr(req.query.date)) return res.status(400).json({ error: 'date must look like 2026-09-20.' });
-      return res.json(db.prepare('SELECT * FROM flags WHERE date = ? ORDER BY id DESC').all(req.query.date));
+      return res.json(db.prepare('SELECT * FROM flags WHERE repo = ? AND date = ? ORDER BY id DESC').all(scope, req.query.date));
     }
-    return res.json(db.prepare('SELECT * FROM flags ORDER BY date DESC, id DESC LIMIT ?').all(limit));
+    return res.json(db.prepare('SELECT * FROM flags WHERE repo = ? ORDER BY date DESC, id DESC LIMIT ?').all(scope, limit));
   });
 
   // The prototype's own activity record (deliveries received, summaries generated).
@@ -388,6 +401,7 @@ function createApiRouter({ db, config, mailer = null }) {
     res.json({
       webhook_events: db.prepare('SELECT * FROM webhook_events ORDER BY id DESC LIMIT ?').all(limit),
       summary_runs: db.prepare('SELECT * FROM summary_runs ORDER BY id DESC LIMIT ?').all(limit),
+      notifications: db.prepare('SELECT * FROM notifications ORDER BY id DESC LIMIT ?').all(limit),
     });
   });
 

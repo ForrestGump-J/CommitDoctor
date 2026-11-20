@@ -1,6 +1,7 @@
 'use strict';
 const { localDate } = require('./time');
 const { generateSummary, catchUp } = require('./summary');
+const { currentScope } = require('./scope');
 const{notifyFlags, checkDeadlineUrgency} = require('./notify');
 
 /**
@@ -30,7 +31,7 @@ function startScheduler({ db, config, mailer = null, log = console, intervalMs =
     const result = generateSummary(db, config, lastDate, 'scheduled');
     log.info(`[scheduler] ${lastDate}: ${result.saved ? 'summary saved' : `skipped (${result.reason})`}`);
     if ((result.saved || result.flagged) && mailer){
-      const flags = db.prepare('SELECT type, detail FROM flags WHERE date = ?').all(lastDate);
+      const flags = db.prepare('SELECT type, detail FROM flags WHERE repo = ? AND date = ?').all(currentScope(db, config), lastDate);
       notifyFlags(db, config, mailer, lastDate, flags, log).catch((err) => log.error(`[scheduler] flag email failed: ${err.message}`));
     }
     lastDate = today;

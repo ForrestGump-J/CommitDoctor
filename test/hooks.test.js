@@ -3,7 +3,7 @@ const { test, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { makeCtx } = require('./helpers');
 const { createApp } = require('../src/app');
-const { ensureWebhookSecret, connectWebhook } = require('../src/hooks');
+const { ensureWebhookSecret } = require('../src/hooks');
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -62,63 +62,6 @@ test('webhook setup is admin-only when ADMIN_TOKEN is set', async () => {
   } finally { server.close(); }
 });
 
-test('connect rejects a localhost payload URL before calling GitHub', async () => {
-  const calls = stubGitHub(() => ({}));
-  const { server, base } = await listen(makeCtx());
-  try {
-    const res = await fetch(`${base}/api/webhook-setup/connect`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: 'a/b', token: 't', payload_url: 'http://localhost:3000/webhook/github' }),
-    });
-    assert.equal(res.status, 400);
-    assert.equal(calls.length, 0);
-  } finally { server.close(); }
-});
-
-test('connect creates the hook on GitHub and starts tracking the repo', async () => {
-  const calls = stubGitHub((url, method) => (method === 'GET' ? { json: [] } : { status: 201, json: { id: 42 } }));
-  const ctx = makeCtx();
-  const { server, base } = await listen(ctx);
-  try {
-    const res = await fetch(`${base}/api/webhook-setup/connect`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: 'Team/Repo', token: 't', payload_url: 'https://cd.example.com/webhook/github' }),
-    });
-    assert.equal(res.status, 201);
-    const post = calls.find((c) => c.method === 'POST');
-    assert.equal(post.url, 'https://api.github.com/repos/team/repo/hooks');
-    assert.deepEqual(post.body.events, ['push']);
-    assert.equal(post.body.config.content_type, 'json');
-    assert.equal(post.body.config.secret, 'test-secret');
-    assert.equal(ctx.db.prepare('SELECT tracked_repo FROM project_settings').get().tracked_repo, 'team/repo');
-  } finally { server.close(); }
-});
-
-test('connectWebhook updates an existing hook with the same URL instead of duplicating it', async () => {
-  const url = 'https://cd.example.com/webhook/github';
-  const calls = stubGitHub((u, method) => (method === 'GET' ? { json: [{ id: 7, config: { url } }] } : { json: { id: 7 } }));
-  const hook = await connectWebhook({ repo: 'a/b', token: 't', payloadUrl: url, secret: 's' });
-  assert.deepEqual(hook, { id: 7, created: false });
-  assert.equal(calls[1].method, 'PATCH');
-  assert.equal(calls[1].url, 'https://api.github.com/repos/a/b/hooks/7');
-});
-
-test('a GitHub permission error is explained', async () => {
-  stubGitHub(() => ({ status: 404, json: { message: 'Not Found' } }));
-  const { server, base } = await listen(makeCtx());
-  try {
-    const res = await fetch(`${base}/api/webhook-setup/connect`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: 'a/b', token: 't', payload_url: 'https://cd.example.com/webhook/github' }),
-    });
-    assert.equal(res.status, 422);
-    assert.match((await res.json()).error, /admin:repo_hook/);
-  } finally { server.close(); }
-});
-
 test('overview reports whether GitHub is delivering for the tracked repo', async () => {
   const ctx = makeCtx();
   const { server, base } = await listen(ctx);
@@ -147,4 +90,103 @@ test('overview reports whether GitHub is delivering for the tracked repo', async
     log('push', 'Team/Repo', 'accepted', 'refs/heads/main');
     assert.equal((await status()).last_ok_event, 'push');
   } finally { server.close(); }
+});
+
+test('sync pulls a public repo\'s recent commits right away, without a token', async () => {
+  const headers = [];
+  const realStub = stubGitHub((url) => (url.endsWith('/repos/team/repo')
+    ? { json: { default_branch: 'main', private: false } }
+    : { json: [
+      { sha: 'a'.repeat(40), html_url: 'https://x', author: { login: 'alice' },
+        commit: { message: 'Add thing', author: { name: 'Alice', email: 'a@x', date: new Date().toISOString() } } },
+    ] }));
+  const wrapped = globalThis.fetch;
+  globalThis.fetch = (url, opts = {}) => { if (String(url).startsWith('https://api.github.com')) headers.push(opts.headers); return wrapped(url, opts); };
+
+  const ctx = makeCtx();
+  const { server, base } = await listen(ctx);
+  try {
+    await fetch(`${base}/api/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tracked_repo: 'team/repo' }) });
+    const res = await fetch(`${base}/api/webhook-setup/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).added, 1);
+    assert.equal(realStub.length, 2);
+    assert.ok(headers.every((h) => !h.Authorization), 'no Authorization header without a token');
+    assert.equal(ctx.db.prepare("SELECT COUNT(*) c FROM commits WHERE repo = 'team/repo'").get().c, 1);
+
+    const { sync } = (await (await fetch(`${base}/api/overview`)).json()).webhook;
+    assert.ok(sync.at);
+    assert.equal(sync.added, 1);
+    assert.equal(sync.error, null);
+
+    // Tracking a different repo clears the old sync result.
+    await fetch(`${base}/api/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tracked_repo: 'team/other' }) });
+    assert.equal((await (await fetch(`${base}/api/overview`)).json()).webhook.sync.at, null);
+  } finally { server.close(); }
+});
+
+test('sync explains a missing (or private) repo', async () => {
+  stubGitHub(() => ({ status: 404, json: { message: 'Not Found' } }));
+  const ctx = makeCtx();
+  ctx.db.prepare("UPDATE project_settings SET tracked_repo = 'team/secret'").run();
+  const { server, base } = await listen(ctx);
+  try {
+    const res = await fetch(`${base}/api/webhook-setup/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(res.status, 422);
+    assert.match((await res.json()).error, /private/);
+    assert.match((await (await fetch(`${base}/api/overview`)).json()).webhook.sync.error, /private/);
+  } finally { server.close(); }
+});
+
+test('untracking stops recording pushes, and tracking again turns it back on', async () => {
+  const { sign, pushPayload } = require('./helpers');
+  const ctx = makeCtx({ repo: 'demo-team/demo-repo' }); // GITHUB_REPO set: must not be used as a fallback once untracked
+  const { server, base } = await listen(ctx);
+  const settings = (body) => fetch(`${base}/api/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json());
+  const push = (repo) => {
+    const body = JSON.stringify(pushPayload([{ timestamp: new Date().toISOString() }], repo));
+    return fetch(`${base}/webhook/github`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-GitHub-Event': 'push', 'X-Hub-Signature-256': sign(body) },
+      body,
+    }).then((r) => r.json());
+  };
+  try {
+    const off = await settings({ tracked_repo: null });
+    assert.equal(off.tracked_repo, null);
+    assert.equal(off.untracked, true);
+    assert.equal((await push('demo-team/demo-repo')).ignored, 'tracking is off');
+
+    const on = await settings({ tracked_repo: 'demo-team/demo-repo' });
+    assert.equal(on.untracked, false);
+    assert.equal((await push('demo-team/demo-repo')).stored, 1);
+
+    // Switch to another repo: the old one's pushes are now ignored, and both show up as known repos.
+    const switched = await settings({ tracked_repo: 'demo-team/other' });
+    assert.equal(switched.tracked_repo, 'demo-team/other');
+    assert.equal((await push('demo-team/demo-repo')).ignored, 'other repository');
+    assert.ok(switched.known_repos.includes('demo-team/demo-repo'));
+  } finally { server.close(); }
+});
+
+test('background sync re-pulls the tracked repo on a timer, and idles when nothing is tracked', async () => {
+  const { startRepoSync } = require('../src/hooks');
+  const calls = stubGitHub((url) => (url.endsWith('/repos/team/repo') ? { json: { default_branch: 'main' } } : { json: [] }));
+  const ctx = makeCtx();
+  const quiet = { info() {} };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  let stop = startRepoSync({ db: ctx.db, config: ctx.config, log: quiet, intervalMs: 20 });
+  await wait(70);
+  stop();
+  assert.equal(calls.length, 0, 'no calls while nothing is tracked');
+
+  ctx.db.prepare("UPDATE project_settings SET tracked_repo = 'team/repo'").run();
+  stop = startRepoSync({ db: ctx.db, config: ctx.config, log: quiet, intervalMs: 20 });
+  await wait(70);
+  stop();
+  assert.ok(calls.some((c) => c.url.endsWith('/repos/team/repo')));
+  assert.ok(ctx.db.prepare('SELECT last_sync_at FROM project_settings').get().last_sync_at);
+
+  assert.equal(startRepoSync({ db: ctx.db, config: { ...ctx.config, syncIntervalMs: 0 } })(), undefined, 'interval 0 turns it off');
 });

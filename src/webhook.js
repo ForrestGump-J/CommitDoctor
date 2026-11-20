@@ -37,7 +37,7 @@ function parsePushCommit(c, payload, deliveryId) {
 function createWebhookRouter({ db, config }) {
   const router = express.Router();
   const store = createStore(db, config);
-  const getTrackedRepo = db.prepare('SELECT tracked_repo FROM project_settings WHERE id = 1');
+  const getTrackedRepo = db.prepare('SELECT tracked_repo, untracked FROM project_settings WHERE id = 1');
   const logEvent = db.prepare(
     `INSERT INTO webhook_events (delivery_id, event, repo, status, detail, commits_received, commits_new)
      VALUES (@delivery_id, @event, @repo, @status, @detail, @received, @added)`
@@ -81,6 +81,10 @@ function createWebhookRouter({ db, config }) {
     // The dashboard's "Track" button can set this at runtime; .env's GITHUB_REPO
     // is only the fallback default so upgrading doesn't require re-entering it.
     const row = getTrackedRepo.get();
+    if (row && row.untracked) {
+      record(base, 'ignored', 'Tracking is off (untracked from the dashboard)');
+      return res.status(202).json({ ok: true, ignored: 'tracking is off' });
+    }
     const trackedRepo = (row && row.tracked_repo) || config.repo || '';
     if (trackedRepo && payload.repository.full_name.toLowerCase() !== trackedRepo) {
       record(base, 'ignored', `Repository is not ${trackedRepo}`);

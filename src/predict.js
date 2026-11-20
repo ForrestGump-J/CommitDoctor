@@ -1,5 +1,6 @@
 'use strict';
 const { addDays, daysBetween, localDate } = require('./time');
+const { currentScope, IN_SCOPE } = require('./scope');
 
 const round = (n) => Math.round(n * 100) / 100;
 
@@ -28,23 +29,29 @@ function predictDeadline(db, config, date = localDate(Date.now(), config.timezon
   const deadline_date = settings ? settings.deadline_date : null;
   if (!deadline_date) return { date, deadline_date: null, status: 'no-deadline', urgency: 'none' };
 
-  const first = db.prepare('SELECT MIN(committed_date) AS d FROM commits').get().d;
-  if (!first) return { date, deadline_date, days_remaining: daysBetween(date, deadline_date), status: 'insufficient-data', urgency: 'none' };
+  const scope = currentScope(db, config);
+  const first = db.prepare(`SELECT MIN(committed_date) AS d FROM commits WHERE ${IN_SCOPE}`).get({ scope }).d;
+  if (!first) {
+    const days = daysBetween(date, deadline_date);
+    return { date, deadline_date, days_remaining: days, status: 'insufficient-data', urgency: urgencyForDays(days) };
+  }
 
   const days_remaining = daysBetween(date, deadline_date);
 
-    // Pace: the last few days compared with everything that came before them.
+  // Pace: the last few days compared with everything that came before them.
   const paceDays = config.summary.comparisonDays;
   const recentStart = addDays(date, -(paceDays - 1));
   const earlierDays = daysBetween(first, recentStart);
   const enoughHistory = earlierDays >= paceDays;
 
   const recentCount = db
-    .prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date <= ?')
-    .get(recentStart, date).c;
+    .prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date <= ? AND ${IN_SCOPE}`)
+    .get({ scope }, recentStart, date).c;
   const recentRate = recentCount / paceDays;
 
-  const earlierCount = db.prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date < ?').get(recentStart).c;
+  const earlierCount = db
+    .prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date < ? AND ${IN_SCOPE}`)
+    .get({ scope }, recentStart).c;
   const earlierRate = earlierDays > 0 ? earlierCount / earlierDays : 0;
 
   const paceRatio = earlierRate > 0 ? recentRate / earlierRate : (recentRate > 0 ? 1 : 0);
@@ -58,9 +65,9 @@ function predictDeadline(db, config, date = localDate(Date.now(), config.timezon
   const churnRows = db
     .prepare(
       `SELECT lines_added, lines_deleted, files_added, files_removed, files_modified
-       FROM commits WHERE committed_date >= ? AND committed_date <= ?`
+       FROM commits WHERE committed_date >= ? AND committed_date <= ? AND ${IN_SCOPE}`
     )
-    .all(windowStart, date);
+    .all({ scope }, windowStart, date);
 
   let linesAdded = 0;
   let linesDeleted = 0;
@@ -110,15 +117,20 @@ function predictDeadline(db, config, date = localDate(Date.now(), config.timezon
     churn_ratio: churnRatio == null ? null : round(churnRatio),
     churn_basis: churnBasis,
     status,
-    urgency: urgencyForStatus(status, days_remaining),
+    urgency: urgencyForDays(days_remaining),
   };
 }
 
-function urgencyForStatus(status, days_remaining){
-  if (status !== 'at-risk' && status !== 'behind') return 'none';
-  if (days_remaining == null || days_remaining > 7) return 'none';
+/**
+ * Reminder tier from days left alone: reminders escalate as the deadline nears
+ * whatever the pace (pace is reported inside the reminder, and an at-risk pace
+ * already raises its own flag through the daily summary).
+ */
+function urgencyForDays(days_remaining) {
+  if (days_remaining == null || days_remaining < 0 || days_remaining > 7) return 'none';
   if (days_remaining <= 1) return 'final';
   if (days_remaining <= 3) return 'urgent';
   return 'reminder';
 }
-module.exports = { predictDeadline, urgencyForStatus };
+
+module.exports = { predictDeadline, urgencyForDays };

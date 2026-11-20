@@ -21,6 +21,10 @@ function loadConfig(env = process.env) {
     // path). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
     tokenEncryptionKey: env.TOKEN_ENCRYPTION_KEY || '',
     pollIntervalMs: Math.max(60_000, num(env.POLL_INTERVAL_MS, 3 * 60_000)),
+    // Background re-pull of the webhook-tracked repo through GitHub's API, so the
+    // dashboard stays current even when webhooks can't reach this server. 0 turns it off.
+    // Unauthenticated, each sync costs ~2 of GitHub's 60 requests/hour.
+    syncIntervalMs: num(env.SYNC_INTERVAL_MS, 5 * 60_000) === 0 ? 0 : Math.max(60_000, num(env.SYNC_INTERVAL_MS, 5 * 60_000)),
     smtp: {
       host: (env.SMTP_HOST || '').trim(),
       port: num(env.SMTP_PORT, 587),
