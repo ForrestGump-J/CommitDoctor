@@ -54,20 +54,28 @@ async function notifyFlags(db, config, mailer, date, flags, log = console){
     return result;
 }
 
-const TIER_LABEL = {reminder: 'Reminder', urgent: 'Urgent', final: 'FINAL WARNING'}
+const TIER_LABEL = {reminder: 'Reminder', urgent: 'Urgent', final: 'FINAL WARNING'};
+const STATUS_TEXT = {
+    'on-pace': 'The team is on pace.',
+    'at-risk': 'The team is at risk of missing it: recent commits have slowed down.',
+    behind: 'The team is behind pace: recent commits have dropped sharply.',
+    'insufficient-data': 'There is not enough commit history yet to judge the pace.',
+};
 
 function renderDeadlineEmail(p){
-    const label = TIER_LABEL[p.urgency] || 'Notice';
-    const pct = Math.round(p.pace_ratio * 100);
-    const churnLine = p.churn_ratio != null ? `<p> Recent changes are ${Math.round(p.churn_ratio * 100)}% deletions/reworks (by ${p.churn_basis}).</p>`: '';
+    const worried = p.status === 'at-risk' || p.status === 'behind';
+    // A team that is on pace gets a calm reminder, not a warning.
+    const label = worried ? (TIER_LABEL[p.urgency] || 'Notice') : 'Reminder';
+    const left = p.days_remaining === 0 ? 'today' : `in ${p.days_remaining} day(s)`;
+    const paceLine = p.pace_ratio != null
+        ? `<p>Recent commit pace is ${Math.round(p.pace_ratio * 100)}% of the project's earlier pace.</p>` : '';
+    const churnLine = worried && p.churn_ratio != null
+        ? `<p>Recent changes are ${Math.round(p.churn_ratio * 100)}% deletions/rework (by ${escapeHtml(p.churn_basis)}).</p>` : '';
 
     return{
-        subject: `Commit Doctor - ${label}: ${p.days_remaining} day(s) left (${p.status})`,
-        html: `
-        <p><strong>${label}:</strong> the deadline (${p.deadline_date}) is ${p.days_remaining} day(s)
-        away. </p> <p> Recent commit pace is ${pct}% of the project's earlier pace. Status: <strong>
-        ${p.status}</strong>.</p> ${churnLine}
-        `,
+        subject: `Commit Doctor - ${label}: deadline ${left}${worried ? ` (${p.status})` : ''}`,
+        html: `<p><strong>${label}:</strong> the project deadline (${escapeHtml(p.deadline_date)}) is ${left}.</p>
+        <p>${STATUS_TEXT[p.status] || ''}</p>${paceLine}${churnLine}`,
     };
 }
 
@@ -96,4 +104,4 @@ async function checkDeadlineUrgency(db, config, mailer, log = console){
     return{...result, urgency: prediction.urgency};
 }
 
-module.exports = {notifyFlags, checkDeadlineUrgency};
+module.exports = {notifyFlags, checkDeadlineUrgency, renderDeadlineEmail};

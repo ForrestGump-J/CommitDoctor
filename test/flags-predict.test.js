@@ -155,3 +155,31 @@ test('saving a summary while behind pace stores a deadline flag', () => {
   const types = db.prepare('SELECT type FROM flags WHERE date = ?').all(addDays(START, 50)).map((r) => r.type);
   assert.ok(types.includes('deadline_behind'), `expected deadline_behind in ${types}`);
 });
+
+// --- deadline reminder schedule ---------------------------------------------------
+const { urgencyForStatus } = require('../src/predict');
+const { renderDeadlineEmail } = require('../src/notify');
+
+test('teams at risk or behind get a reminder every day of the final week, escalating', () => {
+  const tiers = [8, 7, 4, 3, 2, 1, 0, -1].map((d) => urgencyForStatus('behind', d));
+  assert.deepEqual(tiers, ['none', 'reminder', 'reminder', 'urgent', 'urgent', 'final', 'final', 'none']);
+});
+
+test('teams on pace get only gentle reminders at 7, 3 and 1 day(s) left', () => {
+  for (const status of ['on-pace', 'insufficient-data']) {
+    const sent = [10, 7, 6, 5, 4, 3, 2, 1, 0].filter((d) => urgencyForStatus(status, d) !== 'none');
+    assert.deepEqual(sent, [7, 3, 1], status);
+  }
+  assert.equal(urgencyForStatus('no-deadline', 3), 'none');
+  assert.equal(urgencyForStatus('deadline-passed', 1), 'none');
+});
+
+test('deadline emails are calm when on pace and never invent a pace figure', () => {
+  const calm = renderDeadlineEmail({ status: 'on-pace', urgency: 'final', deadline_date: '2026-12-01', days_remaining: 1, pace_ratio: 1.1 });
+  assert.match(calm.subject, /^Commit Doctor - Reminder: deadline in 1 day\(s\)$/);
+  assert.match(calm.html, /on pace/);
+  const early = renderDeadlineEmail({ status: 'insufficient-data', urgency: 'urgent', deadline_date: '2026-12-01', days_remaining: 3, pace_ratio: null });
+  assert.ok(!/%/.test(early.html), 'no "0% of earlier pace" when there is no history');
+  const worried = renderDeadlineEmail({ status: 'behind', urgency: 'final', deadline_date: '2026-12-01', days_remaining: 0, pace_ratio: 0.2, churn_ratio: 0.7, churn_basis: 'files' });
+  assert.match(worried.subject, /FINAL WARNING: deadline today \(behind\)/);
+});

@@ -114,11 +114,19 @@ function predictDeadline(db, config, date = localDate(Date.now(), config.timezon
   };
 }
 
-function urgencyForStatus(status, days_remaining){
-  if (status !== 'at-risk' && status !== 'behind') return 'none';
-  if (days_remaining == null || days_remaining > 7) return 'none';
-  if (days_remaining <= 1) return 'final';
-  if (days_remaining <= 3) return 'urgent';
-  return 'reminder';
+/**
+ * How urgent a deadline email should be today.
+ *  - at-risk / behind: escalate every day of the final week
+ *    (reminder at 4-7 days left, urgent at 2-3, final at 0-1).
+ *  - on-pace / not enough history: only three gentle reminders, at 7, 3 and
+ *    1 day(s) left, so a team that is doing fine isn't emailed every day.
+ */
+const REMINDER_DAYS = new Set([7, 3, 1]);
+function urgencyForStatus(status, days_remaining) {
+  if (days_remaining == null || days_remaining < 0) return 'none';
+  if (status === 'no-deadline' || status === 'deadline-passed') return 'none';
+  const tier = days_remaining <= 1 ? 'final' : days_remaining <= 3 ? 'urgent' : days_remaining <= 7 ? 'reminder' : 'none';
+  if (status === 'at-risk' || status === 'behind') return tier;
+  return REMINDER_DAYS.has(days_remaining) ? tier : 'none';
 }
 module.exports = { predictDeadline, urgencyForStatus };
