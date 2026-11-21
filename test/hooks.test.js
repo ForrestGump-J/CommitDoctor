@@ -66,10 +66,10 @@ test('connect rejects a localhost payload URL before calling GitHub', async () =
   const calls = stubGitHub(() => ({}));
   const { server, base } = await listen(makeCtx());
   try {
-    const res = await fetch(`${base}/api/webhook-setup/connect`, {
+    const res = await fetch(`${base}/api/repository`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: 'a/b', token: 't', payload_url: 'http://localhost:3000/webhook/github' }),
+      body: JSON.stringify({ repo: 'a/b', method: 'webhook', token: 't', payload_url: 'http://localhost:3000/webhook/github' }),
     });
     assert.equal(res.status, 400);
     assert.equal(calls.length, 0);
@@ -81,12 +81,13 @@ test('connect creates the hook on GitHub and starts tracking the repo', async ()
   const ctx = makeCtx();
   const { server, base } = await listen(ctx);
   try {
-    const res = await fetch(`${base}/api/webhook-setup/connect`, {
+    const res = await fetch(`${base}/api/repository`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: 'Team/Repo', token: 't', payload_url: 'https://cd.example.com/webhook/github' }),
+      body: JSON.stringify({ repo: 'Team/Repo', method: 'webhook', token: 't', payload_url: 'https://cd.example.com/webhook/github' }),
     });
-    assert.equal(res.status, 201);
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).hook_created, true);
     const post = calls.find((c) => c.method === 'POST');
     assert.equal(post.url, 'https://api.github.com/repos/team/repo/hooks');
     assert.deepEqual(post.body.events, ['push']);
@@ -109,10 +110,10 @@ test('a GitHub permission error is explained', async () => {
   stubGitHub(() => ({ status: 404, json: { message: 'Not Found' } }));
   const { server, base } = await listen(makeCtx());
   try {
-    const res = await fetch(`${base}/api/webhook-setup/connect`, {
+    const res = await fetch(`${base}/api/repository`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ repo: 'a/b', token: 't', payload_url: 'https://cd.example.com/webhook/github' }),
+      body: JSON.stringify({ repo: 'a/b', method: 'webhook', token: 't', payload_url: 'https://cd.example.com/webhook/github' }),
     });
     assert.equal(res.status, 422);
     assert.match((await res.json()).error, /admin:repo_hook/);

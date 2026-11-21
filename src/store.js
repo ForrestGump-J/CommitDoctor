@@ -2,6 +2,7 @@
 const { localDate, localHour } = require('./time');
 const { transaction } = require('./db');
 const { maskEmail } = require('./privacy');
+const { trackedRepo } = require('./repository');
 
 const MERGE_RE = /^Merge (pull request|branch|remote-tracking branch)\b/i;
 
@@ -31,6 +32,9 @@ function createStore(db, config) {
    * undefined when not known — stored as NULL, not 0.
    */
   function addCommit(c) {
+    // Single-repository scope: never mix in commits from another repo.
+    const tracked = trackedRepo(db, config);
+    if (tracked && String(c.repo || '').toLowerCase() !== tracked) return 0;
     const when = new Date(c.timestamp);
     if (Number.isNaN(when.getTime())) return 0;
     // The committer's email is never stored (data minimization: nothing reads it).

@@ -12,7 +12,10 @@ const { localDate, addDays, zonedToUtc } = require('../src/time');
 
 const db = openDb(config.dbPath);
 const store = createStore(db, config);
-const repo = config.repo || 'demo-team/demo-repo';
+const { trackedRepo } = require('../src/repository');
+// Seed into the tracked repo (single-repository scope); start tracking the demo repo if none is set.
+const repo = trackedRepo(db, config) || 'demo-team/demo-repo';
+db.prepare('UPDATE project_settings SET tracked_repo = ? WHERE id = 1 AND tracked_repo IS NULL').run(repo);
 
 const people = [
   { username: 'alice', name: 'Alice Reyes', weight: 5 },

@@ -9,6 +9,10 @@ const { encryptToken } = require('./crypto');
 const { testRepoAccess, pollOneRepo } = require('./poller');
 const { connectWebhook } = require('./hooks');
 const { maskEmail } = require('./privacy');
+const { trackedRepo, otherReposWithData, clearProjectData } = require('./repository');
+const { createViewsRouter } = require('./views');
+const { createStudyRouter } = require('./study');
+const { transaction } = require('./db');
 
 const clamp = (v, lo, hi, dflt) => {
   const n = parseInt(v, 10);
@@ -112,7 +116,6 @@ function createApiRouter({ db, config, mailer = null }) {
          FROM commits`
       )
       .get();
-    const latestCommit = db.prepare('SELECT repo FROM commits ORDER BY committed_at DESC LIMIT 1').get();
     const lastPush = db
       .prepare("SELECT received_at FROM webhook_events WHERE status = 'accepted' AND event = 'push' ORDER BY id DESC LIMIT 1")
       .get();
@@ -130,7 +133,7 @@ function createApiRouter({ db, config, mailer = null }) {
     res.json({
       today: localDate(Date.now(), tz),
       timezone: tz,
-      repo: (latestCommit && latestCommit.repo) || config.repo || null,
+      repo: settings.tracked_repo,
       rules: { min_commits: config.summary.minCommits, comparison_days: config.summary.comparisonDays },
       secret_configured: Boolean(config.webhookSecret),
       totals,
@@ -218,34 +221,17 @@ function createApiRouter({ db, config, mailer = null }) {
 
   router.post('/settings', requireAdmin, (req, res) => {
     const body = req.body || {};
-    const hasDeadline = 'deadline_date' in body;
-    const hasRepo = 'tracked_repo' in body;
-    if (!hasDeadline && !hasRepo) {
-      return res.status(400).json({ error: 'Send deadline_date and/or tracked_repo (either may be null to clear it).' });
+    if ('tracked_repo' in body) {
+      return res.status(400).json({ error: 'Change the repository with POST /api/repository.' });
     }
-
-    const current = db.prepare('SELECT deadline_date, tracked_repo FROM project_settings WHERE id = 1').get();
-    let deadline_date = current.deadline_date;
-    let tracked_repo = current.tracked_repo;
-
-    if (hasDeadline) {
-      const value = body.deadline_date;
-      if (value !== null && !isDateStr(value)) {
-        return res.status(400).json({ error: 'deadline_date must look like 2026-09-20, or be null to clear it.' });
-      }
-      deadline_date = value;
+    if (!('deadline_date' in body)) return res.status(400).json({ error: 'Send deadline_date (or null to clear it).' });
+    const value = body.deadline_date;
+    if (value !== null && !isDateStr(value)) {
+      return res.status(400).json({ error: 'deadline_date must look like 2026-09-20, or be null to clear it.' });
     }
-    if (hasRepo) {
-      const value = body.tracked_repo === null ? null : String(body.tracked_repo).trim().toLowerCase();
-      if (value !== null && !REPO_RE.test(value)) {
-        return res.status(400).json({ error: 'tracked_repo must look like owner/name, or be null to clear it.' });
-      }
-      tracked_repo = value;
-    }
-
     db.prepare(
-      `UPDATE project_settings SET deadline_date = ?, tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
-    ).run(deadline_date, tracked_repo);
+      `UPDATE project_settings SET deadline_date = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
+    ).run(value);
     return res.status(200).json(readSettings());
   });
 
@@ -264,92 +250,120 @@ function createApiRouter({ db, config, mailer = null }) {
     });
   });
 
-  router.post('/webhook-setup/connect', requireAdmin, async (req, res) => {
+  // --- The one repository Commit Doctor follows -------------------------------------
+  // Connect by webhook (instant; GitHub must be able to reach this server) or by
+  // polling with a read-only token (works for private repos and on localhost).
+  // Switching to a different repo clears the previous project's data; the client
+  // must confirm that by sending replace: true.
+
+  const pollRow = () => db.prepare('SELECT * FROM tracked_repos LIMIT 1').get() || null;
+
+  function repositoryState() {
+    const repo = trackedRepo(db, config) || null;
+    const row = pollRow();
+    const method = !repo ? null : row ? 'poll' : 'webhook';
+    return {
+      repo,
+      method,
+      commits: db.prepare('SELECT COUNT(*) AS c FROM commits').get().c,
+      poll: row ? {
+        last_polled_at: row.last_polled_at,
+        last_error: row.last_error,
+        interval_minutes: Math.round(config.pollIntervalMs / 60000),
+      } : null,
+      webhook: method === 'webhook' ? webhookStatus(repo) : null,
+    };
+  }
+
+  router.get('/repository', (_req, res) => res.json(repositoryState()));
+
+  const switchRepo = transaction(db, ({ repo, replace, method, tokenEnc, defaultBranch }) => {
+    if (replace) clearProjectData(db);
+    db.prepare(`UPDATE project_settings SET tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(repo);
+    db.exec('DELETE FROM tracked_repos');
+    if (method === 'poll') {
+      db.prepare('INSERT INTO tracked_repos (repo, token_enc, default_branch) VALUES (?, ?, ?)').run(repo, tokenEnc, defaultBranch);
+    }
+  });
+
+  router.post('/repository', requireAdmin, async (req, res) => {
     const body = req.body || {};
     const repo = String(body.repo || '').trim().toLowerCase();
+    const method = body.method === 'poll' ? 'poll' : body.method === 'webhook' ? 'webhook' : null;
     const token = String(body.token || '').trim();
     const payloadUrl = String(body.payload_url || '').trim();
-    if (!REPO_RE.test(repo)) return res.status(400).json({ error: 'repo must look like owner/name.' });
-    if (!token) return res.status(400).json({ error: 'A GitHub token is required to create the webhook.' });
-    if (!URL_RE.test(payloadUrl)) return res.status(400).json({ error: 'payload_url must be a full http(s) URL.' });
-    if (/^https?:\/\/(localhost|127\.|\[::1\])/i.test(payloadUrl)) {
-      return res.status(400).json({ error: 'GitHub cannot reach localhost. Use a public URL (for example from ngrok or smee.io).' });
+    if (!REPO_RE.test(repo)) return res.status(400).json({ error: 'Repository must look like owner/name.' });
+    if (!method) return res.status(400).json({ error: 'method must be "webhook" or "poll".' });
+
+    // A different project already has data here: ask before clearing it.
+    const others = otherReposWithData(db, repo);
+    const current = trackedRepo(db, config);
+    const switching = others.length > 0 || (current && current !== repo);
+    if (switching && body.replace !== true) {
+      const commits = others.reduce((n, r) => n + r.commits, 0);
+      return res.status(409).json({
+        error: `Commit Doctor follows one repository. Switching to ${repo} clears the history of ${current || others[0].repo}.`,
+        needs_replace: true,
+        current: current || others[0].repo,
+        commits,
+      });
     }
 
-    let hook;
-    try {
-      hook = await connectWebhook({ repo, token, payloadUrl, secret: config.webhookSecret });
-    } catch (err) {
-      const hint = err.status === 404 || err.status === 403
-        ? ' The token needs admin access to the repo (classic: admin:repo_hook; fine-grained: Webhooks read and write).'
-        : '';
-      return res.status(422).json({ error: `GitHub refused: ${err.message}${hint}` });
+    // Everything that can fail runs before anything is cleared.
+    let tokenEnc = null;
+    let defaultBranch = null;
+    let hook = null;
+    if (method === 'poll') {
+      if (!config.tokenEncryptionKey) {
+        return res.status(503).json({ error: 'This server has no TOKEN_ENCRYPTION_KEY, so it cannot keep a token. Set it in .env and restart, or use the webhook method.' });
+      }
+      if (!token) return res.status(400).json({ error: 'Paste a GitHub token that can read this repository.' });
+      try {
+        ({ defaultBranch } = await testRepoAccess(repo, token));
+      } catch (err) {
+        return res.status(422).json({ error: `GitHub did not accept that token for ${repo}: ${err.message} The token needs read access to the repository's contents.` });
+      }
+      tokenEnc = encryptToken(token, config.tokenEncryptionKey);
+    } else if (token) {
+      if (!URL_RE.test(payloadUrl)) return res.status(400).json({ error: 'payload_url must be a full http(s) URL.' });
+      if (/^https?:\/\/(localhost|127\.|\[::1\])/i.test(payloadUrl)) {
+        return res.status(400).json({ error: 'GitHub cannot reach localhost. Use the token method instead, or a public URL (for example from ngrok or smee.io).' });
+      }
+      try {
+        hook = await connectWebhook({ repo, token, payloadUrl, secret: config.webhookSecret });
+      } catch (err) {
+        const hint = err.status === 404 || err.status === 403
+          ? ' The token needs admin access to the repo (classic: admin:repo_hook; fine-grained: Webhooks read and write).'
+          : '';
+        return res.status(422).json({ error: `GitHub refused: ${err.message}${hint}` });
+      }
     }
 
-    db.prepare(
-      `UPDATE project_settings SET tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
-    ).run(repo);
-    return res.status(hook.created ? 201 : 200).json({ ok: true, hook_id: hook.id, created: hook.created, settings: readSettings() });
+    switchRepo({ repo, replace: switching, method, tokenEnc, defaultBranch });
+    if (method === 'poll') await pollOneRepo({ db, config, row: pollRow() });
+
+    return res.status(200).json({ ...repositoryState(), cleared: switching, hook_created: hook ? hook.created : null });
   });
 
-  // --- Tracked repos (polled via GitHub's API using a per-repo token; works for
-  // private repos and repos with no public webhook). Token is encrypted at rest
-  // and never returned by any of these endpoints. ---
-
-  const publicRepoRow = (r) => ({
-    id: r.id,
-    repo: r.repo,
-    default_branch: r.default_branch,
-    last_polled_at: r.last_polled_at,
-    last_error: r.last_error,
-    active: Boolean(r.active),
-    created_at: r.created_at,
+  // Stop following the repository. Its data stays until another repo is connected;
+  // the stored token is deleted.
+  router.delete('/repository', requireAdmin, (_req, res) => {
+    db.exec('DELETE FROM tracked_repos');
+    db.prepare(`UPDATE project_settings SET tracked_repo = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run();
+    return res.json(repositoryState());
   });
 
-  router.get('/tracked-repos', (_req, res) => {
-    res.json(db.prepare('SELECT * FROM tracked_repos ORDER BY created_at DESC').all().map(publicRepoRow));
-  });
-
-  router.post('/tracked-repos', requireAdmin, async (req, res) => {
-    if (!config.tokenEncryptionKey) {
-      return res.status(503).json({ error: 'Server has no TOKEN_ENCRYPTION_KEY configured; cannot store tokens.' });
-    }
-    const repo = String((req.body && req.body.repo) || '').trim().toLowerCase();
-    const token = String((req.body && req.body.token) || '').trim();
-    if (!REPO_RE.test(repo)) return res.status(400).json({ error: 'repo must look like owner/name.' });
-    if (!token) return res.status(400).json({ error: 'token is required.' });
-
-    let access;
-    try {
-      access = await testRepoAccess(repo, token);
-    } catch (err) {
-      return res.status(422).json({ error: `Could not verify that repo with this token: ${err.message}` });
-    }
-
-    try {
-      const tokenEnc = encryptToken(token, config.tokenEncryptionKey);
-      const info = db
-        .prepare('INSERT INTO tracked_repos (repo, token_enc, default_branch) VALUES (?, ?, ?)')
-        .run(repo, tokenEnc, access.defaultBranch);
-      // Poll immediately rather than waiting for the next timer tick, so the
-      // dashboard shows real status right away instead of "not checked yet".
-      // The regular interval in poller.js still covers every row afterward.
-      const freshRow = db.prepare('SELECT * FROM tracked_repos WHERE id = ?').get(info.lastInsertRowid);
-      await pollOneRepo({ db, config, row: freshRow });
-      const row = db.prepare('SELECT * FROM tracked_repos WHERE id = ?').get(info.lastInsertRowid);
-      return res.status(201).json(publicRepoRow(row));
-    } catch (err) {
-      if (String(err.message).includes('UNIQUE')) return res.status(409).json({ error: 'That repo is already tracked.' });
-      throw err;
-    }
-  });
-
-  router.delete('/tracked-repos/:id', requireAdmin, (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'id must be a whole number.' });
-    const info = db.prepare('DELETE FROM tracked_repos WHERE id = ?').run(id);
-    if (info.changes === 0) return res.status(404).json({ error: 'Tracked repo not found.' });
-    return res.status(204).end();
+  // Contributors with any history up to a day, for the Team view.
+  router.get('/contributors', (req, res) => {
+    const date = req.query.date || localDate(Date.now(), tz);
+    if (!isDateStr(date)) return res.status(400).json({ error: 'date must look like 2026-09-20.' });
+    const weekStart = addDays(date, -6);
+    const rows = db.prepare(
+      `SELECT contributor AS name, MAX(author_name) AS display_name, MAX(committed_date) AS last_date,
+              SUM(CASE WHEN committed_date >= ? THEN 1 ELSE 0 END) AS commits_7d
+       FROM commits WHERE committed_date <= ? GROUP BY contributor ORDER BY last_date DESC, name`
+    ).all(weekStart, date);
+    res.json(rows.map((r) => ({ ...r, idle_days: daysBetween(r.last_date, date) })));
   });
 
   // --- Subscribers (notification recipients; storage + CRUD only, nothing sends email yet) ---
@@ -418,6 +432,9 @@ function createApiRouter({ db, config, mailer = null }) {
       summary_runs: db.prepare('SELECT * FROM summary_runs ORDER BY id DESC LIMIT ?').all(limit),
     });
   });
+
+  router.use('/views', createViewsRouter({ db }));
+  router.use('/study', createStudyRouter({ db, config, requireAdmin }));
 
   return router;
 }

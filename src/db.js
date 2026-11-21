@@ -4,6 +4,7 @@ const path = require('path');
 // Node's built-in SQLite (Node 22.13+). No native compilation, nothing extra to install.
 const { DatabaseSync } = require('node:sqlite');
 const { maskEmail } = require('./privacy');
+const { migrateSingleRepo } = require('./repository');
 
 // Eight tables:
 //   commits          the raw material (one row per unique commit SHA)
@@ -116,6 +117,59 @@ CREATE TABLE IF NOT EXISTS notifications_sent (
   sent_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
+-- Research question 5: which summary view people use, for how long, and whether
+-- they found it helpful. Anonymous: session_id is a random per-browser id.
+CREATE TABLE IF NOT EXISTS view_events (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT    NOT NULL,
+  view       TEXT    NOT NULL,
+  kind       TEXT    NOT NULL,          -- 'open' or 'dwell'
+  value      INTEGER,                   -- dwell: milliseconds the view was on screen
+  day        TEXT,                      -- the summary day being looked at
+  created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_view_events_view ON view_events(view);
+CREATE TABLE IF NOT EXISTS view_feedback (
+  session_id TEXT    NOT NULL,
+  view       TEXT    NOT NULL,
+  day        TEXT    NOT NULL,
+  helpful    INTEGER NOT NULL,          -- 1 = thumbs up, 0 = thumbs down
+  updated_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  PRIMARY KEY (session_id, view, day)
+);
+
+-- Research question 6: the feasibility study (GitHub history vs Commit Doctor).
+-- Participants are identified only by a facilitator-assigned code such as P01.
+CREATE TABLE IF NOT EXISTS study_sessions (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  code         TEXT    NOT NULL UNIQUE,
+  token_hash   TEXT    NOT NULL,        -- sha256 of the per-session token given to the browser
+  plan         TEXT    NOT NULL,        -- JSON: block order, sets, days
+  consent_at   TEXT    NOT NULL,
+  completed_at TEXT,
+  sus_items    TEXT,                    -- JSON array of 10 answers (1-5)
+  sus_score    REAL,
+  comments     TEXT,                    -- JSON of the open-ended answers
+  created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE TABLE IF NOT EXISTS study_tasks (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id  INTEGER NOT NULL REFERENCES study_sessions(id) ON DELETE CASCADE,
+  block       INTEGER NOT NULL,         -- 1 = first condition shown, 2 = second
+  condition   TEXT    NOT NULL,         -- 'github' or 'comdoc'
+  task_set    TEXT    NOT NULL,         -- 'A' or 'B'
+  position    INTEGER NOT NULL,
+  prompt      TEXT    NOT NULL,
+  kind        TEXT    NOT NULL,         -- 'choice', 'number' or 'yesno'
+  options     TEXT,                     -- JSON array for 'choice'
+  answer_key  TEXT    NOT NULL,         -- JSON; never sent to the browser
+  response    TEXT,
+  correct     INTEGER,
+  ms          INTEGER,
+  answered_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_study_tasks_session ON study_tasks(session_id);
+
 -- Repos tracked by polling the GitHub REST API with a per-repo personal access
 -- token (encrypted at rest — see src/crypto.js), instead of a public webhook.
 -- Works for private repos and repos behind NAT/firewalls.
@@ -166,6 +220,7 @@ function openDb(file) {
   db.exec(SCHEMA);
   migrate(db);
   db.exec("INSERT OR IGNORE INTO project_settings (id, deadline_date) VALUES (1, NULL);");
+  migrateSingleRepo(db);
   return db;
 }
 
