@@ -5,6 +5,11 @@ const { createStore } = require('./store');
 const API = 'https://api.github.com';
 const UA = 'CommitDoctor';
 
+// GitHub's `since` filters on the commit's own date, not when it was pushed, so a
+// commit made before the last poll but pushed after it would never be returned.
+// Re-asking for a trailing window catches those; already-stored SHAs are skipped.
+const LOOKBACK_MS = 14 * 24 * 60 * 60 * 1000;
+
 const STATUS_ADDED = new Set(['added', 'copied']);
 const STATUS_REMOVED = new Set(['removed']);
 const STATUS_MODIFIED = new Set(['modified', 'renamed', 'changed']);
@@ -61,8 +66,10 @@ function nextUrl(linkHeader) {
   return m ? m[1] : null;
 }
 
-async function ghFetch(url, token) {
+async function ghFetch(url, token, { method = 'GET', body } = {}) {
   const res = await fetch(url, {
+    method,
+    body: body === undefined ? undefined : JSON.stringify(body),
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
@@ -83,7 +90,9 @@ async function ghFetch(url, token) {
     throw err;
   }
   if (!res.ok) {
-    const err = new Error(`GitHub API returned ${res.status}.`);
+    const body = await res.json().catch(() => ({}));
+    const detail = (body.errors && body.errors[0] && body.errors[0].message) || body.message;
+    const err = new Error(`GitHub API returned ${res.status}${detail ? `: ${detail}` : ''}.`);
     err.status = res.status;
     throw err;
   }
@@ -124,6 +133,7 @@ async function pollOneRepo({ db, config, row, log = console }) {
     `UPDATE tracked_repos SET last_since = ?, last_polled_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
        last_error = ?, default_branch = COALESCE(?, default_branch) WHERE id = ?`
   );
+  const isStored = db.prepare('SELECT 1 FROM commits WHERE sha = ?');
 
   let token;
   try {
@@ -136,24 +146,39 @@ async function pollOneRepo({ db, config, row, log = console }) {
     let branch = row.default_branch;
     if (!branch) ({ defaultBranch: branch } = await testRepoAccess(row.repo, token));
     const nowIso = new Date().toISOString();
-    const raw = await fetchNewCommits(row.repo, token, row.last_since);
-    const fresh = raw.filter((c) => c && c.sha);
-    // One detail call per new commit for churn stats. `since` already limits
-    // the list to commits newer than the last poll, so this is bounded by
-    // how much actually landed since then, not the whole repo history.
+    const since = row.last_since ? new Date(Date.parse(row.last_since) - LOOKBACK_MS).toISOString() : null;
+    const raw = await fetchNewCommits(row.repo, token, since);
+    const fresh = raw.filter((c) => c && c.sha && !isStored.get(c.sha));
+    // One detail call per new commit for churn stats. Already-stored SHAs are
+    // filtered out above, so the lookback window costs list calls only.
     const mapped = [];
+    let rateLimited = false;
     for (const c of fresh) {
       let detail;
       try {
         // eslint-disable-next-line no-await-in-loop
         detail = await fetchCommitDetail(row.repo, c.sha, token);
       } catch (detailErr) {
+        if (detailErr.status === 401 || detailErr.status === 403) {
+          // Out of API quota: storing the rest without churn stats would lose them
+          // permanently. Stop here and keep the cursor so the next cycle retries.
+          rateLimited = true;
+          log.info(`[poller] ${row.repo}: ${detailErr.message}`);
+          break;
+        }
         log.info(`[poller] ${row.repo}: could not fetch churn detail for ${c.sha.slice(0, 7)}: ${detailErr.message}`);
       }
       mapped.push(parseApiCommit(c, row.repo, branch, detail));
     }
     const added = store.addMany(mapped);
-    touch.run(nowIso, null, branch, row.id);
+
+    touch.run(
+      rateLimited ? row.last_since : nowIso,
+      rateLimited ? 'Rate limited by GitHub; will resume next cycle.' : null,
+      branch,
+      row.id
+    );
+    
     if (added) log.info(`[poller] ${row.repo}: stored ${added} new commit(s)`);
     return { ok: true, added };
   } catch (err) {
@@ -180,4 +205,4 @@ function startPoller({ db, config, log = console, intervalMs = 3 * 60_000 }) {
   return () => clearInterval(timer);
 }
 
-module.exports = { startPoller, pollOneRepo, testRepoAccess, parseApiCommit, fetchCommitDetail, nextUrl };
+module.exports = { ghFetch, API, startPoller, pollOneRepo, testRepoAccess, parseApiCommit, fetchCommitDetail, nextUrl };

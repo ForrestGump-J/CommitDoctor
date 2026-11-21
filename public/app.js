@@ -7,7 +7,7 @@
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : null);
 
-  const state = { overview: null, trend: [], summary: null, commits: [], date: null, token: null, drawn: false, key: '', pollRepos: [], prediction: null };
+  const state = { hookSecret: null, hookOpen: false, overview: null, trend: [], summary: null, commits: [], flags: [], date: null, token: null, drawn: false, key: '', pollRepos: [], prediction: null, subscribers: [] };
 
   // --- helpers ---------------------------------------------------------------
   async function api(path, opts = {}) {
@@ -77,14 +77,7 @@
 
     const trackInput = $('#repo-input');
     if (document.activeElement !== trackInput) trackInput.value = (o.settings && o.settings.tracked_repo) || '';
-    const hint = $('#track-hint');
-    if (o.settings && o.settings.tracked_repo) {
-      hint.hidden = false;
-      hint.innerHTML = `Tracking <code>${esc(o.settings.tracked_repo)}</code>. On GitHub: Settings &rsaquo; Webhooks &rsaquo; Add webhook, payload URL
-        <code>${esc(window.location.origin)}/webhook/github</code>, content type <code>application/json</code>, secret matching this server's <code>GITHUB_WEBHOOK_SECRET</code>.`;
-    } else {
-      hint.hidden = true;
-    }
+    renderHookSetup();
 
     const deadlineInput = $('#deadline-input');
     const deadline = o.settings && o.settings.deadline_date;
@@ -184,6 +177,69 @@
     return undefined;
   }
 
+  // --- subscribers -----------------------------------------------------------------
+  function renderSubscribers() {
+    const list = state.subscribers;
+    const host = $('#sub-list');
+    if (!list.length) { host.innerHTML = '<li class="empty">Nobody yet.</li>'; return; }
+    host.innerHTML = list.map((s) => `<li>
+      <div>${esc(s.name)}<small>${esc(s.email)}</small></div>
+      <button type="button" class="text-btn sub-remove" data-id="${s.id}" aria-label="Remove ${esc(s.name)}">Remove</button>
+    </li>`).join('');
+  }
+
+  async function loadSubscribers() {
+    try {
+      state.subscribers = await api('/api/subscribers');
+      renderSubscribers();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function addSubscriber() {
+    const btn = $('#sub-add-btn');
+    const nameInput = $('#sub-name');
+    const emailInput = $('#sub-email');
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const hint = $('#sub-hint');
+    hint.hidden = true;
+    if (!name || !email) return undefined;
+    btn.disabled = true;
+    try {
+      await api('/api/subscribers', { method: 'POST', token: state.token, body: { name, email } });
+      nameInput.value = '';
+      emailInput.value = '';
+      await loadSubscribers();
+    } catch (err) {
+      if (err.status === 401) {
+        const t = window.prompt('This server needs an admin token to add a subscriber. Enter it:');
+        if (t) { state.token = t; btn.disabled = false; return addSubscriber(); }
+      } else {
+        hint.hidden = false;
+        hint.textContent = err.body && err.body.error ? err.body.error : err.message;
+      }
+    }
+    btn.disabled = false;
+    return undefined;
+  }
+
+  async function removeSubscriber(id) {
+    try {
+      await api(`/api/subscribers/${id}`, { method: 'DELETE', token: state.token });
+      await loadSubscribers();
+    } catch (err) {
+      if (err.status === 401) {
+        const t = window.prompt('This server needs an admin token to remove a subscriber. Enter it:');
+        if (t) { state.token = t; return removeSubscriber(id); }
+      } else {
+        window.alert(err.body && err.body.error ? err.body.error : err.message);
+      }
+    }
+    return undefined;
+  }
+
   // --- deadline prediction --------------------------------------------------------
   const PRED_LABEL = {
     'on-pace': 'On pace',
@@ -220,9 +276,9 @@
       el.innerHTML = `${dot}${strong} (${Math.abs(p.days_remaining)} day(s) ago).`;
       return;
     }
-    const paceNote = p.recent_commit_rate >= p.overall_commit_rate
-      ? `averaging ${p.recent_commit_rate} Commits /day over the last ${p.window_days} day(s), matching or beating your overall average of ${p.overall_commit_rate}/day`
-      : `averaging ${p.recent_commit_rate} Commits /day over the last ${p.window_days} day(s), down from your overall average of ${p.overall_commit_rate}/day`;
+    const paceNote = p.recent_commit_rate >= p.earlier_commit_rate
+      ? `averaging ${p.recent_commit_rate} commits/day over the last ${p.window_days} day(s), matching or beating the ${p.earlier_commit_rate}/day before that`
+      : `averaging ${p.recent_commit_rate} commits/day over the last ${p.window_days} day(s), down from ${p.earlier_commit_rate}/day before that`;
     el.innerHTML = `${dot}${strong} — ${paceNote}. ${p.days_remaining} day(s) left until the deadline.`;
   }
 
@@ -351,8 +407,9 @@
     $('#who').innerHTML = list.map((c) => {
       const span = c.first_time === c.last_time ? c.first_time : `${c.first_time} to ${c.last_time}`;
       const alias = c.display_name && c.display_name !== c.name ? `<small>${esc(c.display_name)}</small>` : '';
+      const lines = c.lines_changed == null ? '<small> lines not available </small>' : `<small class="lines"><span class="add">+${c.lines_added}</span> <span class = "del">&minus;${c.lines_deleted}</span> (${c.lines_changed} changed)</small>`;
       return `<div class="who-row">
-        <div class="who-name">${esc(c.name)}${alias}<small>${esc(span)}</small></div>
+        <div class="who-name">${esc(c.name)}${alias}<small>${esc(span)}</small>${lines}</div>
         <div class="bar" role="img" aria-label="${esc(c.name)}: ${plural(c.commits, 'commit')}"><span style="width:${(c.commits / max) * 100}%"></span></div>
         <div class="who-count">${c.commits}</div>
       </div>`;
@@ -395,6 +452,26 @@
       .join('');
   }
 
+  const FLAG_LABEL = {
+    activity_above_baseline: ['Activity above baseline', 'ok'],
+    activity_below_baseline: ['Activity below baseline', 'bad'],
+    contributor_inactive: ['Contributor inactive', 'bad'],
+    deadline_at_risk: ['Deadline at risk', 'bad'],
+    deadline_behind: ['Behind deadline pace', 'bad'],
+  };
+
+  function renderFlags() {
+    const list = state.flags;
+    if (!list.length) {
+      $('#flags').innerHTML = `<li class="empty" style="border:0;padding:0">${state.summary.source === 'saved' ? 'Nothing unusual on this day.' : 'Flags are checked when the day\'s summary is saved.'}</li>`;
+      return;
+    }
+    $('#flags').innerHTML = list.map((f) => {
+      const [label, tone] = FLAG_LABEL[f.type] || [f.type, ''];
+      return `<li data-tone="${tone}"><strong>${esc(label)}</strong><span>${esc(f.detail)}</span></li>`;
+    }).join('');
+  }
+
   function renderHours() {
     const h = state.summary.hourly;
     const max = Math.max(1, ...h);
@@ -412,6 +489,7 @@
     renderWho();
     renderCommits();
     renderVitals();
+    renderFlags();
     renderHours();
   }
 
@@ -419,15 +497,16 @@
   async function refresh({ force = false } = {}) {
     const overview = await api('/api/overview');
     if (!state.date) state.date = overview.today;
-    const [trend, summary, commits] = await Promise.all([
+    const [trend, summary, commits, flags] = await Promise.all([
       api('/api/trend?days=14'),
       api(`/api/summaries/${state.date}`),
       api(`/api/commits?date=${state.date}`),
+      api(`/api/flags?date=${state.date}`),
     ]);
     state.overview = overview;
-    const key = JSON.stringify([overview.totals, overview.last_saved_date, trend, summary, commits, state.date]);
+    const key = JSON.stringify([overview.totals, overview.last_saved_date, overview.webhook, overview.settings, trend, summary, commits, flags, state.date]);
     if (!force && key === state.key) { renderStatus(); return; } // nothing changed; keep focus and hover as they are
-    Object.assign(state, { trend, summary, commits, key });
+    Object.assign(state, { trend, summary, commits, flags, key });
     renderAll();
   }
 
@@ -464,25 +543,153 @@
     return undefined;
   }
 
+  // Accept "owner/name" or anything pasted from GitHub (https://github.com/owner/name(.git)/...).
+  const parseRepo = (v) => {
+    const m = v.trim().match(/^(?:https?:\/\/)?(?:www\.)?(?:github\.com\/)?([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:[/#?].*)?$/i);
+    return m ? `${m[1]}/${m[2]}` : v.trim();
+  };
+
+  async function withAdmin(fn, what) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (err.status !== 401) throw err;
+      const t = window.prompt(`This server needs an admin token to ${what}. Enter it:`);
+      if (!t) throw err;
+      state.token = t;
+      return fn();
+    }
+  }
+
   async function trackRepo() {
     const btn = $('#track-btn');
     const input = $('#repo-input');
-    const value = input.value.trim();
+    const value = parseRepo(input.value);
     if (!value) return;
+    input.value = value;
     btn.disabled = true;
     try {
-      await api('/api/settings', { method: 'POST', token: state.token, body: { tracked_repo: value } });
+      await withAdmin(() => api('/api/settings', { method: 'POST', token: state.token, body: { tracked_repo: value } }), 'change settings');
+      state.hookOpen = true;
       await refresh({ force: true });
+      watchConnection();
     } catch (err) {
-      if (err.status === 401) {
-        const t = window.prompt('This server needs an admin token to change settings. Enter it:');
-        if (t) { state.token = t; btn.disabled = false; return trackRepo(); }
-      } else {
-        window.alert(err.body && err.body.error ? err.body.error : err.message);
-      }
+      if (err.status !== 401) window.alert(err.body && err.body.error ? err.body.error : err.message);
     }
     btn.disabled = false;
-    return undefined;
+  }
+
+  // --- webhook setup panel -----------------------------------------------------------
+  const isLocal = () => /^(localhost|127\.|\[::1\])/.test(window.location.hostname);
+  const URL_KEY = 'commitdoctor.payloadUrl';
+  const loadUrl = () => { try { return window.localStorage.getItem(URL_KEY) || ''; } catch { return ''; } };
+  const saveUrl = (v) => { try { window.localStorage.setItem(URL_KEY, v); } catch { /* storage unavailable */ } };
+
+  function renderHookSetup() {
+    const o = state.overview;
+    const repo = o.settings && o.settings.tracked_repo;
+    const box = $('#hook-setup');
+    box.hidden = !repo;
+    if (!repo) return;
+
+    const w = o.webhook || { state: 'waiting' };
+    const connected = w.state === 'connected';
+    if (connected) stopWatching();
+    const status = $('#hook-status');
+    status.dataset.state = w.state;
+    const r = `<code>${esc(repo)}</code>`;
+    const text = {
+      connected: w.last_ok_event === 'push'
+        ? `Connected to ${r}. Last push ${esc(ago(w.last_ok_at))}.`
+        : `Connected to ${r}. GitHub pinged ${esc(ago(w.last_ok_at))}; push a commit to see it here.`,
+      waiting: `Waiting for GitHub to send a delivery for ${r}…`,
+      failing: `GitHub reached this server, but the delivery was rejected: ${esc(w.detail || 'unknown error')}. Check the secret and content type, then click Redeliver on GitHub.`,
+      other_repo: `GitHub is sending from <code>${esc(w.repo_seen)}</code>, but you're tracking ${r}. Track <button type="button" class="text-btn" id="hook-track-seen" data-repo="${esc(w.repo_seen)}">${esc(w.repo_seen)}</button> instead, or add the webhook to ${r}.`,
+    }[w.state];
+    const checking = state.watchUntil && !connected ? ' <span class="hook-checking">checking…</span>' : '';
+    const toggle = connected ? ` <button type="button" class="text-btn" id="hook-toggle">${state.hookOpen ? 'Hide setup' : 'Show setup'}</button>` : '';
+    const recheck = connected ? '' : ' <button type="button" class="text-btn" id="hook-recheck">Check now</button>';
+    status.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${text}${checking}${recheck}${toggle}</span>`;
+    $('#hook-steps').hidden = connected && !state.hookOpen;
+
+    const urlInput = $('#hook-url-input');
+    if (!urlInput.value) urlInput.value = loadUrl() || (isLocal() ? '' : `${window.location.origin}/webhook/github`);
+    const urlHint = $('#hook-url-hint');
+    urlHint.hidden = !isLocal();
+    urlHint.innerHTML = 'GitHub cannot reach <code>localhost</code>. Run <code>npx smee-client --target ' +
+      `${esc(window.location.origin)}/webhook/github</code> (or <code>ngrok http ${esc(window.location.port || '80')}</code>) and paste the public URL it prints.`;
+    $('#hook-f-url').textContent = urlInput.value.trim() || '(fill in step 1)';
+    $('#hook-gh-link').href = `https://github.com/${repo}/settings/hooks/new`;
+
+    if (state.hookSecret === null) loadHookSecret();
+  }
+
+  async function loadHookSecret() {
+    state.hookSecret = '';
+    const el = $('#hook-f-secret');
+    try {
+      const setup = await api('/api/webhook-setup', { token: state.token });
+      state.hookSecret = setup.secret;
+      el.textContent = setup.secret;
+    } catch (err) {
+      state.hookSecret = null;
+      el.innerHTML = err.status === 401
+        ? '<button type="button" class="text-btn" id="hook-secret-unlock">Enter admin token to show</button>'
+        : esc(err.message);
+    }
+  }
+
+  async function connectHook() {
+    const btn = $('#hook-connect-btn');
+    const tokenInput = $('#hook-token-input');
+    const payloadUrl = $('#hook-url-input').value.trim();
+    const token = tokenInput.value.trim();
+    const repo = state.overview.settings && state.overview.settings.tracked_repo;
+    if (!payloadUrl) { $('#hook-url-input').focus(); return; }
+    if (!token) { tokenInput.focus(); return; }
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+    try {
+      const r = await withAdmin(() => api('/api/webhook-setup/connect', { method: 'POST', token: state.token, body: { repo, token, payload_url: payloadUrl } }), 'create the webhook');
+      tokenInput.value = '';
+      $('#hook-status').textContent = r.created
+        ? 'Webhook created on GitHub. Waiting for its first ping…'
+        : 'Existing webhook updated. Waiting for its ping…';
+      watchConnection();
+    } catch (err) {
+      if (err.status !== 401) window.alert(err.body && err.body.error ? err.body.error : err.message);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Create webhook on GitHub';
+  }
+
+  // Re-check every few seconds after a Track click so the indicator flips to
+  // "Connected" as soon as GitHub's delivery lands, without reloading the page.
+  const WATCH_MS = 3000;
+  const WATCH_FOR_MS = 2 * 60 * 1000;
+  function watchConnection() {
+    stopWatching();
+    state.watchUntil = Date.now() + WATCH_FOR_MS;
+    state.watchTimer = setInterval(() => {
+      if (Date.now() > state.watchUntil) { stopWatching(); renderHookSetup(); return; }
+      refresh().catch(showError);
+    }, WATCH_MS);
+  }
+  function stopWatching() {
+    clearInterval(state.watchTimer);
+    state.watchTimer = null;
+    state.watchUntil = null;
+  }
+
+  async function copyField(id, btn) {
+    const text = $(`#${id}`).textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = 'Copied';
+    } catch {
+      btn.textContent = 'Select and copy';
+    }
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
   }
 
   // --- system log ----------------------------------------------------------------
@@ -512,6 +719,22 @@
     $('#save-btn').addEventListener('click', saveNow);
     $('#track-btn').addEventListener('click', trackRepo);
     $('#repo-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); trackRepo(); } });
+    $('#hook-connect-btn').addEventListener('click', connectHook);
+    $('#hook-token-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); connectHook(); } });
+    $('#hook-url-input').addEventListener('input', (e) => {
+      saveUrl(e.target.value.trim());
+      $('#hook-f-url').textContent = e.target.value.trim() || '(fill in step 1)';
+    });
+    $('#hook-setup').addEventListener('click', (e) => {
+      if (e.target.id === 'hook-recheck') { watchConnection(); refresh({ force: true }).catch(showError); }
+      if (e.target.id === 'hook-track-seen') { $('#repo-input').value = e.target.dataset.repo; trackRepo(); }
+      if (e.target.id === 'hook-toggle') { state.hookOpen = !state.hookOpen; renderHookSetup(); }
+      if (e.target.id === 'hook-secret-unlock') {
+        const t = window.prompt('Enter the admin token:');
+        if (t) { state.token = t; loadHookSecret(); }
+      }
+      if (e.target.classList.contains('copy-btn')) copyField(e.target.dataset.copy, e.target);
+    });
     $('#deadline-btn').addEventListener('click', setDeadline);
     $('#deadline-clear-btn').addEventListener('click', clearDeadline);
 
@@ -520,6 +743,12 @@
     $('#poll-list').addEventListener('click', (e) => {
       const btn = e.target.closest('.poll-remove');
       if (btn) removePolledRepo(btn.dataset.id);
+    });
+
+    $('#sub-form').addEventListener('submit', (e) => { e.preventDefault(); addSubscriber(); });
+    $('#sub-list').addEventListener('click', (e) => {
+      const btn = e.target.closest('.sub-remove');
+      if (btn) removeSubscriber(btn.dataset.id);
     });
 
     const trace = $('#trace');
@@ -546,4 +775,5 @@
   refresh({ force: true }).catch(showError);
   loadPollList();
   loadPrediction();
+  loadSubscribers();
 })();

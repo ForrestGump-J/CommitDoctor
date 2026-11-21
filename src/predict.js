@@ -11,6 +11,8 @@ const round = (n) => Math.round(n * 100) / 100;
  * this feature to — not a trained or historically-calibrated predictor.
  *
  * Method:
+ *  - N is CHURN_WINDOW_DAYS (default 21), separate from the 7-day summary
+ *    baseline, matching the paper's 21-day rolling period for churn.
  *  - pace_ratio = (commits/day over the last N days) / (commits/day over the
  *    whole project so far). Below 1 means slowing down relative to the
  *    project's own history.
@@ -24,28 +26,34 @@ const round = (n) => Math.round(n * 100) / 100;
 function predictDeadline(db, config, date = localDate(Date.now(), config.timezone)) {
   const settings = db.prepare('SELECT deadline_date FROM project_settings WHERE id = 1').get();
   const deadline_date = settings ? settings.deadline_date : null;
-  if (!deadline_date) return { date, deadline_date: null, status: 'no-deadline' };
+  if (!deadline_date) return { date, deadline_date: null, status: 'no-deadline', urgency: 'none' };
 
   const first = db.prepare('SELECT MIN(committed_date) AS d FROM commits').get().d;
-  if (!first) return { date, deadline_date, days_remaining: daysBetween(date, deadline_date), status: 'insufficient-data' };
+  if (!first) return { date, deadline_date, days_remaining: daysBetween(date, deadline_date), status: 'insufficient-data', urgency: 'none' };
 
   const days_remaining = daysBetween(date, deadline_date);
 
-  const n = config.summary.comparisonDays;
-  let windowStart = addDays(date, -n);
-  if (first > windowStart) windowStart = first;
-  const windowDays = Math.max(1, daysBetween(windowStart, date));
+    // Pace: the last few days compared with everything that came before them.
+  const paceDays = config.summary.comparisonDays;
+  const recentStart = addDays(date, -(paceDays - 1));
+  const earlierDays = daysBetween(first, recentStart);
+  const enoughHistory = earlierDays >= paceDays;
 
   const recentCount = db
     .prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date <= ?')
-    .get(windowStart, date).c;
-  const recentRate = recentCount / windowDays;
+    .get(recentStart, date).c;
+  const recentRate = recentCount / paceDays;
 
-  const totalDays = Math.max(1, daysBetween(first, date));
-  const totalCount = db.prepare('SELECT COUNT(*) AS c FROM commits').get().c;
-  const overallRate = totalCount / totalDays;
+  const earlierCount = db.prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date < ?').get(recentStart).c;
+  const earlierRate = earlierDays > 0 ? earlierCount / earlierDays : 0;
 
-  const paceRatio = overallRate > 0 ? recentRate / overallRate : (recentRate > 0 ? 1 : 0);
+  const paceRatio = earlierRate > 0 ? recentRate / earlierRate : (recentRate > 0 ? 1 : 0);
+
+  // Churn keeps its own 21-day window.
+  const n = config.prediction.windowDays;
+  let windowStart = addDays(date, -n);
+  if (first > windowStart) windowStart = first;
+  const churnWindowDays = Math.max(1, daysBetween(windowStart, date));
 
   const churnRows = db
     .prepare(
@@ -83,6 +91,7 @@ function predictDeadline(db, config, date = localDate(Date.now(), config.timezon
 
   let status;
   if (days_remaining < 0) status = 'deadline-passed';
+  else if (!enoughHistory) status = 'insufficient-data';
   else if (paceRatio >= 0.75) status = 'on-pace';
   else if (paceRatio >= 0.4) status = 'at-risk';
   else status = 'behind';
@@ -93,14 +102,23 @@ function predictDeadline(db, config, date = localDate(Date.now(), config.timezon
     date,
     deadline_date,
     days_remaining,
-    window_days: windowDays,
+    window_days: paceDays,
+    churn_window_days: churnWindowDays,
     recent_commit_rate: round(recentRate),
-    overall_commit_rate: round(overallRate),
-    pace_ratio: round(paceRatio),
+    earlier_commit_rate: round(earlierRate),
+    pace_ratio: enoughHistory ? round(paceRatio) : null,
     churn_ratio: churnRatio == null ? null : round(churnRatio),
     churn_basis: churnBasis,
     status,
+    urgency: urgencyForStatus(status, days_remaining),
   };
 }
 
-module.exports = { predictDeadline };
+function urgencyForStatus(status, days_remaining){
+  if (status !== 'at-risk' && status !== 'behind') return 'none';
+  if (days_remaining == null || days_remaining > 7) return 'none';
+  if (days_remaining <= 1) return 'final';
+  if (days_remaining <= 3) return 'urgent';
+  return 'reminder';
+}
+module.exports = { predictDeadline, urgencyForStatus };
