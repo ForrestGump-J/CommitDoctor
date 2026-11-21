@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 // Node's built-in SQLite (Node 22.13+). No native compilation, nothing extra to install.
 const { DatabaseSync } = require('node:sqlite');
+const { maskEmail } = require('./privacy');
 
 // Eight tables:
 //   commits          the raw material (one row per unique commit SHA)
@@ -146,6 +147,15 @@ function migrate(db) {
   addColumn('commits', 'lines_added', 'INTEGER');
   addColumn('commits', 'lines_deleted', 'INTEGER');
   addColumn('project_settings', 'webhook_secret', 'TEXT');
+
+  // Older versions stored committer emails and could use one as the contributor
+  // label. Drop the stored emails and mask any email-shaped labels. Idempotent.
+  db.exec('UPDATE commits SET author_email = NULL WHERE author_email IS NOT NULL');
+  const relabel = db.prepare('UPDATE commits SET contributor = ?, author_name = CASE WHEN author_name = contributor THEN ? ELSE author_name END WHERE contributor = ?');
+  for (const { contributor } of db.prepare("SELECT DISTINCT contributor FROM commits WHERE contributor LIKE '%_@_%' AND contributor NOT LIKE '_***@%'").all()) {
+    const masked = maskEmail(contributor);
+    relabel.run(masked, masked, contributor);
+  }
 }
 
 function openDb(file) {

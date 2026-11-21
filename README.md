@@ -15,7 +15,7 @@ npm install
 cp .env.example .env # optional: GITHUB_WEBHOOK_SECRET is auto-generated if left empty
 npm run seed # optional: two weeks of demo data
 npm start # http://localhost:3000
-npm test # 39 tests
+npm test
 ```
 
 Try it without GitHub (signs the request the same way GitHub does):
@@ -49,6 +49,7 @@ The webhook secret comes from `GITHUB_WEBHOOK_SECRET` if set; otherwise one is g
 - **Daily summary.** A small scheduler notices when the local date changes and saves the finished day. If the server was off at midnight, a catch-up pass on the next start summarizes the missed days. Today is always shown live; past days show the saved snapshot.
 - **Rolling-baseline flags.** Each time a summary is (re)generated, the day is compared against the average of the preceding `SUMMARY_COMPARISON_DAYS` days. Notable deviations (activity clearly above/below baseline, or a contributor gone quiet for a full comparison window) are stored as discrete flags rather than just embedded in the summary text.
 - **Deadline tracking.** A team enters a deadline date (and, optionally, which repo to track) via `POST /api/settings`; `GET /api/settings` returns days remaining.
+- **Privacy.** Committer emails from push payloads are never stored; a commit with no name or username is labelled with a masked email (`j***@example.com`). Subscriber emails are masked in the API and in logs.
 - **Summaries are rule-based, not AI-generated.** Same commits in, same summary out, which keeps the prototype easy to evaluate.
 
 ## Configuration (`.env`)
@@ -62,7 +63,7 @@ The webhook secret comes from `GITHUB_WEBHOOK_SECRET` if set; otherwise one is g
 | `SUMMARY_COMPARISON_DAYS` | `7` | Length of the "recent days" rolling baseline, used for both the summary comparison and inactivity flags. |
 | `CHURN_WINDOW_DAYS` | `21` | Rolling window for the deadline prediction's commit rate and code churn. |
 | `DB_PATH` | `./data/commitdoctor.db` | SQLite file. |
-| `ADMIN_TOKEN` | none | If set, required as `Authorization: Bearer <token>` for write endpoints (`/api/summaries/:date/generate`, `/api/settings`, `/api/subscribers`, `/api/webhook-setup`). |
+| `ADMIN_TOKEN` | none | Required as `Authorization: Bearer <token>` for every write endpoint. If empty, writes are accepted only from the server machine itself (loopback, local `Host`/`Origin`, no proxy headers), so a tunnel or host such as ngrok or Render can't bypass it. **Set it on any public deploy.** |
 | `PORT` | `3000` | |
 
 ## API

@@ -27,12 +27,32 @@ function createApiRouter({ db, config, mailer = null }) {
   const router = express.Router();
   const tz = config.timezone;
 
-  const isLoopback = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+  // With no ADMIN_TOKEN, writes are allowed only from a browser or script on the
+  // server machine itself. Each check closes a way around a plain IP test:
+  //   - loopback socket: the request really arrived on 127.0.0.1 / ::1
+  //   - no proxy headers: ngrok, cloudflared, Render etc. also connect from
+  //     loopback, so a forwarded request would otherwise look local
+  //   - local Host header: blocks DNS rebinding (evil.com resolving to 127.0.0.1)
+  //   - local or absent Origin: blocks cross-site form posts (CSRF) from a page
+  //     opened in a browser on the server machine
+  const LOOPBACK_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+  const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+  const PROXY_HEADERS = ['x-forwarded-for', 'x-forwarded-host', 'forwarded', 'x-real-ip', 'cf-connecting-ip', 'true-client-ip'];
+  const hostnameOf = (hostHeader) => String(hostHeader || '').toLowerCase().replace(/:\d+$/, '');
+  const isLocalOrigin = (origin) => {
+    if (!origin) return true;
+    try { return LOCAL_HOSTS.has(new URL(origin).hostname.toLowerCase().replace(/^::1$/, '[::1]')); } catch { return false; }
+  };
+  const isTrustedLocal = (req) =>
+    LOOPBACK_IPS.has(req.socket.remoteAddress) &&
+    PROXY_HEADERS.every((h) => req.headers[h] === undefined) &&
+    LOCAL_HOSTS.has(hostnameOf(req.headers.host)) &&
+    isLocalOrigin(req.headers.origin);
 
   const requireAdmin = (req, res, next) => {
     if (!config.adminToken) {
       // No token configured: only the machine running the server may change things.
-      if (isLoopback(req)) return next();
+      if (isTrustedLocal(req)) return next();
       return res.status(401).json({ error: 'No ADMIN_TOKEN is set on this server, so changes are only allowed from the server itself. Set ADMIN_TOKEN in .env and restart.' });
     }
     const header = req.get('authorization') || '';

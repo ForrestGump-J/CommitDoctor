@@ -1,6 +1,7 @@
 'use strict';
 const { localDate, localHour } = require('./time');
 const { transaction } = require('./db');
+const { maskEmail } = require('./privacy');
 
 const MERGE_RE = /^Merge (pull request|branch|remote-tracking branch)\b/i;
 
@@ -32,7 +33,9 @@ function createStore(db, config) {
   function addCommit(c) {
     const when = new Date(c.timestamp);
     if (Number.isNaN(when.getTime())) return 0;
-    const contributor = c.authorUsername || c.authorName || c.authorEmail || 'unknown';
+    // The committer's email is never stored (data minimization: nothing reads it).
+    // It's used only as a last-resort label, masked, when a commit has no name.
+    const contributor = c.authorUsername || c.authorName || (c.authorEmail ? maskEmail(c.authorEmail) : 'unknown');
     const message = String(c.message || '').trim();
     const numOrNull = (v) => (Number.isFinite(v) ? v : null);
     return insert.run({
@@ -41,7 +44,7 @@ function createStore(db, config) {
       branch: c.branch || null,
       author_name: c.authorName || contributor,
       author_username: c.authorUsername || null,
-      author_email: c.authorEmail || null,
+      author_email: null,
       contributor,
       message,
       url: c.url || null,
