@@ -392,3 +392,17 @@ td.wrap { white-space: normal; min-width: 12rem; }
 .results-body { margin-top: 1rem; display: grid; gap: .6rem; }
 .results-body p { margin: 0; }
 .results-body h3 { margin: .8rem 0 0; font-size: .95rem; }
+
+/* commit-intent tags (NLP) */
+.tag.intent { border-color: transparent; }
+.tag.intent-feature { color: #1d5fb8; background: rgba(29, 95, 184, .12); }
+.tag.intent-fix { color: #b42318; background: rgba(180, 35, 24, .11); }
+.tag.intent-docs { color: #7a4fb5; background: rgba(122, 79, 181, .12); }
+.tag.intent-refactor { color: #9a6200; background: rgba(154, 98, 0, .13); }
+.tag.intent-test { color: #1a7f4b; background: rgba(26, 127, 75, .12); }
+.tag.intent-chore { color: var(--muted); background: rgba(91, 100, 112, .13); }
+.tag.intent.unsure { opacity: .75; border: 1px dashed currentColor; }
+@media (prefers-color-scheme: dark) {
+  .tag.intent-feature { color: #7fb0f0; } .tag.intent-fix { color: #f08a80; } .tag.intent-docs { color: #c3a2ee; }
+  .tag.intent-refactor { color: #e8b45a; } .tag.intent-test { color: #6fd19c; }
+}
