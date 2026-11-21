@@ -2,6 +2,7 @@
 
 const{localDate} = require('./time');
 const{predictDeadline} = require('./predict');
+const { maskEmail } = require('./privacy');
 
 const RETRY_AFTER_FAILURE_MS = 15 * 60_000;
 const failedAttempts = new WeakMap(); // db -> Map(key -> timestamp of last failed attempt)
@@ -29,7 +30,7 @@ async function sendToAllSubscribers(db, mailer, { subject, html }, log){
             delivered += 1;
         }
         catch (err){
-            log.error(`[notify] failed to email ${email}: ${err.message}`);
+            log.error(`[notify] failed to email ${maskEmail(email)}: ${err.message}`);
         }
     }
     return {sent:delivered > 0, count: delivered, attempted: emails.length}

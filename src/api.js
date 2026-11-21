@@ -8,6 +8,7 @@ const { checkDeadlineUrgency } = require('./notify');
 const { encryptToken } = require('./crypto');
 const { testRepoAccess, pollOneRepo } = require('./poller');
 const { connectWebhook } = require('./hooks');
+const { maskEmail } = require('./privacy');
 
 const clamp = (v, lo, hi, dflt) => {
   const n = parseInt(v, 10);
@@ -27,7 +28,6 @@ function createApiRouter({ db, config, mailer = null }) {
   const tz = config.timezone;
 
   const isLoopback = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
-  const maskEmail = (e) => String(e).replace(/^(.).*(@.*)$/, '$1***$2');
 
   const requireAdmin = (req, res, next) => {
     if (!config.adminToken) {
