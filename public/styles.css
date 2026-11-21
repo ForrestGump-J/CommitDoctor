@@ -361,3 +361,34 @@ td.wrap { white-space: normal; min-width: 12rem; }
 .fb-thanks { color: var(--teal); font-weight: 600; }
 .col-side section + section { margin-top: 2.25rem; }
 .manual a, .hint a { color: var(--teal); }
+
+/* --- study page ------------------------------------------------------------------- */
+.study .brand { color: var(--ink); text-decoration: none; }
+.study-main { max-width: 46rem; }
+.study-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1.4rem 1.5rem 1.5rem; margin-top: .5rem; }
+.study-title { font-size: clamp(1.7rem, 4vw, 2.3rem); margin-bottom: .5rem; }
+.study-title:focus, .study-q:focus { outline: none; }
+.study-q { font: 500 clamp(1.3rem, 3vw, 1.7rem)/1.3 var(--serif); margin: .3rem 0 1rem; }
+.eyebrow { margin: 0; font-size: .82rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--signal); }
+.lead { font: 400 1.15rem/1.5 var(--serif); margin: .4rem 0 1rem; }
+.study-card a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+.consent { border-left: 3px solid var(--teal); padding: .2rem 0 .2rem 1rem; margin: 1rem 0; font-size: .95rem; }
+.consent h2 { border: 0; padding: 0; margin: 0 0 .4rem; }
+.consent p { margin: 0 0 .6rem; }
+.field.narrow { max-width: 12rem; }
+.field.area { height: auto; padding: .5rem .7rem; resize: vertical; }
+.check { display: flex; gap: .55rem; align-items: baseline; margin-top: 1rem; font-size: .95rem; cursor: pointer; }
+.answers label { font-size: 1.05rem; padding: .45rem .6rem; border: 1px solid var(--rule); border-radius: 6px; margin-bottom: .4rem; }
+.answers label:has(input:checked) { border-color: var(--teal); background: var(--teal-soft); }
+.sus { padding-left: 1.4rem; margin: 1rem 0 0; display: grid; gap: 1rem; }
+.sus-item { border: 0; padding: 0; margin: 0; }
+.sus-item legend { font-size: .98rem; margin-bottom: .4rem; }
+.scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .3rem; }
+.scale label { display: flex; flex-direction: column; align-items: center; gap: .1rem; padding: .4rem .2rem; border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; text-align: center; }
+.scale label:has(input:checked) { border-color: var(--teal); background: var(--teal-soft); }
+.scale input { margin: 0; }
+.scale span { font-weight: 700; }
+.scale small { font-size: .7rem; color: var(--muted); line-height: 1.15; }
+.results-body { margin-top: 1rem; display: grid; gap: .6rem; }
+.results-body p { margin: 0; }
+.results-body h3 { margin: .8rem 0 0; font-size: .95rem; }
