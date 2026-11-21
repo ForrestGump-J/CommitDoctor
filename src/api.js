@@ -8,7 +8,7 @@ const { checkDeadlineUrgency } = require('./notify');
 const { encryptToken } = require('./crypto');
 const { testRepoAccess, pollOneRepo } = require('./poller');
 const { classify, CONFIDENT } = require('./intent');
-const { connectWebhook } = require('./hooks');
+const { connectWebhook, syncTrackedRepo } = require('./hooks');
 const { maskEmail } = require('./privacy');
 const { trackedRepo, otherReposWithData, clearProjectData } = require('./repository');
 const { createViewsRouter } = require('./views');
@@ -261,6 +261,16 @@ function createApiRouter({ db, config, mailer = null }) {
 
   const pollRow = () => db.prepare('SELECT * FROM tracked_repos LIMIT 1').get() || null;
 
+  function syncStatus() {
+    const row = db.prepare('SELECT last_sync_at, last_sync_error, last_sync_added FROM project_settings WHERE id = 1').get() || {};
+    return {
+      last_sync_at: row.last_sync_at || null,
+      last_error: row.last_sync_error || null,
+      last_added: row.last_sync_added ?? null,
+      interval_minutes: config.syncIntervalMs ? Math.round(config.syncIntervalMs / 60000) : null,
+    };
+  }
+
   function repositoryState() {
     const repo = trackedRepo(db, config) || null;
     const row = pollRow();
@@ -275,6 +285,8 @@ function createApiRouter({ db, config, mailer = null }) {
         interval_minutes: Math.round(config.pollIntervalMs / 60000),
       } : null,
       webhook: method === 'webhook' ? webhookStatus(repo) : null,
+      // Token-free scans of a public repo through GitHub's API (src/hooks.js).
+      sync: method === 'webhook' ? syncStatus() : null,
     };
   }
 
@@ -282,7 +294,8 @@ function createApiRouter({ db, config, mailer = null }) {
 
   const switchRepo = transaction(db, ({ repo, replace, method, tokenEnc, defaultBranch }) => {
     if (replace) clearProjectData(db);
-    db.prepare(`UPDATE project_settings SET tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(repo);
+    db.prepare(`UPDATE project_settings SET tracked_repo = ?, last_sync_at = NULL, last_sync_error = NULL, last_sync_added = NULL,
+      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(repo);
     db.exec('DELETE FROM tracked_repos');
     if (method === 'poll') {
       db.prepare('INSERT INTO tracked_repos (repo, token_enc, default_branch) VALUES (?, ?, ?)').run(repo, tokenEnc, defaultBranch);
@@ -292,11 +305,15 @@ function createApiRouter({ db, config, mailer = null }) {
   router.post('/repository', requireAdmin, async (req, res) => {
     const body = req.body || {};
     const repo = String(body.repo || '').trim().toLowerCase();
-    const method = body.method === 'poll' ? 'poll' : body.method === 'webhook' ? 'webhook' : null;
+    // 'public' = no token at all: scan the public repo through GitHub's API now and
+    // every few minutes. It is stored like 'webhook' (no saved token), so a webhook
+    // can be added later for instant updates without reconnecting.
+    const requested = body.method;
+    const method = requested === 'poll' ? 'poll' : requested === 'webhook' || requested === 'public' ? 'webhook' : null;
     const token = String(body.token || '').trim();
     const payloadUrl = String(body.payload_url || '').trim();
     if (!REPO_RE.test(repo)) return res.status(400).json({ error: 'Repository must look like owner/name.' });
-    if (!method) return res.status(400).json({ error: 'method must be "webhook" or "poll".' });
+    if (!method) return res.status(400).json({ error: 'method must be "public", "webhook" or "poll".' });
 
     // A different project already has data here: ask before clearing it.
     const others = otherReposWithData(db, repo);
@@ -316,7 +333,16 @@ function createApiRouter({ db, config, mailer = null }) {
     let tokenEnc = null;
     let defaultBranch = null;
     let hook = null;
-    if (method === 'poll') {
+    if (requested === 'public') {
+      try {
+        await testRepoAccess(repo, '');
+      } catch (err) {
+        const msg = err.status === 404
+          ? `GitHub has no public repository called ${repo}. If it is private, choose "Yes, it's private" and connect with a token.`
+          : `Could not reach GitHub: ${err.message}`;
+        return res.status(422).json({ error: msg });
+      }
+    } else if (method === 'poll') {
       if (!config.tokenEncryptionKey) {
         return res.status(503).json({ error: 'This server has no TOKEN_ENCRYPTION_KEY, so it cannot keep a token. Set it in .env and restart, or use the webhook method.' });
       }
@@ -344,15 +370,31 @@ function createApiRouter({ db, config, mailer = null }) {
 
     switchRepo({ repo, replace: switching, method, tokenEnc, defaultBranch });
     if (method === 'poll') await pollOneRepo({ db, config, row: pollRow() });
+    // First scan right away (no token needed), so the dashboard isn't empty until the next push.
+    else if (requested === 'public' || config.syncIntervalMs) await syncTrackedRepo({ db, config, repo });
 
     return res.status(200).json({ ...repositoryState(), cleared: switching, hook_created: hook ? hook.created : null });
+  });
+
+  // Scan the connected public repo now instead of waiting for the next timer.
+  let scanning = false;
+  router.post('/repository/scan', requireAdmin, async (_req, res) => {
+    const repo = trackedRepo(db, config);
+    if (!repo) return res.status(400).json({ error: 'No repository is connected.' });
+    if (pollRow()) {
+      await pollOneRepo({ db, config, row: pollRow() });
+    } else if (!scanning) {
+      scanning = true;
+      try { await syncTrackedRepo({ db, config, repo }); } finally { scanning = false; }
+    }
+    return res.json(repositoryState());
   });
 
   // Stop following the repository. Its data stays until another repo is connected;
   // the stored token is deleted.
   router.delete('/repository', requireAdmin, (_req, res) => {
     db.exec('DELETE FROM tracked_repos');
-    db.prepare(`UPDATE project_settings SET tracked_repo = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run();
+    db.prepare(`UPDATE project_settings SET tracked_repo = NULL, last_sync_at = NULL, last_sync_error = NULL, last_sync_added = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run();
     return res.json(repositoryState());
   });
 

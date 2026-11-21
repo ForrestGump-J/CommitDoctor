@@ -67,6 +67,54 @@ test('connecting by webhook without a token just starts tracking the repo', asyn
   } finally { server.close(); }
 });
 
+test('a public repo can be scanned without any token', async () => {
+  const ctx = makeCtx();
+  const calls = [];
+  globalThis.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    if (!u.startsWith('https://api.github.com')) return realFetch(url, opts);
+    calls.push({ u, auth: (opts.headers || {}).Authorization });
+    const json = /\/commits/.test(u)
+      ? [{ sha: 'b'.repeat(40), html_url: 'https://github.com/team/open/commit/b', parents: [{}],
+          commit: { message: 'Fix login bug', author: { name: 'Ann', date: '2026-09-20T02:00:00Z' } },
+          author: { login: 'ann' } }]
+      : { default_branch: 'main', private: false };
+    return new Response(JSON.stringify(json), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const { server, call } = await listen(ctx);
+  try {
+    const r = await call('POST', '/api/repository', { repo: 'team/open', method: 'public' });
+    assert.equal(r.status, 200);
+    assert.equal(r.body.repo, 'team/open');
+    assert.equal(r.body.sync.last_added, 1);
+    assert.equal(r.body.sync.last_error, null);
+    assert.ok(calls.length > 0 && calls.every((c) => !c.auth), 'no token is sent to GitHub');
+    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM commits').get().c, 1);
+    // Nothing is stored that could hold a token.
+    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM tracked_repos').get().c, 0);
+
+    const again = await call('POST', '/api/repository/scan');
+    assert.equal(again.status, 200);
+    assert.equal(again.body.sync.last_added, 0);
+  } finally { server.close(); }
+});
+
+test('scanning a private or missing repo without a token explains what to do', async () => {
+  const ctx = makeCtx();
+  globalThis.fetch = async (url, opts = {}) => {
+    if (!String(url).startsWith('https://api.github.com')) return realFetch(url, opts);
+    return new Response(JSON.stringify({ message: 'Not Found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+  };
+  const { server, call } = await listen(ctx);
+  try {
+    const r = await call('POST', '/api/repository', { repo: 'team/secret', method: 'public' });
+    assert.equal(r.status, 422);
+    assert.match(r.body.error, /private/);
+    const state = await call('GET', '/api/repository');
+    assert.equal(state.body.repo, null, 'nothing is connected after a failed scan');
+  } finally { server.close(); }
+});
+
 test('switching repositories needs confirmation, then clears the old project', async () => {
   const ctx = makeCtx();
   const { server, call } = await listen(ctx);

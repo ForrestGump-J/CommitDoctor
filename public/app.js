@@ -105,8 +105,12 @@
         s = 'ok'; t = `Last push ${ago(state.overview.last_push_at)}`;
       } else if (r.webhook.state === 'connected') {
         s = 'ok'; t = 'Connected; waiting for the first push';
+      } else if (r.sync && r.sync.last_error) {
+        s = 'warn'; t = 'Could not scan GitHub last time';
+      } else if (r.sync && r.sync.last_sync_at) {
+        s = 'ok'; t = `Scanned GitHub ${ago(r.sync.last_sync_at)}`;
       } else {
-        t = 'Waiting for GitHub';
+        t = 'Waiting for the first scan';
       }
     }
     $('#status').dataset.state = s;
@@ -156,9 +160,15 @@
       } else if (w.state === 'other_repo') {
         tone = 'bad';
         text = `GitHub is sending pushes from <code>${esc(w.repo_seen)}</code>, not ${repoLink}. Remove that webhook, or change the repository here.`;
+      } else if (r.sync && r.sync.last_error) {
+        tone = 'bad';
+        text = `Connected to ${repoLink}, but the last scan failed: ${esc(r.sync.last_error)} <button type="button" class="text-btn" id="repo-scan-btn">Scan now</button>`;
       } else {
-        tone = 'wait';
-        text = `Waiting for GitHub to contact this server for ${repoLink}… <button type="button" class="text-btn" id="repo-recheck-btn">Check now</button>`;
+        const sy = r.sync || {};
+        tone = sy.last_sync_at ? 'ok' : 'wait';
+        const every = sy.interval_minutes ? ` · scans GitHub every ${plural(sy.interval_minutes, 'minute')}, no token needed` : '';
+        const last = sy.last_sync_at ? ` · last scan ${esc(ago(sy.last_sync_at))}` : '';
+        text = `Connected to ${repoLink}${every}${last} <button type="button" class="text-btn" id="repo-scan-btn">Scan now</button>`;
       }
     }
     const line = $('#repo-line');
@@ -167,9 +177,8 @@
 
     // Manual webhook details only matter while the webhook isn't working yet (or on request).
     const manual = $('#manual-setup');
-    const needsManual = r.method === 'webhook' && r.webhook.state !== 'connected';
-    manual.hidden = r.method !== 'webhook';
-    if (needsManual && !manual.dataset.touched) manual.open = true;
+    // Optional upgrade: scans already work without a token; a webhook makes updates instant.
+    manual.hidden = r.method !== 'webhook' || r.webhook.state === 'connected';
     if (r.method === 'webhook') {
       $('#manual-gh-link').href = `https://github.com/${r.repo}/settings/hooks/new`;
       $('#manual-url').textContent = store.get(PAYLOAD_KEY) || payloadUrlDefault() || '(your server\'s public address)/webhook/github';
@@ -182,6 +191,8 @@
 
   function renderRepoForm(connected) {
     const f = state.form;
+    const pub = $('input[name="repo-private"]:checked').value === 'no';
+    $('#repo-continue-btn').textContent = pub ? 'Scan repository' : 'Continue';
     $('#repo-cancel-btn').hidden = !connected;
     $('#repo-step1').hidden = f.step !== 1;
     $('#repo-step2').hidden = f.step !== 2;
@@ -239,6 +250,12 @@
     if (!repo) { formError('Enter the repository as owner/name, or paste its GitHub link.'); $('#repo-input').focus(); return; }
     const isPrivate = $('input[name="repo-private"]:checked').value === 'yes';
     formError('');
+    if (!isPrivate) {
+      // Public repo: no token needed. Commit Doctor reads it straight from GitHub.
+      state.form = { ...state.form, repo, private: false, method: null };
+      connectRepo({ scan: true });
+      return;
+    }
     state.form = { ...state.form, step: 2, repo, private: isPrivate, method: null };
     $('#token-input').value = '';
     $('#advanced').open = false;
@@ -257,20 +274,21 @@
     });
   }
 
-  async function connectRepo({ manual = false } = {}) {
+  async function connectRepo({ manual = false, scan = false } = {}) {
     const f = state.form;
-    const method = manual ? 'webhook' : (f.method || recommendedMethod(f.private));
-    const token = manual ? '' : $('#token-input').value.trim();
+    const method = scan ? 'public' : manual ? 'webhook' : (f.method || recommendedMethod(f.private));
+    const token = manual || scan ? '' : $('#token-input').value.trim();
     const payloadUrl = $('#payload-url').value.trim();
-    if (!manual && !token) { formError('Paste the GitHub token first.'); $('#token-input').focus(); return; }
+    if (!manual && !scan && !token) { formError('Paste the GitHub token first.'); $('#token-input').focus(); return; }
     if (method === 'webhook' && token) {
       if (!payloadUrl) { $('#advanced').open = true; formError('Enter the address GitHub should send pushes to (under Advanced).'); $('#payload-url').focus(); return; }
       store.set(PAYLOAD_KEY, payloadUrl);
     }
     formError('');
-    const btn = $('#repo-connect-btn');
+    const btn = scan ? $('#repo-continue-btn') : $('#repo-connect-btn');
+    const label = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Connecting…';
+    btn.textContent = scan ? 'Scanning…' : 'Connecting…';
     const send = (replace) => api('/api/repository', {
       method: 'POST', token: state.token,
       body: { repo: f.repo, method, token: token || undefined, payload_url: method === 'webhook' && token ? payloadUrl : undefined, replace },
@@ -295,7 +313,19 @@
       if (err.status !== 401) formError(errText(err));
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Connect';
+      btn.textContent = label;
+    }
+  }
+
+  async function scanNow(btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Scanning…'; }
+    try {
+      state.repository = await withAdmin(() => api('/api/repository/scan', { method: 'POST', token: state.token }), 'scan the repository');
+      await refresh({ force: true });
+    } catch (err) {
+      if (err.status !== 401) showError(err);
+    } finally {
+      if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = 'Scan now'; }
     }
   }
 
@@ -818,13 +848,19 @@
     $('#repo-cancel-btn').addEventListener('click', closeForm);
     $('#repo-change-btn').addEventListener('click', () => openForm());
     $('#repo-disconnect-btn').addEventListener('click', disconnectRepo);
+    for (const el of $$('input[name="repo-private"]')) {
+      el.addEventListener('change', () => {
+        $('#repo-continue-btn').textContent = el.value === 'no' && el.checked ? 'Scan repository' : 'Continue';
+      });
+    }
     $('#manual-connect-btn').addEventListener('click', () => connectRepo({ manual: true }));
     $('#payload-url').addEventListener('input', (e) => store.set(PAYLOAD_KEY, e.target.value.trim()));
     for (const el of $$('input[name="repo-method"]')) {
       el.addEventListener('change', () => { state.form.method = el.value; formError(''); renderRepoCard(); });
     }
     $('#repo-connected').addEventListener('click', (e) => {
-      if (e.target.id === 'repo-recheck-btn') refresh({ force: true }).catch(showError);
+      if (e.target.id === 'repo-scan-btn') scanNow(e.target);
+      if (e.target.id === 'manual-token-btn') openForm({ repo: state.repository.repo, step: 2, isPrivate: false, method: 'webhook' });
       if (e.target.id === 'repo-retoken-btn') openForm({ repo: state.repository.repo, step: 2, isPrivate: true, method: 'poll' });
       if (e.target.id === 'manual-secret-unlock') {
         const t = window.prompt('Enter the admin token:');
