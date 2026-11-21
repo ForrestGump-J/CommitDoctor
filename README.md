@@ -40,6 +40,22 @@ From the dashboard:
 
 The webhook secret comes from `GITHUB_WEBHOOK_SECRET` if set; otherwise one is generated on first start and kept in the database.
 
+## Deploying (Render)
+
+`render.yaml` is a Render Blueprint: in Render choose **New > Blueprint** and pick this repo.
+Render serves the app over HTTPS and generates `ADMIN_TOKEN` and `GITHUB_WEBHOOK_SECRET`
+(both are kept in Render's environment, not in the repo). Set `TOKEN_ENCRYPTION_KEY` and the
+`SMTP_*` values yourself in the Render dashboard. Your webhook Payload URL is
+`https://<service>.onrender.com/webhook/github`.
+
+Free-plan limits: the service sleeps after about 15 minutes idle (GitHub retries failed
+deliveries, and the poller looks back 14 days), and **the disk is wiped on every deploy or
+restart, so the SQLite database is lost**. For anything beyond a demo, attach a persistent disk
+and point `DB_PATH` at it.
+
+Vercel and Netlify are not supported: they run short-lived serverless functions, while
+Commit Doctor needs a long-running process (scheduler, poller) and a writable disk.
+
 ## How it works
 
 
