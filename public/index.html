@@ -23,44 +23,83 @@
   </header>
 
   <main>
+    <!-- The one repository Commit Doctor follows -->
+    <section class="repo-card" id="repo-card" aria-label="Repository">
+      <!-- Connected: a single status line -->
+      <div class="repo-connected" id="repo-connected" hidden>
+        <p class="repo-line" id="repo-line" role="status"></p>
+        <div class="repo-actions">
+          <button type="button" class="btn" id="repo-change-btn">Change repository</button>
+          <button type="button" class="text-btn" id="repo-disconnect-btn">Disconnect</button>
+        </div>
+        <details class="manual" id="manual-setup" hidden>
+          <summary>Set up the webhook on GitHub yourself</summary>
+          <p class="hint">Open <a id="manual-gh-link" href="#" target="_blank" rel="noopener">GitHub › Settings › Webhooks › Add webhook</a> and enter:</p>
+          <dl class="hook-fields">
+            <dt>Payload URL</dt><dd><code id="manual-url"></code> <button type="button" class="text-btn copy-btn" data-copy="manual-url">Copy</button></dd>
+            <dt>Content type</dt><dd><code>application/json</code></dd>
+            <dt>Secret</dt><dd><code id="manual-secret">…</code> <button type="button" class="text-btn copy-btn" data-copy="manual-secret">Copy</button></dd>
+            <dt>Events</dt><dd>Just the push event</dd>
+          </dl>
+          <p class="hint" id="manual-local-hint" hidden></p>
+        </details>
+      </div>
+
+      <!-- Not connected, or changing: two short steps -->
+      <form class="repo-form" id="repo-form" hidden novalidate>
+        <div id="repo-step1">
+          <h2 class="card-title">Connect your repository</h2>
+          <p class="hint">Commit Doctor follows one GitHub repository and summarizes its commits every day.</p>
+          <label class="field-label" for="repo-input">Repository</label>
+          <input type="text" id="repo-input" class="field" placeholder="owner/name or a GitHub link" autocomplete="off" spellcheck="false">
+          <fieldset class="choice">
+            <legend class="field-label">Is it private?</legend>
+            <label><input type="radio" name="repo-private" value="no" checked> No, it's public</label>
+            <label><input type="radio" name="repo-private" value="yes"> Yes, it's private</label>
+          </fieldset>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="repo-continue-btn">Continue</button>
+            <button type="button" class="text-btn" id="repo-cancel-btn" hidden>Cancel</button>
+          </div>
+        </div>
+
+        <div id="repo-step2" hidden>
+          <p class="step2-head">Connecting <strong id="step2-repo"></strong> <button type="button" class="text-btn" id="repo-back-btn">Back</button></p>
+          <p class="hint" id="method-explain"></p>
+          <ol class="token-steps" id="token-steps"></ol>
+          <label class="field-label" for="token-input">GitHub token</label>
+          <div class="field-row">
+            <input type="password" id="token-input" class="field" placeholder="Paste the token here" autocomplete="off" spellcheck="false">
+            <button type="submit" class="btn btn-primary" id="repo-connect-btn">Connect</button>
+          </div>
+          <details class="advanced" id="advanced">
+            <summary>Advanced</summary>
+            <fieldset class="choice">
+              <legend class="field-label">How should Commit Doctor get updates?</legend>
+              <label><input type="radio" name="repo-method" value="webhook"> Instantly: GitHub notifies this server on every push (webhook)</label>
+              <label><input type="radio" name="repo-method" value="poll"> Every few minutes: this server checks GitHub using a read-only token</label>
+            </fieldset>
+            <div id="adv-webhook">
+              <label class="field-label" for="payload-url">Address GitHub should send pushes to</label>
+              <input type="url" id="payload-url" class="field" placeholder="https://your-server.example/webhook/github">
+              <p class="hint" id="payload-hint" hidden></p>
+              <p class="hint">No token? <button type="button" class="text-btn" id="manual-connect-btn">Set up the webhook on GitHub myself</button></p>
+            </div>
+          </details>
+        </div>
+        <p class="form-error" id="repo-error" role="alert" hidden></p>
+      </form>
+    </section>
+
     <section class="note" id="summary" aria-labelledby="day-title">
       <div class="note-head">
         <div>
           <p class="repo" id="repo">Repository</p>
           <h1 id="day-title">Today</h1>
-          <div class="repo-track">
-            <input type="text" id="repo-input" placeholder="owner/name or GitHub URL" aria-label="GitHub repository to track via webhook (owner/name or GitHub URL)">
-            <button type="button" id="track-btn">Track via webhook</button>
-          </div>
-          <div class="hook-setup" id="hook-setup" hidden>
-            <p class="hook-status" id="hook-status" role="status"></p>
-            <div class="hook-steps" id="hook-steps">
-              <p class="hook-label">1. Public URL of this server</p>
-              <input type="url" id="hook-url-input" placeholder="https://your-host.example/webhook/github" aria-label="Payload URL GitHub should send pushes to">
-              <p class="track-hint" id="hook-url-hint" hidden></p>
-
-              <p class="hook-label">2a. Easiest: let Commit Doctor create the webhook</p>
-              <div class="repo-track">
-                <input type="password" id="hook-token-input" placeholder="GitHub token (used once, not saved)" aria-label="GitHub token with webhook permission" autocomplete="off">
-                <button type="button" id="hook-connect-btn">Create webhook on GitHub</button>
-              </div>
-              <p class="track-hint">Needs a token with webhook access:
-                <a id="hook-token-link" href="https://github.com/settings/tokens/new?scopes=admin:repo_hook&amp;description=Commit%20Doctor%20webhook" target="_blank" rel="noopener">make a classic token with <code>admin:repo_hook</code></a>,
-                or a fine-grained one with <em>Webhooks: read and write</em>.</p>
-
-              <p class="hook-label">2b. Or add it yourself on <a id="hook-gh-link" href="#" target="_blank" rel="noopener">GitHub &rsaquo; Add webhook</a> and paste:</p>
-              <dl class="hook-fields">
-                <dt>Payload URL</dt><dd><code id="hook-f-url">(fill in step 1)</code> <button type="button" class="text-btn copy-btn" data-copy="hook-f-url">Copy</button></dd>
-                <dt>Content type</dt><dd><code>application/json</code></dd>
-                <dt>Secret</dt><dd><code id="hook-f-secret">…</code> <button type="button" class="text-btn copy-btn" data-copy="hook-f-secret">Copy</button></dd>
-                <dt>Events</dt><dd>Just the push event</dd>
-              </dl>
-            </div>
-          </div>
-          <div class="repo-track">
-            <label for="deadline-input" class="sr-only">Project deadline</label>
-            <input type="date" id="deadline-input" aria-label="Project deadline">
-            <button type="button" id="deadline-btn">Set deadline</button>
+          <div class="deadline-row">
+            <label for="deadline-input" class="deadline-label">Deadline</label>
+            <input type="date" id="deadline-input">
+            <button type="button" class="btn" id="deadline-btn">Set</button>
             <button type="button" id="deadline-clear-btn" class="text-btn" hidden>Clear</button>
           </div>
           <p class="prediction" id="prediction" hidden></p>
@@ -72,20 +111,7 @@
           <button type="button" id="today" class="text-btn">Today</button>
         </div>
       </div>
-      <p class="headline" id="headline" aria-live="polite"></p>
       <p class="provenance"><span id="provenance"></span> <button type="button" id="save-btn" class="text-btn" hidden>Save summary now</button></p>
-    </section>
-
-    <section class="poll-repos" aria-labelledby="poll-title">
-      <h2 id="poll-title">Polled repos (public or private, via token)</h2>
-      <p class="muted">No public webhook needed. Commit Doctor checks these repos on a timer using a personal access token stored per repo.</p>
-      <div class="poll-add">
-        <input type="text" id="poll-repo-input" placeholder="owner/name" aria-label="Repository to poll (owner/name)">
-        <input type="password" id="poll-token-input" placeholder="Personal access token" aria-label="Personal access token" autocomplete="off">
-        <button type="button" id="poll-add-btn">Add</button>
-      </div>
-      <p class="track-hint" id="poll-hint" hidden></p>
-      <ul class="poll-list" id="poll-list"></ul>
     </section>
 
     <section class="trace" aria-labelledby="trace-title">
@@ -96,25 +122,38 @@
 
     <div class="cols">
       <div class="col-main">
-        <section aria-labelledby="who-title">
-          <h2 id="who-title">Who committed</h2>
-          <div id="who"></div>
+        <div class="view-tabs" role="tablist" aria-label="How to show this day">
+          <button type="button" role="tab" id="tab-digest" aria-controls="panel-digest" data-view="digest">Digest</button>
+          <button type="button" role="tab" id="tab-team" aria-controls="panel-team" data-view="team">Team</button>
+          <button type="button" role="tab" id="tab-timeline" aria-controls="panel-timeline" data-view="timeline">Timeline</button>
+        </div>
+
+        <section class="view-panel" id="panel-digest" role="tabpanel" aria-labelledby="tab-digest" tabindex="0">
+          <ul class="digest" id="digest"></ul>
+          <div class="tiles" id="tiles"></div>
+          <h3 class="panel-sub">Flags</h3>
+          <ul class="flag-list" id="flags"></ul>
         </section>
-        <section aria-labelledby="commits-title">
-          <h2 id="commits-title">Commits</h2>
-          <ol class="commit-list" id="commits"></ol>
+
+        <section class="view-panel" id="panel-team" role="tabpanel" aria-labelledby="tab-team" tabindex="0" hidden>
+          <div class="team" id="team"></div>
         </section>
+
+        <section class="view-panel" id="panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" tabindex="0" hidden>
+          <div id="hours"></div>
+          <dl class="vitals vitals-row" id="vitals"></dl>
+          <div id="timeline"></div>
+        </section>
+
+        <div class="feedback" id="feedback">
+          <span id="feedback-q">Was this view helpful?</span>
+          <button type="button" class="fb-btn" data-value="1" aria-pressed="false" aria-label="Yes, helpful">👍</button>
+          <button type="button" class="fb-btn" data-value="0" aria-pressed="false" aria-label="No, not helpful">👎</button>
+          <span class="fb-thanks" id="fb-thanks" hidden>Thanks!</span>
+        </div>
       </div>
 
       <aside class="col-side">
-        <section aria-labelledby="vitals-title">
-          <h2 id="vitals-title">Vitals</h2>
-          <dl class="vitals" id="vitals"></dl>
-        </section>
-        <section aria-labelledby="flags-title">
-          <h2 id="flags-title">Flags</h2>
-          <ul class="flag-list" id="flags"></ul>
-        </section>
         <section aria-labelledby="subs-title">
           <h2 id="subs-title">Notify</h2>
           <p class="muted sub-note">People who will get deadline reminders and flag alerts by email.</p>
@@ -126,18 +165,25 @@
           </form>
           <p class="track-hint" id="sub-hint" hidden></p>
         </section>
-        <section aria-labelledby="hours-title">
-          <h2 id="hours-title">Hour by hour</h2>
-          <div id="hours"></div>
-        </section>
       </aside>
     </div>
 
     <details class="log" id="log">
-      <summary>System log: webhook deliveries and summary runs</summary>
+      <summary>System log: webhook deliveries, summary runs and view usage</summary>
       <div class="log-body" id="log-body"><p class="muted">Open to load.</p></div>
     </details>
   </main>
+
+  <dialog class="confirm" id="switch-dialog" aria-labelledby="switch-title">
+    <form method="dialog">
+      <h2 id="switch-title">Switch repository?</h2>
+      <p id="switch-text"></p>
+      <div class="form-actions">
+        <button value="cancel" class="btn">Cancel</button>
+        <button value="ok" class="btn btn-danger" id="switch-ok">Switch and clear</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="app.js"></script>
 </body>
