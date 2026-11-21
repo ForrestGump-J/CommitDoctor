@@ -1,0 +1,3697 @@
+{
+  "n_samples": 2100,
+  "class_counts": {
+    "fix": 350,
+    "test": 350,
+    "chore": 350,
+    "refactor": 350,
+    "docs": 350,
+    "feature": 350
+  },
+  "repos": {
+    "nestjs/nest": 112,
+    "TanStack/query": 387,
+    "nuxt/nuxt": 274,
+    "vuejs/core": 255,
+    "angular/angular": 329,
+    "vitest-dev/vitest": 303,
+    "vitejs/vite": 342,
+    "conventional-changelog/commitlint": 98
+  },
+  "variants": {
+    "raw (no preprocessing)": {
+      "macro_f1_mean": 0.6083,
+      "macro_f1_std": 0.0224,
+      "vocab_size": 15750,
+      "wild_accuracy": 0.4722,
+      "stress_accuracy": 0.4167
+    },
+    "clean + normalize": {
+      "macro_f1_mean": 0.5951,
+      "macro_f1_std": 0.0115,
+      "vocab_size": 12579,
+      "wild_accuracy": 0.5,
+      "stress_accuracy": 0.25
+    },
+    "clean + normalize + stop": {
+      "macro_f1_mean": 0.5931,
+      "macro_f1_std": 0.004,
+      "vocab_size": 10986,
+      "wild_accuracy": 0.5,
+      "stress_accuracy": 0.3333
+    },
+    "clean + normalize + stem": {
+      "macro_f1_mean": 0.5986,
+      "macro_f1_std": 0.0139,
+      "vocab_size": 11480,
+      "wild_accuracy": 0.4444,
+      "stress_accuracy": 0.1667
+    },
+    "clean + normalize + lemma": {
+      "macro_f1_mean": 0.599,
+      "macro_f1_std": 0.0143,
+      "vocab_size": 11784,
+      "wild_accuracy": 0.4444,
+      "stress_accuracy": 0.1667
+    },
+    "clean + norm + stop + stem": {
+      "macro_f1_mean": 0.5877,
+      "macro_f1_std": 0.0108,
+      "vocab_size": 10006,
+      "wild_accuracy": 0.4722,
+      "stress_accuracy": 0.25
+    }
+  },
+  "baselines": {
+    "majority_class": {
+      "accuracy": 0.1667,
+      "macro_f1": 0.0476
+    },
+    "keyword_rule": {
+      "accuracy": 0.3276,
+      "macro_f1": 0.2957
+    }
+  },
+  "regularization": [
+    {
+      "C": 0.01,
+      "train_f1": 0.7278,
+      "cv_f1": 0.5654
+    },
+    {
+      "C": 0.1,
+      "train_f1": 0.7479,
+      "cv_f1": 0.5749
+    },
+    {
+      "C": 0.3,
+      "train_f1": 0.7963,
+      "cv_f1": 0.593
+    },
+    {
+      "C": 1,
+      "train_f1": 0.8776,
+      "cv_f1": 0.5965
+    },
+    {
+      "C": 3,
+      "train_f1": 0.9528,
+      "cv_f1": 0.5812
+    },
+    {
+      "C": 10,
+      "train_f1": 0.9914,
+      "cv_f1": 0.5742
+    },
+    {
+      "C": 100,
+      "train_f1": 0.9971,
+      "cv_f1": 0.5561
+    },
+    {
+      "C": 1000,
+      "train_f1": 0.9976,
+      "cv_f1": 0.5404
+    }
+  ],
+  "best_C": 1,
+  "test": {
+    "n": 420,
+    "accuracy": 0.6143,
+    "macro_f1": 0.6143,
+    "report": {
+      "chore": {
+        "precision": 0.6428571428571429,
+        "recall": 0.6428571428571429,
+        "f1-score": 0.6428571428571429,
+        "support": 70.0
+      },
+      "docs": {
+        "precision": 0.7017543859649122,
+        "recall": 0.5714285714285714,
+        "f1-score": 0.6299212598425197,
+        "support": 70.0
+      },
+      "feature": {
+        "precision": 0.6666666666666666,
+        "recall": 0.6,
+        "f1-score": 0.631578947368421,
+        "support": 70.0
+      },
+      "fix": {
+        "precision": 0.5617977528089888,
+        "recall": 0.7142857142857143,
+        "f1-score": 0.6289308176100629,
+        "support": 70.0
+      },
+      "refactor": {
+        "precision": 0.4714285714285714,
+        "recall": 0.4714285714285714,
+        "f1-score": 0.4714285714285714,
+        "support": 70.0
+      },
+      "test": {
+        "precision": 0.676056338028169,
+        "recall": 0.6857142857142857,
+        "f1-score": 0.6808510638297872,
+        "support": 70.0
+      },
+      "accuracy": 0.6142857142857143,
+      "macro avg": {
+        "precision": 0.6200934762924085,
+        "recall": 0.6142857142857143,
+        "f1-score": 0.6142613004894176,
+        "support": 420.0
+      },
+      "weighted avg": {
+        "precision": 0.6200934762924084,
+        "recall": 0.6142857142857143,
+        "f1-score": 0.6142613004894175,
+        "support": 420.0
+      }
+    },
+    "confusion": {
+      "labels": [
+        "chore",
+        "docs",
+        "feature",
+        "fix",
+        "refactor",
+        "test"
+      ],
+      "matrix": [
+        [
+          45,
+          3,
+          3,
+          7,
+          9,
+          3
+        ],
+        [
+          9,
+          40,
+          6,
+          6,
+          5,
+          4
+        ],
+        [
+          5,
+          3,
+          42,
+          7,
+          7,
+          6
+        ],
+        [
+          0,
+          2,
+          4,
+          50,
+          9,
+          5
+        ],
+        [
+          5,
+          8,
+          5,
+          14,
+          33,
+          5
+        ],
+        [
+          6,
+          1,
+          3,
+          5,
+          7,
+          48
+        ]
+      ]
+    },
+    "examples": [
+      {
+        "text": "add support for <user> blocks (#70463)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.57
+      },
+      {
+        "text": "add section on reactive context and async operations",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.301
+      },
+      {
+        "text": "add structured logging params support",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.803
+      },
+      {
+        "text": "avoid inherited property-to-attribute mappings (#16225)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.266
+      },
+      {
+        "text": "packet metadata over nats, kafka, rmq, mqtt, grpc (#18386)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.24
+      },
+      {
+        "text": "add `registerAiTools` function",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.229
+      },
+      {
+        "text": "append plugin name to logs (#205)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.365
+      },
+      {
+        "text": "align the page title with its edit action",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.191
+      },
+      {
+        "text": "remove default discord reactions from thread (more noise than it's worth)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.315
+      },
+      {
+        "text": "update generated code signatures",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.341
+      },
+      {
+        "text": "make example test callbacks async (#6484)",
+        "true": "fix",
+        "pred": "test",
+        "confidence": 0.536
+      },
+      {
+        "text": "sort package keys",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.284
+      },
+      {
+        "text": "fix vite 8 stack trace snapshot (#9747)",
+        "true": "test",
+        "pred": "chore",
+        "confidence": 0.285
+      },
+      {
+        "text": "fix backend-integration build test flaky fail (#17913)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.447
+      },
+      {
+        "text": "clarify GitHub Pages instructions (enable + workflow) (#21020)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.312
+      },
+      {
+        "text": "add type tests for page params, 'initialData', 'select', and 'Accessor<QueryClient>' (#10496)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.675
+      },
+      {
+        "text": "remove 'vi.waitFor', and add 'advanceTimersByTimeAsync' (#9415)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.859
+      },
+      {
+        "text": "don't use `__dirname` in tailwind config (#18969)",
+        "true": "test",
+        "pred": "fix",
+        "confidence": 0.282
+      },
+      {
+        "text": "update acceptance test",
+        "true": "refactor",
+        "pred": "test",
+        "confidence": 0.652
+      },
+      {
+        "text": "update bluwy bio (#19442)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.563
+      },
+      {
+        "text": "fix `external: true` merging (#21164)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.28
+      },
+      {
+        "text": "use addEventListener to avoid unconditional CD scheduling on blur",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.308
+      },
+      {
+        "text": "add test for resolving 'provideIsRestoring' value with 'injector' option (#10599)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.63
+      },
+      {
+        "text": "update vscode ts settings (#15250)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.448
+      },
+      {
+        "text": "clarify the custom provider API is experimental (#7855)",
+        "true": "docs",
+        "pred": "feature",
+        "confidence": 0.264
+      },
+      {
+        "text": "keep route options when the route triggered hook is set (#18121)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.626
+      },
+      {
+        "text": "update change detection strategy references",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.335
+      },
+      {
+        "text": "release v5.1.0-beta.1 (#11647)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.927
+      },
+      {
+        "text": "export `defaultAllowedOrigins` for user-land config and 3rd party plugins (#19259)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.402
+      },
+      {
+        "text": "resolve symlinked compat scope paths (#36490)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.4
+      },
+      {
+        "text": "angular examples improvements (#8782)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.433
+      },
+      {
+        "text": "serve unmatched public asset paths on client-side navigation (#36169)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.35
+      },
+      {
+        "text": "add tests for replacing the client before the first update and clearing it while disconnected (#11757)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.684
+      },
+      {
+        "text": "add optimistic-updates example (#12404)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.495
+      },
+      {
+        "text": "guard the cost of resolving a typed `$fetch` call (#36254)",
+        "true": "test",
+        "pred": "fix",
+        "confidence": 0.308
+      },
+      {
+        "text": "Update preact-query version in examples (#10483)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.442
+      },
+      {
+        "text": "complete removal of deprecated `createNgModuleRef` alias",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.337
+      },
+      {
+        "text": "force plain text when comparing output (#909)",
+        "true": "test",
+        "pred": "fix",
+        "confidence": 0.306
+      },
+      {
+        "text": "only match hydration modifiers after lazy prefix (#36750)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.24
+      },
+      {
+        "text": "use relative import location instead of package (#9941)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.244
+      },
+      {
+        "text": "fix layout shift when refreshing the stagger example",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.459
+      },
+      {
+        "text": "update `build.manifest` jsdocs (#19332)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.771
+      },
+      {
+        "text": "spell checker (#6982)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.198
+      },
+      {
+        "text": "Preact Adapter (#9935)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.233
+      },
+      {
+        "text": "scaffold with rolldown-vite (#20739)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.344
+      },
+      {
+        "text": "remove all deep imports in language service",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.247
+      },
+      {
+        "text": "return early in warn() in prod",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.351
+      },
+      {
+        "text": "improve bad character warning (#19683)",
+        "true": "feature",
+        "pred": "chore",
+        "confidence": 0.267
+      },
+      {
+        "text": "read route rules through `getRouteRules` in the runtime (#36937)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.4
+      },
+      {
+        "text": "add SSR support for `.wasm?init` (#21102)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.794
+      },
+      {
+        "text": "add `handleCors` to `nuxt/server`",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.37
+      },
+      {
+        "text": "deduplicate compliance goldens and run against compliance test_cases",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.63
+      },
+      {
+        "text": "export custom snapshot matcher helper from `vitest` (#10042)",
+        "true": "fix",
+        "pred": "test",
+        "confidence": 0.314
+      },
+      {
+        "text": "add tests for 'getQueryStatusColor' (#10670)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.793
+      },
+      {
+        "text": "add type tests for 'MutationCache', its config and notify events (#11486)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.586
+      },
+      {
+        "text": "v7.1.16",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.694
+      },
+      {
+        "text": "fix stale error template path in `.gitattributes`",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.29
+      },
+      {
+        "text": "fix reference link (#8596)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.754
+      },
+      {
+        "text": "align dev skills examples with style guide",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.329
+      },
+      {
+        "text": "update playground (#10356)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.335
+      },
+      {
+        "text": "add type tests for 'createRetryer', its config and retry value types (#11488)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.625
+      },
+      {
+        "text": "update oxc packages (#11919)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.43
+      },
+      {
+        "text": "update default browser target (#21193)",
+        "true": "feature",
+        "pred": "docs",
+        "confidence": 0.428
+      },
+      {
+        "text": "use `@nuxt/devtools-onboard` as a minimal devtools shim (#36470)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.269
+      },
+      {
+        "text": "add `sequence.groupOrder` option (#7852)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.342
+      },
+      {
+        "text": "share the posts query between 'getStaticProps' and 'usePosts' with 'queryOptions' (#11989)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.296
+      },
+      {
+        "text": "v3.5.10",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.481
+      },
+      {
+        "text": "add more rules to AGENTS.md regarding ai contributions (#11142)",
+        "true": "chore",
+        "pred": "docs",
+        "confidence": 0.508
+      },
+      {
+        "text": "do not exit process if global setup has failed (#5726)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.683
+      },
+      {
+        "text": "drop `toNuxtRequestEvent` from `nuxt/server`",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.261
+      },
+      {
+        "text": "rewrite UI tests using @vitest/browser (#5707)",
+        "true": "chore",
+        "pred": "test",
+        "confidence": 0.339
+      },
+      {
+        "text": "add skipCheck for prop (#7548)",
+        "true": "feature",
+        "pred": "chore",
+        "confidence": 0.212
+      },
+      {
+        "text": "change console logger helpers to protected",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.267
+      },
+      {
+        "text": "use native `Promise.withResolvers()` in remaining tests",
+        "true": "refactor",
+        "pred": "test",
+        "confidence": 0.549
+      },
+      {
+        "text": "add changelog rearrange script (#21835)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.468
+      },
+      {
+        "text": "prefer pretty-print for objects (#5928)",
+        "true": "refactor",
+        "pred": "feature",
+        "confidence": 0.251
+      },
+      {
+        "text": "release notes for the v20.3.18 release",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.648
+      },
+      {
+        "text": "update fs.deny default in JSDoc (#18514)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.346
+      },
+      {
+        "text": "remove remaining redundant standalone: true",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.383
+      },
+      {
+        "text": "replace 'async/await sleep' with 'sleep().then()' in test 'queryFn' and 'mutationFn' (#10398)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.713
+      },
+      {
+        "text": "Add ReactQueryDevToolsPanel support (#7788)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.391
+      },
+      {
+        "text": "minimum node version v20",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.284
+      },
+      {
+        "text": "forward queryFn errors to the NgZone (#8842)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.369
+      },
+      {
+        "text": "add plugin registry to resources (#21821)",
+        "true": "docs",
+        "pred": "feature",
+        "confidence": 0.432
+      },
+      {
+        "text": "set dom stub type to `never` instead of `{}` (#13915)",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.278
+      },
+      {
+        "text": "add solid devtools panel export to solid devtools (#9551)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.312
+      },
+      {
+        "text": "replace dead Vue Router docs links (#32779)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.483
+      },
+      {
+        "text": "remove docs for migration to nuxt v4",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.604
+      },
+      {
+        "text": "`sentence-case` allow upper-case characters in first word (#531)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.302
+      },
+      {
+        "text": "app.runWithContext() (#7451)",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.269
+      },
+      {
+        "text": "improve consistency of `PublicInstanceProxyHandlers.has` (#13507)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.236
+      },
+      {
+        "text": "`extends: true` correctly inherits all root config properties (#7232)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.283
+      },
+      {
+        "text": "pin dependencies (#507)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.5
+      },
+      {
+        "text": "use 'toStrictEqual' to assert the exact state shape (#11047)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.332
+      },
+      {
+        "text": "support opening fileURL in editor (#20040)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.381
+      },
+      {
+        "text": "preserve placeholder for conditional explicit default slots (#14748)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.343
+      },
+      {
+        "text": "properly set kebab-case props on Vue custom elements",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.418
+      },
+      {
+        "text": "deduplicate pipe diagnostics in preprocessor",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.35
+      },
+      {
+        "text": "add 'vueConfig' with native 'vue' rules for 'vue-query' and 'vue-query-devtools' (#12450)",
+        "true": "chore",
+        "pred": "feature",
+        "confidence": 0.266
+      },
+      {
+        "text": "release v5.1.1 (#12004)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.906
+      },
+      {
+        "text": "mock modules through an import map (#11534)",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.314
+      },
+      {
+        "text": "update filename regex (#18593)",
+        "true": "test",
+        "pred": "chore",
+        "confidence": 0.434
+      },
+      {
+        "text": "remove `<user>project/runtime` devDep (#20389)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.386
+      },
+      {
+        "text": "share generated output paths",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.248
+      },
+      {
+        "text": "remove vite+ alpha banner (#10703)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.307
+      },
+      {
+        "text": "give `issues: write` permission to needs-reproduction workflow",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.301
+      },
+      {
+        "text": "clickable dashboard numbers (#7406)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.198
+      },
+      {
+        "text": "graduate signal forms APIs to public API",
+        "true": "feature",
+        "pred": "docs",
+        "confidence": 0.283
+      },
+      {
+        "text": "allow specifying `moduleDependencies` as an async function (#33504)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.605
+      },
+      {
+        "text": "sort commit type list (#2885)",
+        "true": "docs",
+        "pred": "fix",
+        "confidence": 0.29
+      },
+      {
+        "text": "skip native config compat check when warning is ignored (#23000)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.304
+      },
+      {
+        "text": "print onUserConsoleLog separetly from test run (#8312)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.399
+      },
+      {
+        "text": "escape search text in explorer highlight (#11672)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.267
+      },
+      {
+        "text": "distribute license with all packages #426",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.232
+      },
+      {
+        "text": "add `--repeats` CLI option (#10504)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.465
+      },
+      {
+        "text": "remove unused methods (#8211)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.535
+      },
+      {
+        "text": "type async validator subscription",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.253
+      },
+      {
+        "text": "extract redis client info tag to shared utility",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.235
+      },
+      {
+        "text": "support css `:host` selector by applying css vars on host element (#8830)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.338
+      },
+      {
+        "text": "resolve CLI file filters once instead of per test file (#11935)",
+        "true": "refactor",
+        "pred": "test",
+        "confidence": 0.231
+      },
+      {
+        "text": "use cosmiconfig-typescript-loader v5 to remove ts-node dependency for @commitlint/load (#3633)",
+        "true": "feature",
+        "pred": "chore",
+        "confidence": 0.378
+      },
+      {
+        "text": "add tests for 'clientPersisterOnSuccess' and the 'unmount' returned by 'clientPersister' (#11623)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.752
+      },
+      {
+        "text": "remove dead code that the \"./src/*\" export was hiding from knip (#10919)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.461
+      },
+      {
+        "text": "fix missed updates when passing text vnode to `<component :is>` (#8304)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.321
+      },
+      {
+        "text": "simplifying the ComponentFactory usage",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.366
+      },
+      {
+        "text": "reduce matching screenshot overhead (#10278)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.221
+      },
+      {
+        "text": "relocate cli dts fixtures (#9566)",
+        "true": "test",
+        "pred": "fix",
+        "confidence": 0.212
+      },
+      {
+        "text": "escape imported name in `transformCjsImport` (#24080)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.314
+      },
+      {
+        "text": "add type tests for 'useQueries', 'query' with 'enabled: false' and 'skipToken', and undefined 'initialData' (#12309)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.74
+      },
+      {
+        "text": "properly warn if slot invoked in setup (#12195)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.472
+      },
+      {
+        "text": "update `vitepress-plugin-group-icons` (#9482)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.466
+      },
+      {
+        "text": "properly set initial inXML state based on root ns",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.481
+      },
+      {
+        "text": "add test for error state when one of the queries rejects (#10597)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.598
+      },
+      {
+        "text": "simulate `allowArbitraryExtensions` on resolving type (#13301)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.452
+      },
+      {
+        "text": "update reporter snapshot (#7689)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.301
+      },
+      {
+        "text": "deps (#4562)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.413
+      },
+      {
+        "text": "add a test to ensure new meta gets accepted by fetchQuery",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.331
+      },
+      {
+        "text": "make markdown consistent (#10987)",
+        "true": "docs",
+        "pred": "feature",
+        "confidence": 0.215
+      },
+      {
+        "text": "honor falsy results of rpc exception filters",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.246
+      },
+      {
+        "text": "fix the 'queueMicrotask' typo in the batching method label and description (#12347)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.595
+      },
+      {
+        "text": "port test utils to typescript (#906)",
+        "true": "refactor",
+        "pred": "test",
+        "confidence": 0.301
+      },
+      {
+        "text": "improve description of `app.vue` (#31645)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.282
+      },
+      {
+        "text": "load typescript configs with jiti directly (#5052)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.43
+      },
+      {
+        "text": "Export hybrid analysis from bin",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.372
+      },
+      {
+        "text": "remove unecessary array copy (#12400)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.272
+      },
+      {
+        "text": "update build (#12783)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.771
+      },
+      {
+        "text": "use precise time in 'advanceTimersByTimeAsync' (#9429)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.611
+      },
+      {
+        "text": "guard diagnostic codes against drift from `4.x`",
+        "true": "test",
+        "pred": "chore",
+        "confidence": 0.241
+      },
+      {
+        "text": "await deferred loads of a gateway's scoped enhancers",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.47
+      },
+      {
+        "text": "remove unnecessary async (#9027)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.41
+      },
+      {
+        "text": "eslint setup (#981)",
+        "true": "test",
+        "pred": "chore",
+        "confidence": 0.381
+      },
+      {
+        "text": "vue devtools class attribute (#10849)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.23
+      },
+      {
+        "text": "remove `mlly` from dependencies (#35946)",
+        "true": "refactor",
+        "pred": "chore",
+        "confidence": 0.312
+      },
+      {
+        "text": "add \"Set\" instead of \"includes\" (#9221)",
+        "true": "refactor",
+        "pred": "feature",
+        "confidence": 0.225
+      },
+      {
+        "text": "reject mqtt topics longer than 65535 bytes",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.238
+      },
+      {
+        "text": "update babel monorepo (#2023)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.323
+      },
+      {
+        "text": "remove rpts2",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.567
+      },
+      {
+        "text": "add '<user> skip' banner so the app's 'solid-refresh' does not wrap the bundled Solid runtime (#12517)",
+        "true": "chore",
+        "pred": "docs",
+        "confidence": 0.217
+      },
+      {
+        "text": "replace `semver` with `verkit` (#35713)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.397
+      },
+      {
+        "text": "allow passing down test cases to `toTestSpecification` (#9627)",
+        "true": "feature",
+        "pred": "test",
+        "confidence": 0.38
+      },
+      {
+        "text": "handle dynamic host bindings in preprocessor",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.516
+      },
+      {
+        "text": "add `getGlobalTestNamePattern` method (#8438)",
+        "true": "feature",
+        "pred": "test",
+        "confidence": 0.291
+      },
+      {
+        "text": "add semgrep (#10844)",
+        "true": "chore",
+        "pred": "feature",
+        "confidence": 0.434
+      },
+      {
+        "text": "update e2eUtils puppeteer options",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.261
+      },
+      {
+        "text": "remove karma-js.conf.js",
+        "true": "refactor",
+        "pred": "chore",
+        "confidence": 0.25
+      },
+      {
+        "text": "Update overview.md (#9181)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.494
+      },
+      {
+        "text": "update rolldown (#502)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.509
+      },
+      {
+        "text": "reorganize and reword route resources guide",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.306
+      },
+      {
+        "text": "close men\u00f9 with click outside container",
+        "true": "docs",
+        "pred": "fix",
+        "confidence": 0.247
+      },
+      {
+        "text": "use bg* colors in reporter instead of reversing (#7785)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.289
+      },
+      {
+        "text": "default 'TData' of infinite query options to 'InfiniteData' (#11147)",
+        "true": "fix",
+        "pred": "feature",
+        "confidence": 0.36
+      },
+      {
+        "text": "unpin rollup",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.307
+      },
+      {
+        "text": "improve lightningcss messages (#19880)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.264
+      },
+      {
+        "text": "tweak permissions for pr label task (#10085)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.389
+      },
+      {
+        "text": "add regression test for #35893",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.814
+      },
+      {
+        "text": "fix reduce on reactive arrays to preserve reactivity (#12737)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.402
+      },
+      {
+        "text": "correct the type of `server.middlewareMode` (#23222)",
+        "true": "docs",
+        "pred": "fix",
+        "confidence": 0.354
+      },
+      {
+        "text": "run router tree tests zoneless",
+        "true": "refactor",
+        "pred": "test",
+        "confidence": 0.47
+      },
+      {
+        "text": "support typescript build mode (#9870)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.603
+      },
+      {
+        "text": "handle missing chunk import maps (#23777)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.354
+      },
+      {
+        "text": "fix ComputedRefImpl type build",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.271
+      },
+      {
+        "text": "point cache driver at `.mjs` runtime output (#35263)",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.303
+      },
+      {
+        "text": "fix logic errors found by no-unnecessary-condition rule (#18891)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.25
+      },
+      {
+        "text": "build package using vite (#9517)",
+        "true": "refactor",
+        "pred": "chore",
+        "confidence": 0.379
+      },
+      {
+        "text": "update to sinon/fake-timers v15 and add `setTickMode` to timer controls (#8726)",
+        "true": "feature",
+        "pred": "test",
+        "confidence": 0.276
+      },
+      {
+        "text": "improve `onTestFailed` and `onTestFinished` jsdoc (#9175)",
+        "true": "docs",
+        "pred": "test",
+        "confidence": 0.47
+      },
+      {
+        "text": "add test for 'getObservers' method (#10248)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.762
+      },
+      {
+        "text": "add test for reusing hydrated data on an already-connected host without an eager refetch (#11811)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.531
+      },
+      {
+        "text": "add EdgeOne pages (#21233)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.314
+      },
+      {
+        "text": "add `tripleClick` to interactive api (#5987)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.375
+      },
+      {
+        "text": "observing \"promise\" needs to implicitly observe \"data\" (#9772)",
+        "true": "fix",
+        "pred": "feature",
+        "confidence": 0.227
+      },
+      {
+        "text": "add troubleshooting for MCP setup issues",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.438
+      },
+      {
+        "text": "add `import.meta.resolve` support for ESM config (bundle config loader) (#20962)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.725
+      },
+      {
+        "text": "document deprecated allowSignalWrites option in v19 update guide",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.536
+      },
+      {
+        "text": "add `*?url&no-inline` type and warning for `.json?inline` / `.json?no-inline` (#19566)",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.318
+      },
+      {
+        "text": "make internal invoke event to use the same interface with `handleInvoke` (#18902)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.307
+      },
+      {
+        "text": "wait for the mutation to settle after unmount and assert that no error is logged (#12335)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.436
+      },
+      {
+        "text": "replace hardcoded query keys with 'queryKey()' utility (#10417)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.538
+      },
+      {
+        "text": "use safe hasOwnProperty when parsing query params",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.207
+      },
+      {
+        "text": "set locale to en for nuxt-time tests (#33343)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.563
+      },
+      {
+        "text": "split 'isValidTimeout' rejection cases into separate 'it' blocks (#11071)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.314
+      },
+      {
+        "text": "add benchmark for vite client build (#31118)",
+        "true": "test",
+        "pred": "feature",
+        "confidence": 0.285
+      },
+      {
+        "text": "cover add regression test for hmr in sibling local layers (#35125)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.704
+      },
+      {
+        "text": "correct the NG0207 page",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.508
+      },
+      {
+        "text": "use fresh containers for app mount tests",
+        "true": "chore",
+        "pred": "test",
+        "confidence": 0.44
+      },
+      {
+        "text": "rectify accidentally passing test",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.659
+      },
+      {
+        "text": "ignore importer when resolving Vitest (#6469)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.327
+      },
+      {
+        "text": "remove attrsProxy and slotsProxy from instance (#11390)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.387
+      },
+      {
+        "text": "infer the data and error types of 'getQueryState' from a tagged query key (#11921)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.239
+      },
+      {
+        "text": "update rolldown and support custom configs for native dynamic import vars plugin (#310)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.743
+      },
+      {
+        "text": "add `removeServerPluginContainer` future deprecation (#20437)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.437
+      },
+      {
+        "text": "remove deprecated no-op type only properties (#19985)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.535
+      },
+      {
+        "text": "update to angular 20 stable (#9209)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.435
+      },
+      {
+        "text": "update snap",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.563
+      },
+      {
+        "text": "support in-process execution and persistent analyzer in preprocessor",
+        "true": "refactor",
+        "pred": "feature",
+        "confidence": 0.41
+      },
+      {
+        "text": "add test for imports with unquoted URL",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.825
+      },
+      {
+        "text": "rewrite codebase to use inquirer - UPDATED with current master (#2697)",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.202
+      },
+      {
+        "text": "support `meta` in test options (#9535)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.753
+      },
+      {
+        "text": "experimentally normalise page component names to match route (#33513)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.315
+      },
+      {
+        "text": "footer parser does not escape special chars for regex #4560 (#4634)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.456
+      },
+      {
+        "text": "enforce format check",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.442
+      },
+      {
+        "text": "bump `vite-plugin-checker`",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.433
+      },
+      {
+        "text": "fix Solid README dev commands (#10430)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.348
+      },
+      {
+        "text": "make test-specification options writable (#10154)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.323
+      },
+      {
+        "text": "improve performance of `numberToPos` (#20244)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.332
+      },
+      {
+        "text": "add integration with chrome devtools workspaces (#32084)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.356
+      },
+      {
+        "text": "enable more tests",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.578
+      },
+      {
+        "text": "remove redundant 'vi.mocked' around the 'console.error' spy (#11634)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.265
+      },
+      {
+        "text": "remove unused `event.context.webpack` code (#34502)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.546
+      },
+      {
+        "text": "`dot` reporter leaves pending tests (#9684)",
+        "true": "fix",
+        "pred": "test",
+        "confidence": 0.482
+      },
+      {
+        "text": "introduce default constant for legacyOptionalChaining flag",
+        "true": "refactor",
+        "pred": "feature",
+        "confidence": 0.408
+      },
+      {
+        "text": "add test for rendering an idle mutation row (#10764)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.867
+      },
+      {
+        "text": "add an 'Oxlint' section for using the plugin through 'jsPlugins' (#12041)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.297
+      },
+      {
+        "text": "share existing singleton providers with lazily loaded modules",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.319
+      },
+      {
+        "text": "add cosmiconfig typescript loader",
+        "true": "feature",
+        "pred": "chore",
+        "confidence": 0.331
+      },
+      {
+        "text": "clarify context reuse between test files (#11905)",
+        "true": "docs",
+        "pred": "test",
+        "confidence": 0.267
+      },
+      {
+        "text": "keep nested layout on deferred route during suspended layout switch (#35443)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.666
+      },
+      {
+        "text": "comments on reactivity functions (fixes #4832) (#4836)",
+        "true": "docs",
+        "pred": "feature",
+        "confidence": 0.236
+      },
+      {
+        "text": "replace deprecated 'toBeCalledTimes' with 'toHaveBeenCalledTimes' (#10940)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.244
+      },
+      {
+        "text": "fix trace highlight of shadow dom on webdriverio (#10227)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.265
+      },
+      {
+        "text": "memoize normalized alias map (#36752)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.292
+      },
+      {
+        "text": "map only first frame for trace locations (#11613)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.249
+      },
+      {
+        "text": "support accessing Error as global in template expressions (#7018)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.589
+      },
+      {
+        "text": "cleanup comments, add more `debug` statements (#10953)",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.205
+      },
+      {
+        "text": "release notes for the v22.1.3 release",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.477
+      },
+      {
+        "text": "pin devdependency vue-sfc-transformer to 0.1.4 (main) (#31692)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.734
+      },
+      {
+        "text": "add excludes section (#9041)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.596
+      },
+      {
+        "text": "avoid AsyncResource.bind() per request in interceptor chain (#18136)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.324
+      },
+      {
+        "text": "ensure ?no-inline is not included in the asset url in the production environment (#19496)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.356
+      },
+      {
+        "text": "fix the broken Unicode locale ID link in the i18n guide",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.658
+      },
+      {
+        "text": "v7.2.8",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.586
+      },
+      {
+        "text": "simplify cold-start html project discovery with openFiles",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.316
+      },
+      {
+        "text": "add missing JSDoc to 'createBaseQuery' and the mutation state helper (#11845)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.337
+      },
+      {
+        "text": "write durations in 'count * unit * 1000' order (#12382)",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.263
+      },
+      {
+        "text": "switch to fake timers, replace 'waitFor' with 'advanceTimersByTimeAsync', and use 'sleep().then()' pattern (#9900)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.853
+      },
+      {
+        "text": "add extensible test artifact API (#8987)",
+        "true": "feature",
+        "pred": "test",
+        "confidence": 0.586
+      },
+      {
+        "text": "switch to fake timers and replace 'sleep' with 'advanceTimersByTimeAsync' (#9372)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.824
+      },
+      {
+        "text": "Add OpenAPI Qraft React to the list of community projects (#8588)",
+        "true": "docs",
+        "pred": "feature",
+        "confidence": 0.304
+      },
+      {
+        "text": "document file upload validation examples (#18185)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.577
+      },
+      {
+        "text": "remove jsx examples in favour of browser examples (#6630)",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.419
+      },
+      {
+        "text": "add`build.rolldownOptions.output.sourcemapBaseUrl` support",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.716
+      },
+      {
+        "text": "assert refetch queryKey outside the discarded promise callback (#11461)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.561
+      },
+      {
+        "text": "fs check with svg and relative paths (#19782)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.287
+      },
+      {
+        "text": "Adds deep linking from Chrome Performance panel",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.2
+      },
+      {
+        "text": "add tests for 'MutationFunctionContext' passed to mutationFn and callbacks (#11441)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.739
+      },
+      {
+        "text": "resolve the context class through the class-ref registry (#18517)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.361
+      },
+      {
+        "text": "ensure `provide` / `inject` work in `setup` of `defineNuxtComponent` (#30982)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.431
+      },
+      {
+        "text": "adds browserUrl input support to router links",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.34
+      },
+      {
+        "text": "add custom browser command example to show how to validate input (#10443)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.358
+      },
+      {
+        "text": "v3.3.0-alpha.10",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.68
+      },
+      {
+        "text": "add jest-junit-compatible naming options (#10189)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.347
+      },
+      {
+        "text": "handle newlines when evaluating constants during stringification (#7995)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.593
+      },
+      {
+        "text": "pass AbortSignal to WebMCP tools to handle cancellation",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.235
+      },
+      {
+        "text": "remove synchronous *Sync preprocessor APIs",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.369
+      },
+      {
+        "text": "lock file maintenance (#4818)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.249
+      },
+      {
+        "text": "answer requests whose exception filter throws (#18359)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.269
+      },
+      {
+        "text": "add ci matrix table to test readme (#11899)",
+        "true": "docs",
+        "pred": "test",
+        "confidence": 0.273
+      },
+      {
+        "text": "simplify intro experience",
+        "true": "docs",
+        "pred": "refactor",
+        "confidence": 0.421
+      },
+      {
+        "text": "simplify checkRecursiveUpdates (#11856)",
+        "true": "refactor",
+        "pred": "chore",
+        "confidence": 0.277
+      },
+      {
+        "text": "enable failure-only trace view by default (#11766)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.552
+      },
+      {
+        "text": "update `vitepress-plugin-group-icons` (#21439)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.466
+      },
+      {
+        "text": "split normal script logic",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.28
+      },
+      {
+        "text": "Move the attribute comment to the HTML AST",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.536
+      },
+      {
+        "text": "update marocchino/sticky-pull-request-comment digest to fd19551 (#9674)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.747
+      },
+      {
+        "text": "auto-import the new `nuxt/server` helpers",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.271
+      },
+      {
+        "text": "crawl client module graph when warming dev server (#35870)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.305
+      },
+      {
+        "text": "fix example to include initial state (#10172)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.396
+      },
+      {
+        "text": "add `markdown-it-image-size` to reduce layout shift (#20474)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.351
+      },
+      {
+        "text": "`thresholds` to support maximum uncovered items (#7061)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.745
+      },
+      {
+        "text": "add test for skipping 'notify' when 'setOptions' is called with same options (#10098)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.58
+      },
+      {
+        "text": "update roadmap dates (#34166)",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.563
+      },
+      {
+        "text": "Update tests to use `currentNavigation()`",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.32
+      },
+      {
+        "text": "improve conditional branching (#11185)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.299
+      },
+      {
+        "text": "configure VS Code extension host launch for ngp language service",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.253
+      },
+      {
+        "text": "add exclamation mark support for breaking changes (#4655)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.614
+      },
+      {
+        "text": "improve signal demo example",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.427
+      },
+      {
+        "text": "v3.4.33",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.48
+      },
+      {
+        "text": "implement Angular signal graph tool",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.302
+      },
+      {
+        "text": "remove unused styles",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.511
+      },
+      {
+        "text": "add type tests for 'FocusManager' public surface (#11481)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.619
+      },
+      {
+        "text": "use the right filters for inherited request-scoped middleware",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.26
+      },
+      {
+        "text": "update __vnode of static nodes when patching along the optimized path (#13223)",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.342
+      },
+      {
+        "text": "migrate to oxc (#11367)",
+        "true": "chore",
+        "pred": "feature",
+        "confidence": 0.246
+      },
+      {
+        "text": "add \"provide\" option (#6253)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.68
+      },
+      {
+        "text": "replace the fake host with a 'LitElement' host (#11688)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.263
+      },
+      {
+        "text": "add `isSsrTargetWebWorker` flag to `configEnvironment` hook (#18620)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.594
+      },
+      {
+        "text": "rebuild only when affected (#20559)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.376
+      },
+      {
+        "text": "keep the filters of a middleware's use() with exclude()",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.346
+      },
+      {
+        "text": "remove double quote character added by #2391 (#2456)",
+        "true": "docs",
+        "pred": "refactor",
+        "confidence": 0.344
+      },
+      {
+        "text": "v6.0.0-beta.1",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.882
+      },
+      {
+        "text": "remove 'vi.waitFor' and add 'advanceTimersByTimeAsync' (#9345)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.859
+      },
+      {
+        "text": "add MulterOptions and MulterField interfaces for express platform configuration",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.232
+      },
+      {
+        "text": "replace 'async/await sleep' with 'sleep().then()' in test 'queryFn' and 'mutationFn' (#10400)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.713
+      },
+      {
+        "text": "add commands to communicate betweens server and the browser (#5097)",
+        "true": "feature",
+        "pred": "docs",
+        "confidence": 0.319
+      },
+      {
+        "text": "harden island endpoint against unauthenticated DoS",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.379
+      },
+      {
+        "text": "add support for non-ascii filenames in public assets (#35636)",
+        "true": "test",
+        "pred": "feature",
+        "confidence": 0.567
+      },
+      {
+        "text": "new homepage",
+        "true": "docs",
+        "pred": "chore",
+        "confidence": 0.25
+      },
+      {
+        "text": "update actions/checkout digest to df4cb1c (#22636)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.449
+      },
+      {
+        "text": "update our test authoring guidance",
+        "true": "docs",
+        "pred": "test",
+        "confidence": 0.652
+      },
+      {
+        "text": "add information to the workspace docs on how to use extends (#6169)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.52
+      },
+      {
+        "text": "manage 'eslint' and '<user>eslint/parser' with pnpm 'catalog' (#11785)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.534
+      },
+      {
+        "text": "use `startVitest` instead of `execa` (#5439)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.332
+      },
+      {
+        "text": "split 'should pass meta to mutation' into separate success and error tests (#10947)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.426
+      },
+      {
+        "text": "add unit tests for watch strategies (#32138)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.778
+      },
+      {
+        "text": "fix signal forms compat examples",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.585
+      },
+      {
+        "text": "replace 'toBeDefined'/'toBeFalsy' with exact-value assertions (#11123)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.327
+      },
+      {
+        "text": "add subpath imports test from sub directory (#22059)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.33
+      },
+      {
+        "text": "fix directives guide issues and inaccuracies",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.584
+      },
+      {
+        "text": "publish v12.4.1 release",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.741
+      },
+      {
+        "text": "use 'toHaveStyle' matcher in the 'style' merge cases (#10846)",
+        "true": "test",
+        "pred": "feature",
+        "confidence": 0.238
+      },
+      {
+        "text": "remove fullTemplateTypeCheck from the template type checking guide",
+        "true": "docs",
+        "pred": "refactor",
+        "confidence": 0.482
+      },
+      {
+        "text": "inline dev-id value in CSS selector (#22736)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.312
+      },
+      {
+        "text": "add nuxt `appSecret` (#35874)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.462
+      },
+      {
+        "text": "rename 'console.error' spy from 'onErrorMock' to 'consoleMock' to align with react-query (#11603)",
+        "true": "test",
+        "pred": "fix",
+        "confidence": 0.241
+      },
+      {
+        "text": "set build outputs when restoring vue cache (#35895)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.283
+      },
+      {
+        "text": "extract function `isReservedPrefix` (#3265)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.258
+      },
+      {
+        "text": "pass react framework to TanStack CLI (#22397)",
+        "true": "fix",
+        "pred": "docs",
+        "confidence": 0.237
+      },
+      {
+        "text": "keep constants import on one line for prettier",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.375
+      },
+      {
+        "text": "clarify disabled FormArray value behavior",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.484
+      },
+      {
+        "text": "align prod mode runtime type generation with defineProps",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.31
+      },
+      {
+        "text": "update attribute testing guide to include canonical example with local component",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.582
+      },
+      {
+        "text": "bump jest, puppeteer and use official rollup terser plugin",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.306
+      },
+      {
+        "text": "remove strip-ansi for a node built-in (#18630)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.393
+      },
+      {
+        "text": "switch to fake timers, use 'sleep(10)' and 'queryKey()', and unify test names with 'should' (#11669)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.731
+      },
+      {
+        "text": "apply API options without browser config (#10852)",
+        "true": "fix",
+        "pred": "feature",
+        "confidence": 0.29
+      },
+      {
+        "text": "accept module metadata as the root module (#18523)",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.301
+      },
+      {
+        "text": "add component input binding support for router resources",
+        "true": "refactor",
+        "pred": "feature",
+        "confidence": 0.465
+      },
+      {
+        "text": "v6.0.0",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.796
+      },
+      {
+        "text": "report diagnostic on specific imports item array",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.26
+      },
+      {
+        "text": "add license section (#21071)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.596
+      },
+      {
+        "text": "improve explanation of global middleware (#32855)",
+        "true": "docs",
+        "pred": "fix",
+        "confidence": 0.291
+      },
+      {
+        "text": "skip importing pages for island prefetch in dev (#36730)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.267
+      },
+      {
+        "text": "clarify `expect` docs (#7853)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.86
+      },
+      {
+        "text": "export `defaultExternalConditions` (#20279)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.283
+      },
+      {
+        "text": "Update determineLongestAnimation to account for playback rate",
+        "true": "refactor",
+        "pred": "docs",
+        "confidence": 0.278
+      },
+      {
+        "text": "support relative imported types in macros",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.484
+      },
+      {
+        "text": "remove publishCI diff",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.495
+      },
+      {
+        "text": "do not replace `global` with `globalThis` (#32130)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.427
+      },
+      {
+        "text": "fix view injector integration spec",
+        "true": "test",
+        "pred": "chore",
+        "confidence": 0.219
+      },
+      {
+        "text": "assert 'updateState' sets keys missing from the update to 'undefined' (#11609)",
+        "true": "test",
+        "pred": "docs",
+        "confidence": 0.231
+      },
+      {
+        "text": "ignore style v-bind in double slash comments (#5409)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.271
+      },
+      {
+        "text": "inject requests into the node adapter like the fastify one (#18435)",
+        "true": "feature",
+        "pred": "refactor",
+        "confidence": 0.27
+      },
+      {
+        "text": "time out the stock Ubuntu job when apt hangs (#5123)",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.276
+      },
+      {
+        "text": "allow specifying helpUrl via config (#2180)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.489
+      },
+      {
+        "text": "add tests for in-page panel visibility while a PiP window is open (#10762)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.642
+      },
+      {
+        "text": "update build (#13799)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.771
+      },
+      {
+        "text": "default isCustomElement for sfc playground",
+        "true": "chore",
+        "pred": "fix",
+        "confidence": 0.262
+      },
+      {
+        "text": "parse each module once in the keyed-functions transform (#37042)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.302
+      },
+      {
+        "text": "use `http-proxy-3` (#20402)",
+        "true": "refactor",
+        "pred": "chore",
+        "confidence": 0.319
+      },
+      {
+        "text": "normalize slashes when mapping controllers for middleware (#18075)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.386
+      },
+      {
+        "text": "refactor and add mutation-property-order rule (#9191)",
+        "true": "feature",
+        "pred": "test",
+        "confidence": 0.23
+      },
+      {
+        "text": "enable import/no-extraneous-dependencies (#983)",
+        "true": "test",
+        "pred": "chore",
+        "confidence": 0.296
+      },
+      {
+        "text": "add `import.meta.env.DEV` example (#20352)",
+        "true": "docs",
+        "pred": "feature",
+        "confidence": 0.49
+      },
+      {
+        "text": "remove extends ImportMeta from ModuleRunnerImportMeta (#21710)",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.278
+      },
+      {
+        "text": "update nitro (main) (#36433)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.294
+      },
+      {
+        "text": "clarify route resource parameters",
+        "true": "docs",
+        "pred": "refactor",
+        "confidence": 0.266
+      },
+      {
+        "text": "Version Packages (#10706)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.555
+      },
+      {
+        "text": "upgrade @antfu/install-pkg (#6328)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.245
+      },
+      {
+        "text": "handle escaped delimiters in inline template and styles highlighting",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.25
+      },
+      {
+        "text": "use typescript pool in toTestSpecification (#11451)",
+        "true": "fix",
+        "pred": "test",
+        "confidence": 0.235
+      },
+      {
+        "text": "restructure profiler and directive forest code",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.469
+      },
+      {
+        "text": "enable `typedPages` with `compatibilityVersion: 5` (#35789)",
+        "true": "feature",
+        "pred": "chore",
+        "confidence": 0.247
+      },
+      {
+        "text": "suggest `usePolling` for `EISDIR` error when watching files (#21578)",
+        "true": "docs",
+        "pred": "fix",
+        "confidence": 0.295
+      },
+      {
+        "text": "add nub package manager support (#23019)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.539
+      },
+      {
+        "text": "fix typo in worker-options.md (#21897)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.629
+      },
+      {
+        "text": "use `vp` in nightly release script",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.403
+      },
+      {
+        "text": "mark date and limit signal forms APIs public",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.251
+      },
+      {
+        "text": "update actions/labeler (#10278)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.495
+      },
+      {
+        "text": "keep failed render headers off the thrown error (#36586)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.484
+      },
+      {
+        "text": "recommend status over pending in data fetching (#35694)",
+        "true": "docs",
+        "pred": "fix",
+        "confidence": 0.296
+      },
+      {
+        "text": "v5.71.0",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.907
+      },
+      {
+        "text": "respect nested test.only within describe.only (fix #9021) (#9213)",
+        "true": "fix",
+        "pred": "test",
+        "confidence": 0.498
+      },
+      {
+        "text": "update agentscan (#11010)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.563
+      },
+      {
+        "text": "link module graphs one at a time (#11096)",
+        "true": "fix",
+        "pred": "fix",
+        "confidence": 0.479
+      },
+      {
+        "text": "export ObjectPlugin and FunctionPlugin types (#8946)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.302
+      },
+      {
+        "text": "add injection context tests (#7993)",
+        "true": "chore",
+        "pred": "test",
+        "confidence": 0.647
+      },
+      {
+        "text": "add aria tag on Nuxt logo (#32429)",
+        "true": "fix",
+        "pred": "docs",
+        "confidence": 0.356
+      },
+      {
+        "text": "add timeout to `untilBrowserLog` (#20905)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.282
+      },
+      {
+        "text": "decrease if checks when prerendering (#32455)",
+        "true": "refactor",
+        "pred": "fix",
+        "confidence": 0.514
+      },
+      {
+        "text": "fix typo in heading of method definition for \"toHaveBeenCalledExactlyOnceWith\" (#9925)",
+        "true": "docs",
+        "pred": "docs",
+        "confidence": 0.323
+      },
+      {
+        "text": "optimize size retrieval in createInstrumentations (#13759)",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.277
+      },
+      {
+        "text": "simplify 'queryFn' (#9495)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.331
+      },
+      {
+        "text": "remove deprecated typecheck and runner types (#8199)",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.444
+      },
+      {
+        "text": "use native binary for getting process start time on windows (#24087)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.258
+      },
+      {
+        "text": "remove short syntax support in defineSlots()",
+        "true": "fix",
+        "pred": "feature",
+        "confidence": 0.313
+      },
+      {
+        "text": "added @commitlint/config-nx-scopes for nx monorepos (#3913)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.244
+      },
+      {
+        "text": "support `--inspect` (#6433)",
+        "true": "feature",
+        "pred": "feature",
+        "confidence": 0.964
+      },
+      {
+        "text": "v5.69.3",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.824
+      },
+      {
+        "text": "use workspace vue dep for sfc-playground",
+        "true": "chore",
+        "pred": "refactor",
+        "confidence": 0.239
+      },
+      {
+        "text": "add `onTestsRerun` method to global setup context (#6803)",
+        "true": "feature",
+        "pred": "test",
+        "confidence": 0.3
+      },
+      {
+        "text": "include builder-env types in nitro context when `nitroViteEnvironment` is enabled (#36558)",
+        "true": "fix",
+        "pred": "refactor",
+        "confidence": 0.287
+      },
+      {
+        "text": "remove GitLab clone depth limitation (#4105)",
+        "true": "docs",
+        "pred": "refactor",
+        "confidence": 0.262
+      },
+      {
+        "text": "fix typo (#11535) [ci skip]",
+        "true": "chore",
+        "pred": "docs",
+        "confidence": 0.405
+      },
+      {
+        "text": "implement module mocking in browser mode (#5765)",
+        "true": "feature",
+        "pred": "fix",
+        "confidence": 0.304
+      },
+      {
+        "text": "use 'eslint-config-preact' through a flat config and run 'test:eslint' (#11953)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.509
+      },
+      {
+        "text": "improve performance of forks pool (#5592)",
+        "true": "refactor",
+        "pred": "refactor",
+        "confidence": 0.321
+      },
+      {
+        "text": "rename 'mutationFn' param to '_variables' in 'MutationFunctionContext' tests (#11448)",
+        "true": "test",
+        "pred": "test",
+        "confidence": 0.367
+      },
+      {
+        "text": "load one graphql build and run the code-first suite (#18409)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.245
+      },
+      {
+        "text": "enable pnpm trustPolicy: no-downgrade (#15330)",
+        "true": "chore",
+        "pred": "chore",
+        "confidence": 0.608
+      },
+      {
+        "text": "replace '\u0130stanbul' with '\u0130pek' in the Unicode lowercasing fixtures to clear 'cspell' warnings (#12549)",
+        "true": "test",
+        "pred": "refactor",
+        "confidence": 0.291
+      }
+    ]
+  },
+  "wild": {
+    "accuracy": 0.5,
+    "items": [
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "Added, Plus and Minus features for commits",
+        "note": "",
+        "tokens": [
+          "added",
+          "plus",
+          "and",
+          "minus",
+          "features",
+          "for",
+          "commits"
+        ],
+        "pred": "feature",
+        "confidence": 0.291,
+        "correct": true,
+        "known_tokens": 4
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "Changed overall rate to earlier rate for faster reaction time to activity drops, added lines added and deleted",
+        "note": "ambiguous: change + addition",
+        "tokens": [
+          "changed",
+          "overall",
+          "rate",
+          "to",
+          "earlier",
+          "rate",
+          "for",
+          "faster",
+          "reaction",
+          "time",
+          "to",
+          "activity",
+          "drops",
+          "added",
+          "lines",
+          "added",
+          "and",
+          "deleted"
+        ],
+        "pred": "feature",
+        "confidence": 0.288,
+        "correct": true,
+        "known_tokens": 10
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "added connected indicator",
+        "note": "",
+        "tokens": [
+          "added",
+          "connected",
+          "indicator"
+        ],
+        "pred": "feature",
+        "confidence": 0.341,
+        "correct": true,
+        "known_tokens": 2
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "Merged email and latest build",
+        "note": "merge",
+        "tokens": [
+          "merged",
+          "email",
+          "and",
+          "latest",
+          "build"
+        ],
+        "pred": "chore",
+        "confidence": 0.268,
+        "correct": true,
+        "known_tokens": 4
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "Merge <user>'s email notification system",
+        "note": "merge; name masked",
+        "tokens": [
+          "merge",
+          "<user>",
+          "s",
+          "email",
+          "notification",
+          "system"
+        ],
+        "pred": "chore",
+        "confidence": 0.258,
+        "correct": false,
+        "known_tokens": 3
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "75% completion",
+        "note": "vague",
+        "tokens": [
+          "75",
+          "completion"
+        ],
+        "pred": "fix",
+        "confidence": 0.201,
+        "correct": false,
+        "known_tokens": 0
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "Ignore .env.example",
+        "note": "",
+        "tokens": [
+          "ignore",
+          "environment",
+          "example"
+        ],
+        "pred": "docs",
+        "confidence": 0.376,
+        "correct": false,
+        "known_tokens": 3
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "Deleted .env.example. i aint taking no risk, hell naw",
+        "note": "slang",
+        "tokens": [
+          "deleted",
+          "environment",
+          "example",
+          "i",
+          "is",
+          "not",
+          "taking",
+          "no",
+          "risk",
+          "hell",
+          "naw"
+        ],
+        "pred": "fix",
+        "confidence": 0.309,
+        "correct": false,
+        "known_tokens": 6
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "Merge branch 'main' of <url>",
+        "note": "merge",
+        "tokens": [
+          "merge",
+          "branch",
+          "main",
+          "of",
+          "<url>"
+        ],
+        "pred": "chore",
+        "confidence": 0.312,
+        "correct": true,
+        "known_tokens": 4
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "Made and debugged email notif system. Hoping it works",
+        "note": "abbreviation; hedging",
+        "tokens": [
+          "made",
+          "and",
+          "debugged",
+          "email",
+          "notif",
+          "system",
+          "hoping",
+          "it",
+          "works"
+        ],
+        "pred": "docs",
+        "confidence": 0.224,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "Latest updates",
+        "note": "vague",
+        "tokens": [
+          "latest",
+          "updates"
+        ],
+        "pred": "refactor",
+        "confidence": 0.221,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "missing email, notifications, deadline refinement",
+        "note": "telegraphic",
+        "tokens": [
+          "missing",
+          "email",
+          "notifications",
+          "deadline",
+          "refinement"
+        ],
+        "pred": "fix",
+        "confidence": 0.264,
+        "correct": false,
+        "known_tokens": 1
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "build deadline prediction next",
+        "note": "\"build\" is also a chore type",
+        "tokens": [
+          "build",
+          "deadline",
+          "prediction",
+          "next"
+        ],
+        "pred": "chore",
+        "confidence": 0.345,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "source": "comdoc",
+        "label": "fix",
+        "text": "Broken version to fix v1, db needs to accept past version of code",
+        "note": "",
+        "tokens": [
+          "broken",
+          "version",
+          "to",
+          "fix",
+          "v1",
+          "database",
+          "needs",
+          "to",
+          "accept",
+          "past",
+          "version",
+          "of",
+          "code"
+        ],
+        "pred": "docs",
+        "confidence": 0.296,
+        "correct": false,
+        "known_tokens": 10
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "Initial commit of project",
+        "note": "",
+        "tokens": [
+          "initial",
+          "commit",
+          "of",
+          "project"
+        ],
+        "pred": "chore",
+        "confidence": 0.238,
+        "correct": true,
+        "known_tokens": 4
+      },
+      {
+        "source": "comdoc",
+        "label": "chore",
+        "text": "first commit",
+        "note": "",
+        "tokens": [
+          "first",
+          "commit"
+        ],
+        "pred": "refactor",
+        "confidence": 0.214,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "source": "comdoc",
+        "label": "feature",
+        "text": "Scope dashboard, flags and notifications per tracked repo; merge upstream pace changes",
+        "note": "",
+        "tokens": [
+          "scope",
+          "dashboard",
+          "flags",
+          "and",
+          "notifications",
+          "per",
+          "tracked",
+          "repo",
+          "merge",
+          "upstream",
+          "pace",
+          "changes"
+        ],
+        "pred": "feature",
+        "confidence": 0.259,
+        "correct": true,
+        "known_tokens": 6
+      },
+      {
+        "source": "express",
+        "label": "test",
+        "text": "skip QUERY method test (#5628)",
+        "note": "",
+        "tokens": [
+          "skip",
+          "query",
+          "method",
+          "test"
+        ],
+        "pred": "test",
+        "confidence": 0.576,
+        "correct": true,
+        "known_tokens": 4
+      },
+      {
+        "source": "express",
+        "label": "test",
+        "text": "Remove duplicate tests in res.location and res.jsonp (#6996)",
+        "note": "",
+        "tokens": [
+          "remove",
+          "duplicate",
+          "tests",
+          "in",
+          "res",
+          "location",
+          "and",
+          "res",
+          "jsonp"
+        ],
+        "pred": "test",
+        "confidence": 0.524,
+        "correct": true,
+        "known_tokens": 6
+      },
+      {
+        "source": "express",
+        "label": "refactor",
+        "text": "Polish HTML structure of the response in the res.redirect() function (#5167)",
+        "note": "",
+        "tokens": [
+          "polish",
+          "html",
+          "structure",
+          "of",
+          "the",
+          "response",
+          "in",
+          "the",
+          "res",
+          "redirect",
+          "function"
+        ],
+        "pred": "refactor",
+        "confidence": 0.323,
+        "correct": true,
+        "known_tokens": 9
+      },
+      {
+        "source": "express",
+        "label": "docs",
+        "text": "Update Security.md",
+        "note": "",
+        "tokens": [
+          "update",
+          "security",
+          "md"
+        ],
+        "pred": "chore",
+        "confidence": 0.422,
+        "correct": false,
+        "known_tokens": 3
+      },
+      {
+        "source": "express",
+        "label": "chore",
+        "text": "Upgrade `content-disposition` (#7233)",
+        "note": "",
+        "tokens": [
+          "upgrade",
+          "content",
+          "disposition"
+        ],
+        "pred": "docs",
+        "confidence": 0.259,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "source": "express",
+        "label": "chore",
+        "text": "remove examples from the ignore",
+        "note": "",
+        "tokens": [
+          "remove",
+          "examples",
+          "from",
+          "the",
+          "ignore"
+        ],
+        "pred": "docs",
+        "confidence": 0.37,
+        "correct": false,
+        "known_tokens": 5
+      },
+      {
+        "source": "express",
+        "label": "refactor",
+        "text": "Refactor: simplify `acceptsLanguages` implementation using spread operator (#6137)",
+        "note": "",
+        "tokens": [
+          "refactor",
+          "simplify",
+          "accepts",
+          "languages",
+          "implementation",
+          "using",
+          "spread",
+          "operator"
+        ],
+        "pred": "refactor",
+        "confidence": 0.356,
+        "correct": true,
+        "known_tokens": 4
+      },
+      {
+        "source": "express",
+        "label": "docs",
+        "text": "Add note on how to update docs for new release (#5541)",
+        "note": "",
+        "tokens": [
+          "add",
+          "note",
+          "on",
+          "how",
+          "to",
+          "update",
+          "documentation",
+          "for",
+          "new",
+          "release"
+        ],
+        "pred": "docs",
+        "confidence": 0.883,
+        "correct": true,
+        "known_tokens": 10
+      },
+      {
+        "source": "express",
+        "label": "chore",
+        "text": "remove minor version pinning from ci (#5722)",
+        "note": "",
+        "tokens": [
+          "remove",
+          "minor",
+          "version",
+          "pinning",
+          "from",
+          "ci"
+        ],
+        "pred": "chore",
+        "confidence": 0.502,
+        "correct": true,
+        "known_tokens": 5
+      },
+      {
+        "source": "express",
+        "label": "fix",
+        "text": "Ignore `expires` and `maxAge` in `res.clearCookie()` (#5792)",
+        "note": "",
+        "tokens": [
+          "ignore",
+          "expires",
+          "and",
+          "max",
+          "age",
+          "in",
+          "res",
+          "clear",
+          "cookie"
+        ],
+        "pred": "fix",
+        "confidence": 0.241,
+        "correct": true,
+        "known_tokens": 6
+      },
+      {
+        "source": "express",
+        "label": "fix",
+        "text": "Fix routing requests without method",
+        "note": "",
+        "tokens": [
+          "fix",
+          "routing",
+          "requests",
+          "without",
+          "method"
+        ],
+        "pred": "refactor",
+        "confidence": 0.261,
+        "correct": false,
+        "known_tokens": 5
+      },
+      {
+        "source": "express",
+        "label": "fix",
+        "text": "Fix handling very large stacks of sync middleware",
+        "note": "",
+        "tokens": [
+          "fix",
+          "handling",
+          "very",
+          "large",
+          "stacks",
+          "of",
+          "sync",
+          "middleware"
+        ],
+        "pred": "fix",
+        "confidence": 0.377,
+        "correct": true,
+        "known_tokens": 5
+      },
+      {
+        "source": "express",
+        "label": "chore",
+        "text": "Replace Appveyor windows testing with GHA (#5599)",
+        "note": "",
+        "tokens": [
+          "replace",
+          "appveyor",
+          "windows",
+          "testing",
+          "with",
+          "gha"
+        ],
+        "pred": "test",
+        "confidence": 0.303,
+        "correct": false,
+        "known_tokens": 4
+      },
+      {
+        "source": "express",
+        "label": "chore",
+        "text": "Remove unused `depd` dependency",
+        "note": "",
+        "tokens": [
+          "remove",
+          "unused",
+          "depd",
+          "dependency"
+        ],
+        "pred": "refactor",
+        "confidence": 0.507,
+        "correct": false,
+        "known_tokens": 3
+      },
+      {
+        "source": "express",
+        "label": "fix",
+        "text": "call callback once on listen error",
+        "note": "",
+        "tokens": [
+          "call",
+          "callback",
+          "once",
+          "on",
+          "listen",
+          "error"
+        ],
+        "pred": "fix",
+        "confidence": 0.461,
+        "correct": true,
+        "known_tokens": 6
+      },
+      {
+        "source": "express",
+        "label": "docs",
+        "text": "improve step update documentation",
+        "note": "",
+        "tokens": [
+          "improve",
+          "step",
+          "update",
+          "documentation"
+        ],
+        "pred": "docs",
+        "confidence": 0.714,
+        "correct": true,
+        "known_tokens": 3
+      },
+      {
+        "source": "express",
+        "label": "fix",
+        "text": "Improved fix for open redirect allow list bypass",
+        "note": "",
+        "tokens": [
+          "improved",
+          "fix",
+          "for",
+          "open",
+          "redirect",
+          "allow",
+          "list",
+          "bypass"
+        ],
+        "pred": "docs",
+        "confidence": 0.266,
+        "correct": false,
+        "known_tokens": 6
+      },
+      {
+        "source": "express",
+        "label": "docs",
+        "text": "update history.md for acceptParams change (#6177)",
+        "note": "",
+        "tokens": [
+          "update",
+          "history",
+          "md",
+          "for",
+          "accept",
+          "params",
+          "change"
+        ],
+        "pred": "docs",
+        "confidence": 0.402,
+        "correct": true,
+        "known_tokens": 6
+      },
+      {
+        "source": "express",
+        "label": "fix",
+        "text": "Use object with null prototype for settings closes #4835",
+        "note": "",
+        "tokens": [
+          "use",
+          "object",
+          "with",
+          "null",
+          "prototype",
+          "for",
+          "settings",
+          "closes"
+        ],
+        "pred": "refactor",
+        "confidence": 0.305,
+        "correct": false,
+        "known_tokens": 7
+      }
+    ],
+    "keyword_rule_accuracy": 0.5833,
+    "macro_f1": 0.534
+  },
+  "stress": {
+    "accuracy": 0.25,
+    "items": [
+      {
+        "challenge": "misspelling",
+        "label": "fix",
+        "text": "fixd teh login bug",
+        "tokens": [
+          "fixed",
+          "the",
+          "login",
+          "bug"
+        ],
+        "pred": "docs",
+        "confidence": 0.324,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "challenge": "misspelling",
+        "label": "docs",
+        "text": "udpate readme instalation steps",
+        "tokens": [
+          "update",
+          "readme",
+          "instalation",
+          "steps"
+        ],
+        "pred": "docs",
+        "confidence": 0.389,
+        "correct": true,
+        "known_tokens": 2
+      },
+      {
+        "challenge": "slang",
+        "label": "chore",
+        "text": "wip dont merge yet lol",
+        "tokens": [
+          "work",
+          "in",
+          "progress",
+          "dont",
+          "merge",
+          "yet",
+          "lol"
+        ],
+        "pred": "fix",
+        "confidence": 0.32,
+        "correct": false,
+        "known_tokens": 3
+      },
+      {
+        "challenge": "slang",
+        "label": "fix",
+        "text": "finally squashed that nasty bug ngl",
+        "tokens": [
+          "finally",
+          "squashed",
+          "that",
+          "nasty",
+          "bug",
+          "ngl"
+        ],
+        "pred": "docs",
+        "confidence": 0.268,
+        "correct": false,
+        "known_tokens": 1
+      },
+      {
+        "challenge": "abbreviation",
+        "label": "fix",
+        "text": "fix btn cfg w/ env vars",
+        "tokens": [
+          "fix",
+          "button",
+          "config",
+          "with",
+          "environment",
+          "vars"
+        ],
+        "pred": "feature",
+        "confidence": 0.229,
+        "correct": false,
+        "known_tokens": 6
+      },
+      {
+        "challenge": "taglish",
+        "label": "fix",
+        "text": "inayos na yung login",
+        "tokens": [
+          "fixed",
+          "the",
+          "login"
+        ],
+        "pred": "docs",
+        "confidence": 0.324,
+        "correct": false,
+        "known_tokens": 2
+      },
+      {
+        "challenge": "taglish",
+        "label": "feature",
+        "text": "dinagdag ung dark mode sa settings",
+        "tokens": [
+          "added",
+          "the",
+          "dark",
+          "mode",
+          "sa",
+          "settings"
+        ],
+        "pred": "fix",
+        "confidence": 0.249,
+        "correct": false,
+        "known_tokens": 5
+      },
+      {
+        "challenge": "unknown words",
+        "label": "feature",
+        "text": "add zxqv frobnicator to pipeline",
+        "tokens": [
+          "add",
+          "zxqv",
+          "frobnicator",
+          "to",
+          "pipeline"
+        ],
+        "pred": "feature",
+        "confidence": 0.598,
+        "correct": true,
+        "known_tokens": 2
+      },
+      {
+        "challenge": "ambiguous",
+        "label": "fix",
+        "text": "update fix for docs",
+        "tokens": [
+          "update",
+          "fix",
+          "for",
+          "documentation"
+        ],
+        "pred": "docs",
+        "confidence": 0.892,
+        "correct": false,
+        "known_tokens": 4
+      },
+      {
+        "challenge": "ambiguous",
+        "label": "refactor",
+        "text": "clean up tests",
+        "tokens": [
+          "clean",
+          "up",
+          "tests"
+        ],
+        "pred": "test",
+        "confidence": 0.636,
+        "correct": false,
+        "known_tokens": 3
+      },
+      {
+        "challenge": "negation",
+        "label": "fix",
+        "text": "do not crash when config is missing",
+        "tokens": [
+          "do",
+          "not",
+          "crash",
+          "when",
+          "config",
+          "is",
+          "missing"
+        ],
+        "pred": "fix",
+        "confidence": 0.729,
+        "correct": true,
+        "known_tokens": 6
+      },
+      {
+        "challenge": "vague",
+        "label": "chore",
+        "text": "stuff",
+        "tokens": [
+          "stuff"
+        ],
+        "pred": "fix",
+        "confidence": 0.201,
+        "correct": false,
+        "known_tokens": 0
+      }
+    ]
+  },
+  "top_features": {
+    "chore": [
+      "0",
+      "v5",
+      "update",
+      "1",
+      "pnpm",
+      "ci",
+      "workflow",
+      "release",
+      "changelog",
+      "v6"
+    ],
+    "docs": [
+      "documentation",
+      "clarify",
+      "guide",
+      "example",
+      "add",
+      "examples",
+      "fix",
+      "document",
+      "section",
+      "reference"
+    ],
+    "feature": [
+      "support",
+      "add",
+      "introduce",
+      "allow",
+      "option",
+      "rolldown",
+      "update rolldown",
+      "server",
+      "config",
+      "adapter"
+    ],
+    "fix": [
+      "preserve",
+      "handle",
+      "prevent",
+      "keep",
+      "when",
+      "not",
+      "on",
+      "errors",
+      "during",
+      "scoped"
+    ],
+    "refactor": [
+      "remove",
+      "optimize",
+      "internal",
+      "replace",
+      "move",
+      "map",
+      "to typescript",
+      "logic",
+      "module",
+      "constant"
+    ],
+    "test": [
+      "tests",
+      "test",
+      "tests for",
+      "test for",
+      "snapshot",
+      "add test",
+      "assert",
+      "for",
+      "add tests",
+      "with"
+    ]
+  }
+}

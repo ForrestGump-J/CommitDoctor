@@ -5,6 +5,12 @@
   const $$ = (sel) => [...document.querySelectorAll(sel)];
   const esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // NLP commit-intent label from src/intent.js; low-confidence guesses get a "?".
+  function intentTag(it) {
+    if (!it) return '';
+    const title = `Commit intent (guessed from the message): ${it.intent}, ${Math.round(it.confidence * 100)}% confidence`;
+    return `<span class="tag intent intent-${esc(it.intent)}${it.sure ? '' : ' unsure'}" title="${esc(title)}">${esc(it.intent)}${it.sure ? '' : '?'}</span>`;
+  }
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : null);
   const VIEWS = ['digest', 'team', 'timeline'];
@@ -612,7 +618,7 @@
           const sha = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(c.short_sha)}</a>` : esc(c.short_sha);
           const first = String(c.message).split('\n')[0] || '(no message)';
           return `<li><span class="c-time">${esc(c.time)}</span>
-            <div><span class="c-msg">${esc(first)}</span>${c.is_merge ? '<span class="tag">merge</span>' : ''}
+            <div><span class="c-msg">${esc(first)}</span>${c.is_merge ? '<span class="tag">merge</span>' : intentTag(c.intent)}
             <span class="c-meta">${esc(c.contributor)}${c.branch ? ` on ${esc(c.branch)}` : ''}, ${sha}</span></div></li>`;
         }).join('')}</ol>`;
     }).join('');

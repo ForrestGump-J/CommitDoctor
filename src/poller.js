@@ -71,7 +71,8 @@ async function ghFetch(url, token, { method = 'GET', body } = {}) {
     method,
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: {
-      Authorization: `Bearer ${token}`,
+      // No token is fine for public repos (GitHub allows 60 unauthenticated calls/hour).
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       Accept: 'application/vnd.github+json',
       'User-Agent': UA,
       'X-GitHub-Api-Version': '2022-11-28',
@@ -205,4 +206,4 @@ function startPoller({ db, config, log = console, intervalMs = 3 * 60_000 }) {
   return () => clearInterval(timer);
 }
 
-module.exports = { ghFetch, API, startPoller, pollOneRepo, testRepoAccess, parseApiCommit, fetchCommitDetail, nextUrl };
+module.exports = { ghFetch, API, LOOKBACK_MS, startPoller, pollOneRepo, testRepoAccess, fetchNewCommits, parseApiCommit, fetchCommitDetail, nextUrl };

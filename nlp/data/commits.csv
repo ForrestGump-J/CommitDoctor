@@ -1,0 +1,2101 @@
+repo,label,text
+nestjs/nest,fix,share existing singleton providers with lazily loaded modules
+TanStack/query,test,add test for suspending only pending queries when some already have cached data (#10126)
+TanStack/query,chore,manage 'react' eslint plugins with pnpm 'catalog' (#11781)
+nuxt/nuxt,fix,make asyncData properties reactive in Options API (#34119)
+TanStack/query,chore,update marocchino/sticky-pull-request-comment digest to fd19551 (#9674)
+vuejs/core,chore,update lint (#12746)
+angular/angular,refactor,keep the `http-xhr-backend` migration idempotent
+vuejs/core,chore,v3.5.3
+angular/angular,test,run declaration-only compliance test suite against NGP (#71313)
+vuejs/core,fix,identifiers in switch-case should not be inferred as references (#13923)
+vitest-dev/vitest,refactor,use experimental `meta.resolve` flag instead of a custom loader (#8567)
+vitest-dev/vitest,docs,remove vite+ alpha banner (#10703)
+vitejs/vite,test,fix backend-integration build test flaky fail (#17913)
+angular/angular,refactor,add component input binding support for router resources
+vitest-dev/vitest,test,print onUserConsoleLog separetly from test run (#8312)
+nestjs/nest,fix,limit the size of the messages a client may send
+angular/angular,fix,preserve leading commas in animation definitions
+vitest-dev/vitest,feature,add extensible test artifact API (#8987)
+vitest-dev/vitest,feature,implement `connect` option for `playwright` browser provider (#7915)
+TanStack/query,chore,consistent casing of devtools types (#7971)
+angular/angular,docs,update e2e-testing guide and skill for official integrations
+angular/angular,fix,use Object.hasOwn to handle null-prototype objects in toStylingKeyValueArray
+nuxt/nuxt,refactor,memoize normalized alias map (#36752)
+vuejs/core,chore,use `packageManager` field (#5911)
+vitejs/vite,fix,overlay not appearing when multiple vite clients were loaded (#18647)
+nestjs/nest,fix,stop a kafka connection attempt once the client is closed (#18512)
+TanStack/query,fix,replace recursive 'Hit' type to avoid excessively deep type instantiation in 'useInfiniteQuery' (#12461)
+TanStack/query,feature,ensureInfiniteQueryData (#8048)
+TanStack/query,docs,Fix broken links on QueryCache reference page (#9033)
+vitest-dev/vitest,feature,add link to open playwright trace (#11059)
+vuejs/core,fix,fix node clone edge case caused by AST reuse (#9983)
+vuejs/core,chore,update build (#13574)
+vitejs/vite,chore,v6.3.6
+vitest-dev/vitest,fix,make example test callbacks async (#6484)
+nestjs/nest,fix,match string file types containing regex metacharacters
+TanStack/query,chore,explain why 'typescript/no-unnecessary-condition' is disabled for the 'importKind' check (#12327)
+nuxt/nuxt,refactor,ensure static imports needed by entry are bundled with it (#36862)
+angular/angular,refactor,add internal utility
+nuxt/nuxt,refactor,make diagnostics + renderer constants independent of major (#37094)
+angular/angular,docs,add skills for Angular pipes
+nuxt/nuxt,fix,keep vnode when leaving deeper nested route (#33778)
+TanStack/query,test,name the 'react/no-did-update-set-state' rule in the bare 'oxlint-disable-next-line' comment (#12323)
+vitest-dev/vitest,fix,revert the viewport scaling in non-ui mode #9018 (#9072)
+vitejs/vite,chore,v7.0.1
+vitest-dev/vitest,fix,move virtual scroller to dev dependencies (#6053)
+vitest-dev/vitest,feature,add `thresholds.<glob>.100` option (#6174)
+nuxt/nuxt,chore,ignore safe pull_request_target
+angular/angular,fix,sanitize placeholder
+vitejs/vite,feature,support Vite+ (vp) package manager (#22788)
+TanStack/query,test,remove '<user>library/jest-dom/vitest' import (#9569)
+vuejs/core,chore,add `onlyBuiltDependencies` list (#12912)
+angular/angular,fix,handle escaped delimiters in inline template and styles highlighting
+TanStack/query,chore,update FlatConfig to Config due to deprecation (#8585)
+angular/angular,refactor,add perf tracing to the preprocessor and ng-analyze
+vitejs/vite,fix,avoid duplicated `buildEnd` (#22931)
+vuejs/core,chore,enforce format check
+TanStack/query,test,add test for error state when one of the queries rejects (#10597)
+angular/angular,refactor,remove selectorless prototype
+nuxt/nuxt,refactor,prefer logical assignment operators (#31004)
+vuejs/core,chore,use git default short commit-id (#7761)
+vitest-dev/vitest,fix,inject helpers after hashbang if present (#9545)
+vitejs/vite,docs,add `import.meta.env.DEV` example (#20352)
+nestjs/nest,fix,listen for the error of every stream the router holds
+TanStack/query,docs,use the dynamic README header endpoint (#11136)
+TanStack/query,chore,replace the legacy '.eslintrc.cjs' with a flat config and run 'test:eslint' (#11949)
+vuejs/core,fix,support inferring generic types (#8511)
+nestjs/nest,fix,reset last index before test() on stateful host regexps
+vitejs/vite,refactor,remove deprecated no-op type only properties (#19985)
+nestjs/nest,fix,use the right filters for inherited request-scoped middleware
+angular/angular,docs,fix CurrencyPipe locale override example
+angular/angular,docs,document barrel file caveat for <user> lazy chunks
+vitejs/vite,refactor,"remove the need for ""processSourceMap"" (#18187)"
+nuxt/nuxt,fix,only use `scrollBehaviorType` for hash scrolling (#32622)
+vitest-dev/vitest,fix,link module graphs one at a time (#11096)
+vuejs/core,fix,disable useDefineForClassFields in esbuild (#9252)
+nuxt/nuxt,docs,fix key change behavior in `useAsyncData` and `useFetch` migration  (#32560)
+nuxt/nuxt,fix,allow modules to set `experimental.asyncContext` (#36175)
+vitejs/vite,docs,fix example in api-environment-frameworks.md (#19946)
+vuejs/core,fix,revert jsx global removal (to be removed in 3.4)
+nestjs/nest,chore,update sample tsconfigs for typescript v6
+vuejs/core,test,ensure createSlots helper work with ssr slots (#6660)
+angular/angular,refactor,abstract type check block metadata to be AST-free
+conventional-changelog/commitlint,test,force plain text when comparing output (#909)
+vuejs/core,chore,split ssr transition group tests
+TanStack/query,chore,v5.85.0
+vuejs/core,chore,`pkg-pr-new` publish add pm option (#14175)
+vuejs/core,chore,remove unused methods (#8211)
+vitest-dev/vitest,feature,deprecate `workspace` in favor of `projects` (#7923)
+angular/angular,test,remove duplicate tests (#67518)
+vitest-dev/vitest,fix,ignore importer when resolving Vitest (#6469)
+TanStack/query,test,replace 'forceUpdate' with reactive property changes (#11745)
+TanStack/query,chore,v5.69.3
+angular/angular,refactor,stop Map copying in handleFilter
+vitest-dev/vitest,fix,treat a removed cache file as a miss (#11861)
+nestjs/nest,fix,fail pending kafka request on deserializer error (#18043)
+vuejs/core,chore,update build (#14901)
+nuxt/nuxt,fix,preserve `.d.mts`/`.d.cts` in `resolveTypePaths` (#35235)
+angular/angular,refactor,add `registerAiTools` function
+vuejs/core,fix,allow Node.js subpath imports patterns in asset urls (#13045)
+angular/angular,docs,fix casing of 'FormField' to 'formField' in templates
+vitejs/vite,feature,add support for injecting debug IDs (#18763)
+TanStack/query,chore,remove eslint-disable comments for rules already off at the package level (#11275)
+angular/angular,docs,release notes for the v21.2.10 release
+vitest-dev/vitest,feature,expose per-retry/repeat attempt result (#11232)
+nuxt/nuxt,refactor,use `@nuxt/devtools-onboard` as a minimal devtools shim (#36470)
+TanStack/query,test,replace 'async/await sleep' with 'sleep().then()' in test 'queryFn' and 'mutationFn' (#10398)
+conventional-changelog/commitlint,chore,pin dependencies (#639)
+angular/angular,refactor,format `<user>` blocks consistently (#69502)
+vitest-dev/vitest,docs,mention `mock.settledResults` (#8825)
+angular/angular,fix,set current tnode in foreign component instruction on reuse
+TanStack/query,chore,"unify and update '<user>react/eslint-plugin', 'eslint', 'svelte-check', 'vue-tsc' and '@tanstack/vue-query' versions (#12421)"
+vitest-dev/vitest,docs,Address typos in expect.md (#6290)
+vitest-dev/vitest,fix,handle failed forks worker start on bun (#12039)
+vitejs/vite,feature,call Logger for plugin logs in build (#13757)
+angular/angular,docs,transformedValue parse error wiring
+vitest-dev/vitest,fix,remove `JestExtendError.context` from verbose error reporting (#9983)
+vitejs/vite,fix,preserve hash/search of file url (#19300)
+TanStack/query,test,"keep each action, wait and assertion together and separate each new user action (#11658)"
+nestjs/nest,fix,await deferred loads of a gateway's scoped enhancers
+vitest-dev/vitest,feature,support `browser.locators.exact` option (#10013)
+angular/angular,chore,update cross-repo angular dependencies to c4344a4
+vuejs/core,feature,"base `watch`, `getCurrentWatcher`, and `onWatcherCleanup` (#9927)"
+angular/angular,fix,animation events not type checked properly when bound through HostListener decorator
+TanStack/query,refactor,remove the unused 'clearMutation' that created a second add mutation (#12168)
+angular/angular,docs,add documentation for dynamic validation schemas
+angular/angular,docs,modernize combobox and select guides and examples
+vuejs/core,chore,update build (#9260)
+nuxt/nuxt,docs,add supporting shared folder video (#31651)
+vuejs/core,docs,document git hooks [ci skip]
+nuxt/nuxt,fix,do not await `ready` event for vite watcher
+vitest-dev/vitest,fix,allow readonly arrays and sets in toBeOneOf (fix #10264) (#10374)
+angular/angular,refactor,adapt strict template suggestion
+angular/angular,chore,use different default port for dev-app
+vuejs/core,fix,should not warn mismatch for nullish prop
+vitest-dev/vitest,docs,add information to the workspace docs on how to use extends (#6169)
+nestjs/nest,fix,preserve handler names on deferred routes (#18568)
+vuejs/core,fix,improve defineProps return type with generic arguments
+angular/angular,fix,prevent TransferState prototype pollution
+vitejs/vite,chore,fix template check and clarity label applier action output parsing (#21658)
+angular/angular,docs,Add docs for `markAsTouched` with `skipDescendants`
+angular/angular,docs,correct the adev writing guide skill
+angular/angular,feature,template & reactive support for FVC
+vuejs/core,feature,expose `DefineProps` type
+nuxt/nuxt,docs,adjust description of `useHydration` (#31712)
+TanStack/query,fix,make sure infiniteQuery always fetches the first page (#8051)
+vuejs/core,fix,handle same-name shorthand edge case for in-DOM templates
+vitest-dev/vitest,fix,don't use `Custom` type internally (#7032)
+nuxt/nuxt,docs,fix twoslash code examples (#34469)
+TanStack/query,fix,"deprecate `create` in favor of `use`, and add full docs (#8950)"
+nuxt/nuxt,feature,experimental typescript plugin support (#33314)
+angular/angular,docs,improve sample code; fix snippets
+vitest-dev/vitest,chore,seprate playwright renovate group (#7455)
+vitest-dev/vitest,chore,fix issue template typo (#9711)
+vuejs/core,fix,allow css variables in style binding  (#5542)
+nuxt/nuxt,fix,set build outputs when restoring vue cache (#35895)
+vitejs/vite,fix,merge old and new `noExternal: true` correctly (#20502)
+vitejs/vite,refactor,remove obsolete fields in package.json (#21194)
+vitejs/vite,chore,set `allowBuilds` instead of `onlyBuiltDependencies` for disabling installation scripts before publishing (#22436)
+TanStack/query,chore,v5.62.14
+nuxt/nuxt,chore,sort package keys
+nuxt/nuxt,refactor,replace remaining instance of `globby` (#31688)
+vitejs/vite,test,update filename regex (#18593)
+vitejs/vite,chore,merge prereleases in changelog (#23466)
+TanStack/query,fix,throw on non-ok 'fetch' responses in the query and mutation functions (#12109)
+conventional-changelog/commitlint,chore,enforce chore type for all Renovate dependency updates
+vitest-dev/vitest,refactor,optimize checking the input type (#8840)
+angular/angular,refactor,add support for compiling NgModules under isolatedDeclarations
+nuxt/nuxt,feature,allow specifying glob patterns for scanning `pages/` (#31090)
+angular/angular,refactor,use the router's platform Navigation API integration
+nestjs/nest,fix,update graphql-tools monorepo (#18350)
+vitejs/vite,refactor,rename `indexOfMatchInSlice` to `findPreloadMarker` (#21054)
+vitejs/vite,chore,escape template tag in CHANGELOG.md (#18126)
+nestjs/nest,test,Add missing tests for StreamableFile
+vitejs/vite,docs,remove link to Discord channel (#19202)
+vitejs/vite,chore,add metadata for vite-plugin-registry (#21453)
+vitejs/vite,fix,remove extends ImportMeta from ModuleRunnerImportMeta (#21710)
+TanStack/query,chore,add workflow dispatch
+vitejs/vite,chore,v8.2.2
+vitest-dev/vitest,fix,fix public types (#7328)
+TanStack/query,chore,Version Packages (#12612)
+nuxt/nuxt,fix,inline css for non-island children of server components (#35001)
+vuejs/core,chore,fix pnpm version requirement
+vitejs/vite,fix,handle self reference url worker in dependency for build (#17846)
+angular/angular,docs,release notes for the vscode extension 22.2.0 release (#70951)
+vuejs/core,fix,simplify block-tracking disabling in h() (#13841)
+vuejs/core,chore,update build (#13799)
+nestjs/nest,feature,add a native node http platform adapter (#18063)
+angular/angular,fix,apply SkipSelf to only the starting node in embedded views
+conventional-changelog/commitlint,docs,add double hyphen to npm husky command in setup guide (#4490)
+vitest-dev/vitest,feature,"allow only files that have ""vitest.config"" or ""vite.config"" in the name (#8542)"
+vuejs/core,chore,v3.3.8
+vitejs/vite,refactor,rename runner.destroy() to runner.close() (#18304)
+nuxt/nuxt,refactor,update to `noScripts` route rule (#31083)
+conventional-changelog/commitlint,chore,rebuilt yarn lock file without meow
+TanStack/query,chore,run 'test:types:tscurrent' by using 'npm-run-all' like other packages (#11707)
+vitest-dev/vitest,chore,fix merged pr check in pr redirect (#11674)
+vuejs/core,fix,fix cancel leave regression (#5974)
+angular/angular,refactor,Permit deferring commit of traversal navigations
+nestjs/nest,fix,mount unversioned middleware paths under the default version
+vuejs/core,fix,update __vnode of static nodes when patching along the optimized path (#13223)
+angular/angular,docs,rename outdated `validateTree` example's model
+angular/angular,fix,provide folding ranges for templates with interpolated strings
+vitejs/vite,docs,fix minor grammar issue in `config/build-options` (#20193)
+TanStack/query,test,add tests for 'onSuccess'/'onError'/'onSettled' callbacks and result timing after 'mutateAsync' (#11452)
+TanStack/query,refactor,build package using vite (#9517)
+angular/angular,fix,avoid mutating recorded frames when merging a frame range
+TanStack/query,chore,manage 'eslint' and '<user>eslint/parser' with pnpm 'catalog' (#11785)
+vuejs/core,fix,don't warn for missing teleport target if disabled (#5135)
+vitejs/vite,fix,avoid event emitter leak caused by `server.listen` callback (#21451)
+angular/angular,docs,release notes for the v19.2.24 release
+vitejs/vite,feature,use js oxc transform plugin in dev environment (#238)
+vitejs/vite,docs,clarify where it applies for each config options (#18375)
+angular/angular,docs,"correct ""What to learn more about Angular?"" to ""Want to learn more about Angular?"""
+angular/angular,docs,fix stray markup in the image optimization and zoneless guides
+vitest-dev/vitest,docs,reference config in `improving-performance` (#9538)
+nuxt/nuxt,chore,give `issues: write` permission to needs-reproduction workflow
+nuxt/nuxt,refactor,normalise components + directories more efficiently (#33207)
+nuxt/nuxt,docs,improve explanation of global middleware (#32855)
+nuxt/nuxt,fix,preserve the types of multiple async data addons (#36791)
+vitejs/vite,test,tag bundled-dev skips in the assets playground (#23680)
+vuejs/core,fix,align prod mode runtime type generation with defineProps
+angular/angular,docs,document that resource value() throws in the error state in the developer skill
+nuxt/nuxt,chore,remove default discord reactions from thread (more noise than it's worth)
+conventional-changelog/commitlint,fix,improve signed-off-by compatibility with agent commits (#5118)
+vitejs/vite,chore,update rolldown-related dependencies (#21174)
+nuxt/nuxt,docs,remove duplicate feature (#34058)
+nuxt/nuxt,docs,correct URL (#34907)
+vitejs/vite,test,"enable ""manual chunk path"" test and remove ""worker.format error"" test (#22824)"
+vuejs/core,fix,do not increase newlines in `InEntity` state (#13362)
+TanStack/query,test,add callback return type tests for mutation callbacks (#9252)
+nuxt/nuxt,chore,bump `vite-plugin-checker`
+vitest-dev/vitest,docs,vitest 4 blog post (#8724)
+angular/angular,fix,reject script element as a dynamic component host
+nestjs/nest,test,load one graphql build and run the code-first suite (#18409)
+vuejs/core,fix,resolve nested async teleport content (#9431)
+angular/angular,fix,sanitize meta selectors
+vitest-dev/vitest,fix,respect nested test.only within describe.only (fix #9021) (#9213)
+vuejs/core,chore,update e2eUtils puppeteer options
+vitejs/vite,fix,update rolldown-related dependencies (#23405)
+angular/angular,docs,release notes for the v19.2.25 release
+conventional-changelog/commitlint,refactor,Fix a typo (#2477)
+vuejs/core,fix,ensure iframe sandbox is handled as an attribute to prevent unintended behavior (#13950)
+vuejs/core,fix,support resolving type declaration from normal script (#5831)
+vitejs/vite,chore,update actions/checkout digest to df4cb1c (#22636)
+vuejs/core,refactor,better naming for baseCompile argument
+TanStack/query,chore,define queryCache notify method's return type (#8191)
+angular/angular,fix,output function return types in linker
+vitest-dev/vitest,chore,add vitest sponsors
+vuejs/core,chore,add node production/development condition in package exports (#10036)
+nuxt/nuxt,chore,share generated output paths
+TanStack/query,docs,fix broken links in QueryClient docs (#8748)
+vitest-dev/vitest,fix,don't use `Custom` internally
+conventional-changelog/commitlint,docs,`pre-commit` -> `commit-msg` for Husky v5 (#2372)
+nestjs/nest,fix,run enhancers that are request-scoped through dependencies
+vitest-dev/vitest,fix,do not optimize deps from index.html (fix #11329) (#11360)
+vitest-dev/vitest,refactor,limit max concurrency without p-limit as a dependency (#5980)
+vuejs/core,chore,use PropertyKey type (#11056)
+vitest-dev/vitest,feature,add custom GitHub Actions summary title (#10891)
+conventional-changelog/commitlint,docs,add commitlint.io to related projects
+vuejs/core,feature,expose `PublicProps` type (#2403)
+vitest-dev/vitest,fix,v8 `autoAttachSubprocess` to use `.tmp` directory (#11632)
+vitejs/vite,fix,lazy hook filter should work (#21443)
+vitest-dev/vitest,fix,skip fs module cache for typed import.meta.glob (#11666)
+nestjs/nest,fix,hand sse header errors to the exception filters
+nuxt/nuxt,refactor,skip importing pages for island prefetch in dev (#36730)
+vitejs/vite,fix,set `legalComments: 'none'` to align with Vite (#497)
+vitejs/vite,fix,skip JS responses for document requests (#20866)
+TanStack/query,chore,v5.80.8
+nuxt/nuxt,chore,use vite-plus to manage pnpm (#35570)
+nestjs/nest,fix,reject listen() on an invalid port (#18059)
+nuxt/nuxt,chore,remove stray test file
+vuejs/core,fix,improve consistency of `PublicInstanceProxyHandlers.has` (#13507)
+TanStack/query,fix,restore NoInfer on persister's TQueryKey (#10601)
+vitejs/vite,docs,add some graphs (#21734)
+vitejs/vite,feature,update rolldown (#456)
+conventional-changelog/commitlint,refactor,replace chalk with picocolors (#4599)
+angular/angular,fix,handle dynamic host bindings in preprocessor
+nuxt/nuxt,test,use `toThrow` instead of `toThrowError`
+vuejs/core,chore,typo (#9767)
+nestjs/nest,fix,cap how many messages of a client wait for their turn
+vuejs/core,feature,add skipCheck for prop (#7548)
+TanStack/query,test,add test for rendering an idle mutation row (#10764)
+nuxt/nuxt,fix,sync internal route before calling `page:finish` hook (#33707)
+vitest-dev/vitest,feature,add action to explorer item to show the test/suite line in the source code tab (#5948)
+nestjs/nest,test,add nested transient isolation integration test
+TanStack/query,docs,fix Preact hydration nav link (#10274)
+TanStack/query,chore,remove redundant `setIsRestoring(true)` to fix lint warning (#8213)
+TanStack/query,docs,fix the 'queueMicrotask' typo in the batching method label and description (#12347)
+TanStack/query,fix,infer the data and error types of 'getQueryState' from a tagged query key (#11921)
+vitejs/vite,test,add subpath imports test from sub directory (#22059)
+vuejs/core,chore,update compiler to ^7.29.0 (#14386)
+vitejs/vite,chore,v6.0.5
+nuxt/nuxt,fix,warn when `definePageMeta` does not receive an object (#31156)
+angular/angular,fix,validate deferredImports
+TanStack/query,chore,v5.57.1
+angular/angular,docs,update change detection strategy references
+nuxt/nuxt,feature,add View Transitions Types support (#31982)
+vitest-dev/vitest,fix,ignore `*.cts` files (#6189)
+vitejs/vite,docs,remove lightningcss preprocessor note (#19735)
+angular/angular,fix,render one card per API member
+angular/angular,test,add test for imports with unquoted URL
+vitest-dev/vitest,feature,allow conditional `context.skip(boolean)` (#7659)
+vitest-dev/vitest,chore,release v2.0.0-beta.10
+nuxt/nuxt,fix,prevent param duplication in `typedPages` implementation (#31331)
+TanStack/query,test,replace incorrect usage of 'fetching' with 'mutating' (#9424)
+nestjs/nest,chore,remove redundant comments
+nuxt/nuxt,chore,update eslint config rule
+vuejs/core,fix,set dom stub type to `never` instead of `{}` (#13915)
+angular/angular,docs,release notes for the v21.2.4 release
+conventional-changelog/commitlint,test,use installModules instead of npm install (#2431)
+vitest-dev/vitest,docs,improve `onTestFailed` and `onTestFinished` jsdoc (#9175)
+vuejs/core,fix,match tsconfig include/exclude relative to the config file
+angular/angular,fix,resolve HTTP(S) URLs without authority as relative during SSR
+vitest-dev/vitest,chore,update oxc packages (#11919)
+vitest-dev/vitest,fix,apply API options without browser config (#10852)
+nuxt/nuxt,chore,remove double set of tests for docs prs
+vuejs/core,feature,support slot presence / props type checks via `defineSlots` macro and `slots` option (#7982)
+vitejs/vite,test,normalize debugId in snapshot (#19475)
+vitest-dev/vitest,feature,parse files statically in vitest list by default (#11088)
+angular/angular,fix,preserve explicit input transform write type
+vitejs/vite,chore,update `create-react-app` links (#22659)
+vitest-dev/vitest,fix,do not exit process if global setup has failed (#5726)
+vuejs/core,fix,keep the boundary pending while its branch is patched (#15411)
+vitejs/vite,fix,avoid duplicate style for server rendered stylesheet link and client inline style during dev (#20767)
+vitest-dev/vitest,docs,fix styling of logos (#10806)
+TanStack/query,docs,fix Solid README dev commands (#10430)
+nuxt/nuxt,fix,add additional logging when skipping error page for bot
+vitejs/vite,test,add nested tsconfig paths test (#527)
+angular/angular,fix,align the page title with its edit action
+vitest-dev/vitest,fix,fix trace highlight of shadow dom on webdriverio (#10227)
+vitejs/vite,chore,v7.1.4
+nestjs/nest,chore,publish v11.1.29 release
+TanStack/query,chore,update to angular 20 RC (#9153)
+vitest-dev/vitest,docs,add ci matrix table to test readme (#11899)
+vuejs/core,chore,fix missing type import
+nestjs/nest,test,nested transient chain instantiation
+vuejs/core,fix,do not throw in production on side effect tags
+vitest-dev/vitest,fix,remove the `.name` from statically collected test (#9596)
+angular/angular,refactor,update ast factories to account for type nodes
+conventional-changelog/commitlint,docs,improve parserPreset documentation with examples and options reference (#4700)
+TanStack/query,test,assert filter reactivity with an unmatched key (#11733)
+vitejs/vite,fix,apply server.fs check to env transport (#22159)
+nuxt/nuxt,chore,prevent layout shift on banner image readme (#34309)
+vuejs/core,chore,add jsdoc for defineSlots (#14566)
+nuxt/nuxt,refactor,clean-up build hooks + emit gc'd snapshots (#34587)
+vitejs/vite,docs,note cssTarget precedence (#23200)
+TanStack/query,fix,forward queryFn errors to the NgZone (#8842)
+vitejs/vite,feature,add eslint.config.js to React templates (#12860)
+angular/angular,fix,directive explorer breadcrumbs height
+vitejs/vite,fix,fix `external: true` merging (#21164)
+angular/angular,fix,propagate hasNgFieldDirective in preprocessor
+nuxt/nuxt,fix,skip cookie watcher entirely when readonly (#35997)
+TanStack/query,test,add test for 'refetchInterval' as a function called with the query (#10901)
+vuejs/core,feature,export ObjectPlugin and FunctionPlugin types (#8946)
+vitejs/vite,chore,v6.0.0
+angular/angular,chore,update to TypeScript 6 stable
+TanStack/query,docs,import 'noop' from '@tanstack/preact-query' instead of '@tanstack/query-core' in examples (#11283)
+vitest-dev/vitest,feature,"support vite 8 beta, fix type issues in the config with different vite versions (#9587)"
+nestjs/nest,fix,Fix skipping maxArrayLength and maxStringLength option
+vitejs/vite,fix,trigger watchChange hook for all environments for native resolver (#463)
+vitest-dev/vitest,fix,dispose vmForks listeners to avoid memory leak (#6448)
+TanStack/query,test,add type tests (#11767)
+TanStack/query,feature,add rule to ensure property order of infinite query functions (#8072)
+nuxt/nuxt,feature,support lazy hydration macros (#31192)
+vitest-dev/vitest,docs,fix reference link (#8596)
+nuxt/nuxt,fix,dedupe and normalise global css links in dev (#35834)
+nuxt/nuxt,chore,don't auto-close team prs 🫣
+angular/angular,test,Add utility functions and update test files to use them
+vitejs/vite,docs,fix grammar in Vite 5.1 blog post (#23228)
+angular/angular,fix,let NgOptimizedImage pass a [srcset] binding through when srcset optimization is disabled
+nuxt/nuxt,chore,add client page weight and browser timing suites (#36788)
+vuejs/core,fix,list cjs dependencies for compat build
+vitest-dev/vitest,test,fix vite 8 stack trace snapshot (#9747)
+angular/angular,fix,catch view effect errors in targeted change detection mode
+TanStack/query,chore,enable 'vitest/require-to-throw-message' and assert the expected error messages in 'toThrow' (#12233)
+conventional-changelog/commitlint,fix,footer parser does not escape special chars for regex #4560 (#4634)
+nestjs/nest,fix,resolve the context class through the class-ref registry (#18517)
+nuxt/nuxt,fix,do not allow native attrs to shadow nuxt link props
+vuejs/core,chore,update build (#12931)
+vitejs/vite,chore,v7.0.5
+vuejs/core,fix,properly fix #6416
+TanStack/query,test,replace fake hosts with 'LitElement' hosts and assert the re-rendered output (#11684)
+angular/angular,docs,align dev skills examples with style guide
+vuejs/core,chore,"bump jest, puppeteer and use official rollup terser plugin"
+nuxt/nuxt,refactor,drop `event` from `useRuntimeConfig` in `nuxt/server`
+nuxt/nuxt,test,add support for non-ascii filenames in public assets (#35636)
+vitest-dev/vitest,docs,update latitude logo (#10802)
+nuxt/nuxt,fix,ensure `optimizeDeps` config is applied before other plugins (#33586)
+TanStack/query,fix,start queued scoped mutations while the window is not focused 🤖🤖🤖 (#11679)
+nuxt/nuxt,fix,only match hydration modifiers after lazy prefix (#36750)
+vitejs/vite,test,test virtual module with query (#19044)
+vitejs/vite,docs,add RSC support (#20618)
+vuejs/core,fix,spell checker (#6982)
+angular/angular,test,enable more passing tests
+vuejs/core,chore,return early in warn() in prod
+vitejs/vite,test,silence sass legacy-js-api deprecation log (#18253)
+angular/angular,docs,update attribute testing guide to include canonical example with local component
+angular/angular,fix,avoid hitting TypeScript limits if template has many translations
+vuejs/core,chore,move custom matcher types to setup-vitest.ts (#11252)
+nuxt/nuxt,docs,fix typo (#30971)
+nuxt/nuxt,fix,cache manifest files to preserve buildId (#34002)
+vitejs/vite,chore,flat v6 config file (#18777)
+TanStack/query,fix,"observing ""promise"" needs to implicitly observe ""data"" (#9772)"
+vitejs/vite,docs,use root relative paths for internal links (#20656)
+angular/angular,docs,update CDK Overlay URL
+angular/angular,feature,adds browserUrl input support to router links
+nuxt/nuxt,feature,add experimental support for `rolldown-vite` (#31812)
+vitest-dev/vitest,docs,add the `task` argument of `*All` hooks (#12019)
+vuejs/core,test,rectify accidentally passing test
+nuxt/nuxt,refactor,replace `semver` with `verkit` (#35713)
+vuejs/core,fix,correct type inference of union event names (#12022)
+nuxt/nuxt,chore,pin devdependency vue-sfc-transformer to 0.1.4 (main) (#31692)
+vuejs/core,chore,mark reactivity transform apis as deprecated
+angular/angular,fix,lazy-initialize debounced state to prevent computation cycle
+angular/angular,fix,block creation of sensitive URI attributes from ICU messages
+vitejs/vite,fix,ensure ?no-inline is not included in the asset url in the production environment (#19496)
+vuejs/core,fix,prohibit const assignment at compile time (#6993)
+nuxt/nuxt,fix,report masked `useAsyncData` errors to the server runtime (#37160)
+vitejs/vite,fix,remove default import in ssr dev (#17922)
+TanStack/query,test,make production fallback test deterministic with 'vi.stubEnv' and 'vi.resetModules' (#10628)
+TanStack/query,test,replace 'toBeDefined' with exact-value assertion (#11124)
+vitest-dev/vitest,fix,assign envs before running tests to keep in sync with process.env (#8769)
+nestjs/nest,test,add tests for nested transient structures
+vuejs/core,feature,support suppressing hydration mismatch via data-allow-mismatch
+vitejs/vite,feature,support retrying failed CSS preloads (#23710)
+vuejs/core,fix,release parent dep on suspensible unmount (#15870)
+conventional-changelog/commitlint,docs,update issues template (#3406)
+nestjs/nest,fix,rethrow non-validation errors in the parse array pipe
+vuejs/core,fix,ignore style v-bind in double slash comments (#5409)
+vitest-dev/vitest,chore,extend comment policy (#11072)
+TanStack/query,fix,default 'TData' of infinite query options to 'InfiniteData' (#11147)
+vuejs/core,fix,pause tracking when invoking function refs (#14985)
+TanStack/query,test,add test for 'useMutationState' returning empty array (#10149)
+vitejs/vite,fix,declare utf-8 charset in fallback page (#23846)
+vitejs/vite,fix,handle missing chunk import maps (#23777)
+vitejs/vite,refactor,replace debug with obug (#21107)
+conventional-changelog/commitlint,feature,resolve pure-ESM presets (conventional-changelog v7/v9/v10) (#4859)
+angular/angular,feature,add support for <user> blocks (#70463)
+TanStack/query,fix,throw on non-ok 'fetch' responses and show a pokemon load error through an 'ErrorBoundary' (#12103)
+nestjs/nest,test,verify kafka run options forwarding
+nestjs/nest,test,Add unit tests for validateModuleKeys
+vuejs/core,fix,avoid inherited property-to-attribute mappings (#16225)
+vitejs/vite,feature,update rolldown (#400)
+nuxt/nuxt,fix,do not await lazy asyncData inside `<ClientOnly>` (#32101)
+TanStack/query,docs,add missing JSDoc to 'createBaseQuery' and the mutation state helper (#11845)
+angular/angular,fix,support dots in class binding names
+vuejs/core,chore,v3.5.8
+TanStack/query,docs,fix partners logos for dark/light mode Related to #10088 (#10107)
+nuxt/nuxt,chore,update pnpm.catalog.vue rspack-vue-loader to ^17.6.2 (main) (#36026)
+angular/angular,refactor,move valueAccessor selection out of ctor
+vuejs/core,fix,fix distribution of union types when unwrapping setup bindings (#9909)
+vitest-dev/vitest,chore,release v4.0.0-beta.3
+vitejs/vite,chore,v8.1.3
+vitejs/vite,fix,correctly type oxc options (#131)
+nestjs/nest,fix,send the standard body for an exception wrapping an error (#18199)
+nuxt/nuxt,chore,send test results to Flakiness.io dashboard (#36159)
+conventional-changelog/commitlint,refactor,replace lodash/omit with spread (#988)
+conventional-changelog/commitlint,chore,lock file maintenance (#4818)
+angular/angular,fix,set initial blocking resource input synchronously on activation
+vitest-dev/vitest,chore,address code scanning alerts (#11671)
+conventional-changelog/commitlint,docs,add CLI instruction for Bun package manager (#4380) (#4383)
+vitejs/vite,chore,deprecate `ResolvedConfig.createResolver` and recommend `createIdResolver` (#20031)
+conventional-changelog/commitlint,chore,time out the stock Ubuntu job when apt hangs (#5123)
+vitejs/vite,docs,update react template README files (#19876)
+nuxt/nuxt,refactor,drop `setResponseHeader(s)` from `nuxt/server`
+TanStack/query,test,"split 'counters-and-state.test.ts' into 'useIsFetching', 'useIsMutating', and 'useMutationState' test files (#11732)"
+vitest-dev/vitest,fix,escape search text in explorer highlight (#11672)
+TanStack/query,test,create 'queryClient' in 'beforeEach' and drop unneeded 'retry: false' default options (#11677)
+vitejs/vite,feature,add `ssrFixStacktrace` / `ssrRewriteStacktrace` to `removeSsrLoadModule` future deprecation (#20435)
+nestjs/nest,fix,"throw for a guard, interceptor or pipe that can't run"
+vitejs/vite,fix,scan is not resolving sub path import if used in a glob import (#22018)
+nuxt/nuxt,fix,respect directory boundaries when matching path prefixes (#37116)
+conventional-changelog/commitlint,docs,version up @commitlint/cli in CLI section (#4499)
+TanStack/query,docs,use signal input in placeholder-query-data.md (#9641)
+TanStack/query,chore,allow Preview Bundle Size to fail
+angular/angular,refactor,add workspace configuration helpers and settings grouping
+nuxt/nuxt,feature,type `preloadComponents` and `NuxtIsland` name (#35775)
+vitest-dev/vitest,chore,simplify test/ structure (#9367)
+vitest-dev/vitest,chore,update agentscan (#11010)
+vuejs/core,fix,preserve option modifier event names (#8338)
+nuxt/nuxt,refactor,keep importers when a composable edit keeps its exports (#37061)
+nestjs/nest,feature,"packet metadata over nats, kafka, rmq, mqtt, grpc (#18386)"
+vuejs/core,fix,normalize toRef property keys before dep lookup + improve types (#14625)
+angular/angular,docs,add self-closing tags guideline to components reference
+nestjs/nest,fix,identify decorator type in invalid-class-module error
+TanStack/query,chore,update to angular 20 stable (#9209)
+vitest-dev/vitest,feature,allow env to be stubbed to undefined (#6359)
+nestjs/nest,fix,stop reusing durable instances holding a failed placeholder
+TanStack/query,chore,v5.53.1
+vuejs/core,chore,changelog [ci skip]
+vitejs/vite,docs,update Oxc Minifier assumptions link (#22633)
+angular/angular,feature,Update Testability to use PendingTasks for stability indicator
+vitejs/vite,docs,correct `ssr.resolve.externalConditions` default value (#22630)
+vuejs/core,fix,fix function default value handling w/ props destructure
+angular/angular,refactor,update deprecation message
+TanStack/query,test,add tests for per-call callbacks when 'createMutation' has no callbacks (#11453)
+nuxt/nuxt,fix,avoid any return type from `callHookWith` in `vue:setup` (#34584)
+conventional-changelog/commitlint,docs,changed `husky init` to `husky install` (#4356)
+TanStack/query,chore,convert 'next.config.js' and 'astro.config.mjs' to TypeScript (#12620)
+nuxt/nuxt,fix,harden island endpoint against unauthenticated DoS
+angular/angular,docs,update parameter inheritance guide for the new default
+vitest-dev/vitest,chore,release v2.1.0
+vitest-dev/vitest,test,skip related test in ecosystem-ci
+TanStack/query,test,add test for not fetching queries with different durations when 'isRestoring' is true (#10387)
+TanStack/query,chore,v5.60.4
+nuxt/nuxt,fix,sync `_route` when navigating up the route tree (#34918)
+vitest-dev/vitest,feature,print how many tests were affected and a total when running `--changed` (#11424)
+angular/angular,docs,fix typo 'requiredSync' instead of 'requireSync'
+nestjs/nest,test,respect NO_COLOR in logger serialization assertion (#18550)
+vuejs/core,fix,fix github button style (#7722)
+vuejs/core,feature,add app.onUnmount() for registering cleanup functions (#4619)
+vitejs/vite,chore,override rolldown for stable lockfile (#20919)
+vitejs/vite,fix,apply `fs.strict` check to HTML files (#20736)
+vitest-dev/vitest,fix,tear down fixture contexts one at a time (#11956)
+vitejs/vite,refactor,use named imports for react (#17773)
+vitejs/vite,chore,v6.3.1
+vitejs/vite,docs,clarify what happens if `new URL` is outside `new Worker` (#22819)
+angular/angular,fix,split the `touched` model into an input and `touch` output
+vitejs/vite,docs,add backticks (#20059)
+TanStack/query,chore,add missing 'preact-query-devtools' and 'preact-query-persist-client' package labels (#10618)
+TanStack/query,test,add test cases for 'static' staleTime with number and function (#10134)
+vuejs/core,chore,update lint (#9287)
+nestjs/nest,feature,add ack decorator
+conventional-changelog/commitlint,feature,ignore reapply commits (#4186)
+TanStack/query,test,add tests for replacing the client before the first update and clearing it while disconnected (#11757)
+vitest-dev/vitest,refactor,improve performance in hot paths (#10446)
+conventional-changelog/commitlint,chore,migrate @nrwl/tao to nx following 13.9.0 release (#3135)
+angular/angular,fix,deduplicate pipe diagnostics in preprocessor
+vuejs/core,fix,render teleport inside async component (#5187)
+angular/angular,refactor,move matchSource into base metadata
+vuejs/core,test,split compileScript macro tests
+vitest-dev/vitest,fix,`dot` reporter leaves pending tests (#9684)
+angular/angular,docs,release notes for the v21.2.26 release
+TanStack/query,test,add tests for 'errorTypes' prop and error trigger via select (#10688)
+nestjs/nest,fix,keep route options when the route triggered hook is set (#18121)
+vuejs/core,chore,improve version copy message (#15008)
+TanStack/query,fix,exclude config files from production DTS rollup (#10358)
+angular/angular,docs,update formatting
+vitest-dev/vitest,test,remove implementation-coupled html reporter snapshot tests (#10344)
+vitejs/vite,refactor,remove `isBuild` check from preAliasPlugin (#19587)
+nuxt/nuxt,fix,ensure `provide` / `inject` work in `setup` of `defineNuxtComponent` (#30982)
+TanStack/query,chore,manage 'typescript' with pnpm 'catalog' and declare it in each package so 'tsc' runs the default version (#11705)
+TanStack/query,test,wait for the mutation to settle after unmount and assert that no error is logged (#12335)
+nuxt/nuxt,feature,catch server-side errors in `<NuxtErrorBoundary>` (#36990)
+vitest-dev/vitest,feature,add `getGlobalTestNamePattern` method (#8438)
+vuejs/core,chore,format
+vuejs/core,test,make transition tests more stable locally
+vuejs/core,chore,fix jest reference in merged test case
+TanStack/query,docs,add the testing guide with 'renderHook' from '@solidjs/testing-library' (#12196)
+nuxt/nuxt,chore,use `vp` in nightly release script
+vuejs/core,chore,replace -1 to PatchFlags.HOISTED (#10146)
+nuxt/nuxt,fix,resolve loaders and runtime deps from nuxt dirs (#35568)
+nuxt/nuxt,chore,use `tsdown` to build project (#35179)
+TanStack/query,refactor,type the pokemon responses and move the queries into 'src/lib/api.ts' with 'queryOptions' (#12102)
+vuejs/core,refactor,remove attrsProxy and slotsProxy from instance (#11390)
+vitejs/vite,fix,close _ssrCompatModuleRunner on server close (#18784)
+vitejs/vite,docs,update decorator workaround as SWC now supports 2023-11 version (#21991)
+vitejs/vite,feature,use `import.meta.ROLLDOWN_FILE_URL_*` for assets in JS (#22888)
+angular/angular,fix,preserve signal debugName insertions in sliced decorator args
+angular/angular,refactor,cache module resolutions and track unresolved imports in preprocessor
+vitejs/vite,fix,externalize virtual modules for html like files (#21001)
+nestjs/nest,fix,stop a redis connection attempt once closed (#18594)
+TanStack/query,docs,explain why reactive() is needed for result narrowing (#10580)
+vitest-dev/vitest,docs,clarify how istanbul coverage works (#10652)
+TanStack/query,chore,examples to react19 (#8408)
+vitejs/vite,test,fix run css playground with legacy sass (#18946)
+TanStack/query,chore,v5.75.6
+angular/angular,refactor,fix signal details UI
+nestjs/nest,docs,document file upload validation examples (#18185)
+nuxt/nuxt,feature,auto-import the new `nuxt/server` helpers
+vuejs/core,fix,rewrite default export with AST analysis instead of regex (#7068)
+conventional-changelog/commitlint,feature,use cosmiconfig-typescript-loader v5 to remove ts-node dependency for @commitlint/load (#3633)
+conventional-changelog/commitlint,docs,use relative url to svg demo
+angular/angular,fix,implement NgModule scope diagnostics in preprocessor
+angular/angular,fix,prevent ReDoS in SOURCEMAP_URL_REGEXP
+TanStack/query,docs,redirect flat reference URLs broken by the TypeDoc migration (#11379)
+vitest-dev/vitest,docs,add excludes section (#9041)
+vuejs/core,fix,infer function prop type from type literal w/ callable signature (#7119)
+conventional-changelog/commitlint,refactor,port read to ts (#922)
+TanStack/query,test,rename per-call 'onSuccess' mocks to 'onSuccessMutate' to align with react-query (#11601)
+nuxt/nuxt,docs,refine auto-imports documentation (#31700)
+angular/angular,docs,use https for external links in adev
+vitejs/vite,feature,support sass compiler api and sass-embedded package (#17754)
+vuejs/core,fix,fix post watcher fire timing on nested app mounts
+TanStack/query,fix,sort 'readFile' before 'readdir' in 'generate-docs' to satisfy 'sort-imports' (#10946)
+conventional-changelog/commitlint,docs,update husky hook adding (#3141)
+angular/angular,feature,introduce route error boundaries and redirect handling
+nuxt/nuxt,fix,resolve layout name override in layout `isCurrent` check (#36132)
+vitest-dev/vitest,test,use `vi.defineHelper` for vue render wrapper (#10337)
+angular/angular,refactor,update internal utility
+angular/angular,fix,avoid compilation errors for invalid tracking functions
+vuejs/core,feature,provide ExtractPublicPropTypes utility type
+vitejs/vite,fix,await sass/less/styl worker disposal on teardown (fix #22274) (#22275)
+vitest-dev/vitest,fix,print parent describe suites when the passed-test list is hidden (fix #10606) (#10768)
+angular/angular,refactor,add TTL and outline style to the highlighting mechanism (#70254)
+vitejs/vite,docs,add plugin registry to resources (#21821)
+nuxt/nuxt,docs,refine nuxt kit components documentation (#31714)
+vuejs/core,fix,preserve placeholder for conditional explicit default slots (#14748)
+vuejs/core,chore,reduce as any in reactivity
+vitest-dev/vitest,feature,add `logger.formatError` (#10268)
+vuejs/core,fix,avoid ast.helpers duplication (#6664)
+vuejs/core,fix,handle newlines when evaluating constants during stringification (#7995)
+vitejs/vite,fix,prevent rebasing `<user> url(...)` (#17857)
+angular/angular,refactor,rename directive-explorer component names and folder structure
+angular/angular,docs,release notes for the vscode extension 21.2.3 release
+nuxt/nuxt,fix,resolve symlinked compat scope paths (#36490)
+nuxt/nuxt,fix,surface compilation errors when stats.toString is empty
+nuxt/nuxt,refactor,read route rules through `getRouteRules` in the runtime (#36937)
+nuxt/nuxt,docs,mention the possibility to scan pages based on a pattern (#31462)
+angular/angular,refactor,introduce signal for required validator status
+vuejs/core,chore,optimize widht/height element check
+vitest-dev/vitest,feature,introduce separate packages for browser mode providers (#8629)
+nestjs/nest,fix,increase timeouts for graceful shutdown tests
+nuxt/nuxt,fix,register each dev server handler once (#36493)
+vuejs/core,chore,add autofix for pr (#9112)
+nuxt/nuxt,feature,add `#server` alias for server directory imports (#33870)
+nestjs/nest,refactor,extract redis client info tag to shared utility
+vitejs/vite,refactor,improve performance of `numberToPos` (#20244)
+vitejs/vite,chore,v7.1.9
+angular/angular,docs,Update request handler to use handle method
+vuejs/core,chore,v3.5.10
+TanStack/query,docs,fix example to include initial state (#10172)
+vuejs/core,chore,limit displayed pre-release versions (#15137)
+nuxt/nuxt,feature,add suggestions + trace to import protection (#34454)
+angular/angular,refactor,update acceptance test
+angular/angular,refactor,add error guide links to diagnostics
+angular/angular,refactor,support in-process execution and persistent analyzer in preprocessor
+TanStack/query,test,rename local 'queryKey' to 'key' to avoid 'no-shadow' with the 'queryKey' import (#10549)
+vitejs/vite,feature,skip self-imports for `import.meta.hot.invalidate`
+vitest-dev/vitest,test,deflake tests sharing the watch fixture (#10841)
+vitejs/vite,refactor,index rendered modules once per output for `cssScopeTo` (#23889)
+nuxt/nuxt,docs,improve description of `page:start` and `page:finish` hooks (#31570)
+vitest-dev/vitest,feature,stabilize experimental features (#9529)
+vitejs/vite,fix,opt-in server.fs.cachedChecks (#17807)
+vitejs/vite,refactor,top-level createEnvironment is client-only (#18475)
+vitest-dev/vitest,fix,print screenshot path alongside the test error message (#5992)
+vitest-dev/vitest,fix,add ERR_MODULE_NOT_FOUND code error if module cannot be loaded (#7776)
+TanStack/query,test,add tests for 'persistQueryClient' restore-then-subscribe flow (#10878)
+TanStack/query,test,use fake timers for infiniteQueryObserver.test.tsx (#8775)
+angular/angular,docs,clarify disabled FormArray value behavior
+vuejs/core,fix,fix defineExpose() codegen regression from #7949
+nuxt/nuxt,fix,point cache driver at `.mjs` runtime output (#35263)
+conventional-changelog/commitlint,chore,update docsify-cli (#2606)
+vitejs/vite,docs,fix canonical links (#19084)
+vitest-dev/vitest,chore,don't call onStackTrace twice (#8398)
+vitejs/vite,feature,make PluginContext available for Vite-specific hooks (#19936)
+vitest-dev/vitest,fix,filter projects eagerly during config resolution (#7313)
+vitejs/vite,fix,avoid watching rolldown runtime virtual module (#21545)
+nestjs/nest,fix,send responses for exceptions thrown from middleware (#17699)
+vuejs/core,fix,properly set initial inXML state based on root ns
+vuejs/core,chore,remove rpts2
+conventional-changelog/commitlint,refactor,optimize header-trim (#4363)
+vitejs/vite,docs,document `vite preview` with more information (#20888)
+vitest-dev/vitest,feature,use providers request interception for module mocking (#7576)
+vuejs/core,chore,improve typing for scripts (#9709)
+vitest-dev/vitest,chore,update funding (#10234)
+vuejs/core,refactor,improve `getType()` GC and speed (#10327)
+TanStack/query,fix,export CreateMutationOptions (#8319)
+vitejs/vite,fix,include preload dependencies to chunk import map hashing (#23793)
+nuxt/nuxt,fix,ensure vue-jsx transform hook runs early
+vitest-dev/vitest,docs,clarify the custom provider API is experimental (#7855)
+nestjs/nest,fix,reject mqtt topics longer than 65535 bytes
+TanStack/query,refactor,move the data layer into 'services/todos' with query and mutation factories (#12365)
+vitejs/vite,feature,append plugin name to logs (#205)
+TanStack/query,refactor,deprecate injectQueryClient (#8497)
+vitest-dev/vitest,test,fix browser provider (#6427)
+nuxt/nuxt,refactor,drop `toNuxtRequestEvent` from `nuxt/server`
+vitejs/vite,fix,don't externalize transitive dep package name with asset extension (#18152)
+vitejs/vite,chore,v6.1.0
+nestjs/nest,fix,keep custom decorator data that has schema or pipes keys (#18090)
+nuxt/nuxt,fix,use factory resolved options everywhere in `useFetch` (#34568)
+angular/angular,fix,use consistent error format returned from parse
+TanStack/query,test,add '<user>library/jest-dom' and replace 'textContent' assertions with 'toHaveTextContent' (#11691)
+vuejs/core,refactor,split normal script logic
+TanStack/query,test,rename the 'city' key passed to 'setValue' to 'material' to match the signal type (#12550)
+TanStack/query,fix,accept partial dehydrated state (#11260)
+vitest-dev/vitest,fix,throw an error if typechecker failed to spawn (#7990)
+angular/angular,refactor,clean up unused parameter
+nuxt/nuxt,chore,dedupe lockfile
+conventional-changelog/commitlint,fix,replace all repository references with conventional changelog (#561)
+conventional-changelog/commitlint,fix,incorrect use of when in getForcedCaseFn (#993)
+TanStack/query,refactor,rename the 'onError' 'context' parameter to 'onMutateResult' and prefix the unused ones (#12174)
+angular/angular,docs,fix close button clickability and prevent layout shift
+vitejs/vite,refactor,replace `find` with `some` (#23554)
+vitest-dev/vitest,fix,stale mock metadata breaks automocking with isolate:false (fix #10145) (#10541)
+angular/angular,chore,configure setup and use pnpm in benchmark comparison workflow
+vuejs/core,fix,handle initial selected state for select with v-model + v-for option (#12399)
+nuxt/nuxt,refactor,skip vue's own packages in composable tree-shaking (#37041)
+vitejs/vite,chore,update pr template for concise description (#21070)
+vitejs/vite,feature,add `future: 'warn'` (#20473)
+conventional-changelog/commitlint,chore,deps (#4121)
+TanStack/query,chore,add type tests for injectQuery (#7947)
+vuejs/core,chore,v3.3.0-alpha.5
+conventional-changelog/commitlint,test,cover git trailers not counting as a commit body (#5092)
+TanStack/query,test,add server-side rendering tests with '<user>labs/ssr' (#11813)
+vitejs/vite,fix,serve assets emitted during HMR/lazy compile (#22745)
+angular/angular,fix,implement custom control reset propagation
+nuxt/nuxt,refactor,skip the compat import walk when no v2 code is found (#36799)
+vuejs/core,chore,v3.3.0-alpha.12
+nestjs/nest,fix,do not emit a trailing null to kafka requesters (#18249)
+nuxt/nuxt,feature,add `useServerHooks` to `nuxt/server`
+nuxt/nuxt,chore,add new scope
+TanStack/query,docs,Add OpenAPI Qraft React to the list of community projects (#8588)
+vitejs/vite,refactor,use filter for plugins
+angular/angular,refactor,import `map` from `rxjs` in the ActivatedRoute example
+conventional-changelog/commitlint,docs,add vidavidorra/commitlint-plugin-function-rules project (#2224)
+TanStack/query,chore,harden nx dependency
+TanStack/query,docs,point the CI badge at the 'release.yml' workflow on 'main' (#11633)
+nuxt/nuxt,test,guard diagnostic codes against drift from `4.x`
+vitejs/vite,refactor,show direct path type in bad character warning (#22339)
+vuejs/core,fix,fix missing scope for extends error message
+vuejs/core,chore,update compiler (#9745)
+angular/angular,docs,adjust wording; fix code block indentation
+TanStack/query,fix,don't overwrite an existing query's data on an incoming 'added' message (#11392)
+vuejs/core,fix,ignore scoped id
+TanStack/query,docs,fix queryClient description of useMutation and use… (#8077)
+nestjs/nest,chore,publish v11.1.27 release
+nuxt/nuxt,fix,allow disabling clearing build hooks (#34594)
+TanStack/query,docs,regenerate reference pages after adopting '@tanstack/oxfmt-config' (#12604)
+vitest-dev/vitest,fix,exit 1 when vitest list fails collection (fix #11145) (#11146)
+vitejs/vite,feature,scaffold with rolldown-vite (#20739)
+vitejs/vite,chore,v6.0.0-beta.1
+vitest-dev/vitest,feature,add `toHaveBeenCalledAfter` and `toHaveBeenCalledBefore` utility (#6056)
+conventional-changelog/commitlint,feature,add support for git submodules
+nuxt/nuxt,feature,experimentally normalise page component names to match route (#33513)
+TanStack/query,fix,replace 'enabled' with 'skipToken' to type the author query (#12010)
+angular/angular,docs,Add callout about the Component interface.
+TanStack/query,chore,Version Packages (#10206)
+TanStack/query,test,use fakeTimers for usePrefetchQuery.test.tsx (#8983)
+nestjs/nest,fix,discover classes by each of their discovery decorators (#18235)
+angular/angular,refactor,ensure `HttpClientModule` always uses the xhr backend
+nestjs/nest,fix,validate parsed array items one at a time
+nuxt/nuxt,fix,ensure leading slash in `/<user>` URLs for Windows (#34810)
+angular/angular,docs,warning about upgrading to v21
+vitejs/vite,fix,prevent partial-exports race on concurrent imports of in-flight invalidated re-export chains (#22369)
+TanStack/query,test,"switch to fake timers, replace 'await' with 'advanceTimersByTimeAsync', and use 'sleep().then()' pattern (#9859)"
+TanStack/query,feature,type narrowing for isPlaceholderData (#8586)
+conventional-changelog/commitlint,fix,trim trailing whitespace off the message handed to ignore matchers (#4960)
+vuejs/core,chore,use workspace vue dep for sfc-playground
+nuxt/nuxt,docs,add JSDoc for `navigateTo` (#21442)
+nestjs/nest,fix,keep the filters of a middleware's use() with exclude()
+vitejs/vite,docs,add license section (#21071)
+nestjs/nest,fix,honor falsy results of rpc exception filters
+vuejs/core,chore,update test (#13734)
+vuejs/core,feature,support `Symbol` global in template expressions (#9069)
+angular/angular,refactor,harden change store access
+TanStack/query,test,replace 'createInfiniteQueryController' test with test for returning the received object without modification (#11740)
+nuxt/nuxt,fix,hydrate prerendered pages with initial route + replace after hydration (#34211)
+TanStack/query,test,add tests for 'MutationFunctionContext' passed to mutationFn and callbacks (#11441)
+vitejs/vite,refactor,remove unnecessary escape (#18044)
+TanStack/query,chore,add typescript-eslint/require-await rule (#9029)
+angular/angular,fix,Generate correct expression for optional chaning.
+vitest-dev/vitest,feature,add commands to communicate betweens server and the browser (#5097)
+vuejs/core,fix,ensure markRaw objects are not reactive (#12824)
+angular/angular,fix,use flattened host directives in preprocessor
+TanStack/query,chore,load the jsdoc and vitest JS plugins only in the overrides that use them (#11946)
+vitejs/vite,fix,don't set builtinModules to `external` by default (#18821)
+angular/angular,chore,cut the v22.0.0-next.9 release
+vitest-dev/vitest,fix,handle Symbol values in format utility (#9658)
+vitejs/vite,docs,suggest `usePolling` for `EISDIR` error when watching files (#21578)
+TanStack/query,refactor,throw type error when `skipToken` is present in suspense query (#8082)
+vitejs/vite,chore,pass along commit of fork branch to use (#18778)
+vitejs/vite,chore,set up bot workflow and ai policy (#23311)
+vitejs/vite,chore,migrate `fast-glob` to `tinyglobby` (#18243)
+TanStack/query,docs,"add offline examples for TanStack Router, React Router and Solid Router, and replace the discontinued '@tanstack/react-location' (#12483)"
+conventional-changelog/commitlint,fix,`sentence-case` allow upper-case characters in first word (#531)
+angular/angular,refactor,detect existing signal dependency without checking all producer links
+TanStack/query,refactor,declare the example types with 'type' in 'types.ts' instead of 'types.d.ts' (#12141)
+nestjs/nest,fix,leave the router on next('router') as express does
+vuejs/core,fix,clone root vnode before inheriting directives
+nuxt/nuxt,fix,keep nested layout on deferred route during suspended layout switch (#35443)
+vitest-dev/vitest,refactor,consolidate unocss style to use class (#11206)
+vuejs/core,chore,update lint (#13096)
+angular/angular,docs,remove fullTemplateTypeCheck from the template type checking guide
+angular/angular,refactor,support go-to-definition for templateUrl and styleUrls
+vitejs/vite,fix,update deprecated tsrouter-app to `@tanstack/cli` (#21527)
+vitest-dev/vitest,feature,`thresholds.autoUpdate` to receive previous threshold as argument (#10495)
+vuejs/core,fix,fix hmr for components managed by keep-alive (#6809)
+vitest-dev/vitest,fix,remove deprecated typecheck and runner types (#8199)
+vitest-dev/vitest,docs,correct typos in migration guide (#8750)
+TanStack/query,chore,use 'eslint-config-preact' through a flat config and run 'test:eslint' (#11953)
+vitest-dev/vitest,chore,migrate to oxc (#11367)
+nuxt/nuxt,refactor,skip tokenising modules without decorators (#36749)
+TanStack/query,feature,add './production' entry to lazy load the devtools in production builds (#12530)
+TanStack/query,fix,include TPageParam in enabled of InfiniteQueryObserverOptions (#9898)
+nuxt/nuxt,fix,resolve shared externals to absolute paths (#31227)
+vitejs/vite,feature,add `*?url&no-inline` type and warning for `.json?inline` / `.json?no-inline` (#19566)
+nuxt/nuxt,feature,add `nuxt/server` (#36275)
+nuxt/nuxt,feature,enable payload extraction for ISR/SWR routes (#33467)
+vitest-dev/vitest,chore,release v4.0.3
+vuejs/core,chore,fix wrong placeholder in issue template (#7918) [ci skip]
+vitest-dev/vitest,docs,"fix typo in heading of method definition for ""toHaveBeenCalledExactlyOnceWith"" (#9925)"
+nuxt/nuxt,fix,don't access unspecified dependencies (#36541)
+vitest-dev/vitest,fix,remove `sequence.concurrent` from the `RuntimeConfig` type (#6880)
+TanStack/query,docs,fix the duplicated 'query-options' id and inject the 'QueryClient' used in the example (#12182)
+vitejs/vite,chore,remove `rolldown-vite` issue link from issue create modal (#21869)
+vuejs/core,test,better indicate array pre & new values are the same object (#7251)
+vitejs/vite,docs,add `markdown-it-image-size` to reduce layout shift (#20474)
+angular/angular,docs,reorganize and reword route resources guide
+nuxt/nuxt,feature,allow specifying `moduleDependencies` as an async function (#33504)
+vitest-dev/vitest,feature,Make clicking on a test in the UI open the report section and scroll to the test failure if applicable (#6900)
+nuxt/nuxt,fix,register namespace binding alongside default import (#36194)
+TanStack/query,fix,abort fetch loop for infinite queries if getNextPageParam returns null or undefined (#7799)
+vitejs/vite,docs,update `build.manifest` jsdocs (#19332)
+TanStack/query,fix,switch to export type * (#11228)
+vitejs/vite,docs,correct the type of `server.middlewareMode` (#23222)
+angular/angular,chore,introduce GHA release publish workflow
+vitest-dev/vitest,chore,tweak permissions for pr label task (#10085)
+nestjs/nest,chore,bump valibot in /sample/36-valibot-serializer
+TanStack/query,fix,export `queryOptions` without type errors (#9668)
+vitest-dev/vitest,test,move `test/snapshots` to `test/e2e` (#10241)
+vitest-dev/vitest,docs,remove irrelevant `vitest.config` references and update the sidebar (#7006)
+vitest-dev/vitest,feature,add jest-junit-compatible naming options (#10189)
+nuxt/nuxt,fix,use fresh route when `<NuxtLayout>` first renders (#24673)
+nuxt/nuxt,chore,add `NUXT_B4022` diagnostic from 4.x
+nuxt/nuxt,test,use `expect.poll` instead of `expectWithPolling`
+nuxt/nuxt,feature,case-sensitive routing by default in v5 (#35650)
+vitest-dev/vitest,chore,release v5.1.0-beta.1 (#11647)
+vuejs/core,fix,remove short syntax support in defineSlots()
+vitest-dev/vitest,fix,`task.meta` should be available in custom reporter's errors (#8115)
+angular/angular,chore,add myself to `size-tracking`
+nuxt/nuxt,refactor,use `es2023` array methods (#34980)
+vitest-dev/vitest,refactor,simplify console task id lookup (#12009)
+vitest-dev/vitest,feature,support typescript build mode (#9870)
+angular/angular,refactor,widen `AsyncValidatorOptions.factory`
+angular/angular,refactor,clean up route resource implementation and test helpers
+vitejs/vite,docs,fix typo in worker-options.md (#21897)
+nuxt/nuxt,feature,auto-import types from `app/types` and `server/types` directories (#35783)
+vitejs/vite,feature,expose `CustomPluginOptionsVite` type (#19557)
+conventional-changelog/commitlint,test,run jest in band on circle ci (#905)
+vuejs/core,fix,keep .trim result when combined with .number v-model modifier (#15346)
+vuejs/core,chore,update build (#14572)
+vitest-dev/vitest,fix,invisible CLI menus when `vitest --standalone` (#8248)
+angular/angular,refactor,route preprocessor query engine I/O through AnalysisHost
+nuxt/nuxt,docs,recommend `getLayerDirectories()` instead of `nuxt.options._layers` (#33484)
+nuxt/nuxt,test,add regression test for #35893
+angular/angular,fix,harden zoneSymbolEventNames against __proto__ key (defense-in-depth)
+vuejs/core,test,fix test case broken by b93f264
+angular/angular,chore,update pnpm-lock.yaml
+vitest-dev/vitest,fix,match `-` and `.` in `noExternal` wildcards (#11978)
+vitest-dev/vitest,chore,check for the presense of files in watch mode (#5508)
+vitejs/vite,docs,add `emitDecoratorMetadata` description (#21198)
+nuxt/nuxt,fix,do not skip layer with defined `srcDir` (#32487)
+vuejs/core,fix,ensure prod hydration warnings actually work
+vitest-dev/vitest,feature,add a flag to include test location in tasks (#5342)
+vuejs/core,chore,fix ComputedRefImpl type build
+conventional-changelog/commitlint,docs,use ` to escape dollar signs in Windows (#4213)
+vitejs/vite,docs,make docsearch background darker (#18281)
+vitest-dev/vitest,fix,ensure `removeEventListener` is bound to worker (#7631)
+nuxt/nuxt,fix,do not process css files with decorator transform (#34769)
+nestjs/nest,chore,reverse lerna version
+angular/angular,feature,add ErrorBoundary programmatic APIs (#70463)
+conventional-changelog/commitlint,feature,add max line length to body/footer
+vitejs/vite,docs,add missing types in env API docs (#18767)
+TanStack/query,test,replace hardcoded query keys with 'queryKey()' utility (#10417)
+vitest-dev/vitest,refactor,"cleanup comments, add more `debug` statements (#10953)"
+vuejs/core,feature,support v-bind shorthand for key and value with the same name (#9451)
+vitejs/vite,test,remove unnecessary logs from output (#18368)
+vitejs/vite,docs,reload after invalidate (#17862)
+angular/angular,refactor,update profiler instruction text for clearing recordings
+angular/angular,refactor,use addEventListener to avoid unconditional CD scheduling on blur
+angular/angular,docs,clarify pipe usage to avoid DI misuse
+vuejs/core,chore,skip chromium download in jobs that do not need it
+vuejs/core,chore,fix typos in defineOptions (#8277)
+vitest-dev/vitest,fix,fix mocking from outside of root (#7789)
+nestjs/nest,fix,stop wildcard exclusions from covering their parent route
+conventional-changelog/commitlint,test,speed up npm bootstrap (#954)
+vitest-dev/vitest,feature,introduce experimental `pointer` API (#10780)
+vitejs/vite,refactor,runtime deprecate `optimizeDeps.rollupOptions` (#507)
+vitejs/vite,feature,fallback to js alias plugin when alias entries include `customResolver` (#280)
+nuxt/nuxt,fix,respect cachedData with multiple asyncData calls (#32099)
+vitejs/vite,fix,close watcher if it's disabled (#18521)
+vitejs/vite,fix,handle `import.meta.hot.invalidate` in virtual module (#23171)
+vuejs/core,chore,remove outdated configuration (#15243)
+nuxt/nuxt,docs,prefix `imports.dirs` with alias
+vitest-dev/vitest,chore,use premove to clean directories (#8593)
+angular/angular,fix,use safe hasOwnProperty when parsing query params
+nuxt/nuxt,chore,update action lint config (#33710)
+angular/angular,feature,migrate static string and array ngClass bindings to class
+TanStack/query,chore,v5.66.10
+vuejs/core,feature,app.runWithContext() (#7451)
+nuxt/nuxt,docs,update package information in roadmap section (#32881)
+angular/angular,fix,report diagnostic on specific imports item array
+vitest-dev/vitest,docs,"fix typo ""sequantial"" to ""sequential"" (#9398)"
+angular/angular,fix,harden FormGroup control lookups against prototype shadowing
+nuxt/nuxt,chore,copy README/LICENSE from repo root
+nestjs/nest,fix,resolve all providers when using resolve() with each option
+conventional-changelog/commitlint,refactor,expose format result with extra tests (#580)
+nuxt/nuxt,docs,document `typesDir`
+vuejs/core,fix,more precise types for Events and added missing definitions (#9675)
+vuejs/core,chore,replace deprecated conventional-changelog-cli with conventional-changelog (#14707)
+nuxt/nuxt,chore,update node.js in devcontainer (#35286)
+vitejs/vite,feature,allow rollup plugin to be assigned to `plugins` option (#176)
+vuejs/core,chore,try puppeteer fix
+TanStack/query,docs,add example for Expo Network in online status management (#8298)
+nuxt/nuxt,refactor,resolve ssr nuxt link route lazily from a prototype getter (#36891)
+nuxt/nuxt,fix,add aria tag on Nuxt logo (#32429)
+nuxt/nuxt,chore,re-enable codspeed ⚡
+vuejs/core,fix,handle Suspense + KeepAlive HMR updating edge case (#13076)
+vuejs/core,fix,handle shallow reactive arrays in renderList correctly (#11870)
+vuejs/core,chore,v3.3.0-alpha.10
+nuxt/nuxt,fix,also augment `nuxt/schema`
+vuejs/core,chore,update build (#12783)
+TanStack/query,fix,vue devtools class attribute (#10849)
+nuxt/nuxt,fix,keep failed render headers off the thrown error (#36586)
+TanStack/query,refactor,move the data layer into 'services/posts' with a query factory (#12362)
+nuxt/nuxt,fix,do not replace `global` with `globalThis` (#32130)
+nestjs/nest,fix,make `isHttpError` check stricter
+nestjs/nest,feature,introduce standard schema serializer
+conventional-changelog/commitlint,refactor,port config-conventional to ts (#3881)
+nuxt/nuxt,fix,add `.mts` file extension in resolver (#33845)
+angular/angular,docs,add section on reactive context and async operations
+angular/angular,docs,fix the broken Unicode locale ID link in the i18n guide
+vitest-dev/vitest,test,update reporter snapshot (#7689)
+vitejs/vite,fix,pass react framework to TanStack CLI (#22397)
+vitejs/vite,fix,escape imported name in `transformCjsImport` (#24080)
+nuxt/nuxt,feature,add integration with chrome devtools workspaces (#32084)
+nestjs/nest,chore,publish v12.4.1 release
+angular/angular,docs,new homepage
+TanStack/query,feature,return a reactive `state` from `useQuery` so `status=== 'success'` narrows `data` without unwrapping refs (#12541)
+nuxt/nuxt,refactor,skip the route rules redirect middleware without redirects (#36995)
+vuejs/core,fix,simulate `allowArbitraryExtensions` on resolving type (#13301)
+angular/angular,docs,correct the NG0207 page
+angular/angular,docs,update signal in a service names
+TanStack/query,refactor,Reduce observer removal overhead (#11214)
+vitejs/vite,test,remove `checkNodeVersion` test (#20647)
+vuejs/core,fix,fix reduce on reactive arrays to preserve reactivity (#12737)
+nuxt/nuxt,feature,use neutral palette and lighter error type (#36255)
+nuxt/nuxt,refactor,use environment-api compatible plugins (#33403)
+vitejs/vite,refactor,remove strip-ansi for a node built-in (#18630)
+vitejs/vite,test,remove `node-fetch` and use native fetch (#19903)
+TanStack/query,test,"add type tests for page params, 'initialData', 'select', and 'Accessor<QueryClient>' (#10496)"
+vitest-dev/vitest,test,update flaky tests (#8439)
+TanStack/query,docs,make markdown consistent (#10987)
+TanStack/query,test,remove unnecessary async (#9028)
+TanStack/query,test,remove 'vi.waitFor' and add 'advanceTimersByTimeAsync' (#9345)
+nuxt/nuxt,fix,apply latest navigation on concurrent `navigateTo` in built-in router (#35631)
+conventional-changelog/commitlint,chore,minimum node version v20
+nuxt/nuxt,fix,preserve error state on aborted or cancelled navigation (#36546)
+vuejs/core,chore,remove unecessary array copy (#12400)
+conventional-changelog/commitlint,chore,run prettier on everything (#962)
+angular/angular,test,replace fixed timeout with polling in event replay test
+nestjs/nest,chore,Remove debug logs from express adapter
+angular/angular,docs,release notes for the v22.3.0 release
+nuxt/nuxt,chore,prepare root types before linting
+vitejs/vite,chore,remove font family `Inter` (#19474)
+TanStack/query,docs,move inline 'type' specifiers to top-level 'import type' declarations (#12193)
+nuxt/nuxt,docs,recommend status over pending in data fetching (#35694)
+vuejs/core,fix,properly set kebab-case props on Vue custom elements
+TanStack/query,test,"add type tests for 'dehydrate', 'hydrate' and the dehydrated state types (#11489)"
+vuejs/core,fix,properly warn if slot invoked in setup (#12195)
+nestjs/nest,fix,preserve string enum values matching numeric member names (#17884)
+vitest-dev/vitest,chore,"add ""feature"" type in the feature template"
+vitest-dev/vitest,fix,don't override the esbuild option in the browser mode (#6692)
+TanStack/query,docs,add router and framework suffix to example directories to match their 'package.json' names (#12473)
+nuxt/nuxt,docs,update mcp tools and mention `X-MCP-Tools` header (#36065)
+nuxt/nuxt,docs,improve description of `app.vue` (#31645)
+conventional-changelog/commitlint,chore,cleanup no longer used dev dependencies (#917)
+vuejs/core,docs,remove extra () in link tag (#13086)
+nestjs/nest,fix,handle file streams the parser destroys with an error (#18377)
+vuejs/core,chore,add pnpm usage to download template (#7815)
+angular/angular,refactor,configure VS Code extension host launch for ngp language service
+vitest-dev/vitest,fix,export custom snapshot matcher helper from `vitest` (#10042)
+vuejs/core,chore,improve isPromise check in accordance with Promise A+ specification (#8506)
+conventional-changelog/commitlint,fix,move loadsh to dependencies
+TanStack/query,docs,use 'import type' for 'Ref' (#12157)
+TanStack/query,test,resolve ESLint typescript-eslint/require-await warnings (#8908)
+conventional-changelog/commitlint,chore,add syntax highlighting and format arrays (#3463)
+nuxt/nuxt,fix,sort route paths before creating route tree (#31454)
+conventional-changelog/commitlint,chore,update babel monorepo (#2023)
+angular/angular,chore,cut the v22.2.0-next.0 release
+nuxt/nuxt,refactor,let a server builder name the event the app sees
+vitejs/vite,chore,add extra actions to live frame (#21937)
+TanStack/query,docs,exclude members declared in 'node_modules' from generated reference docs (#12014)
+vitest-dev/vitest,fix,allow `changed` in configuration options (#10651)
+TanStack/query,docs,Update mutations.md (#8105)
+conventional-changelog/commitlint,fix,fix minor formatting issues
+vitejs/vite,refactor,make esbuild optional peer dependency
+vitejs/vite,docs,update bluwy bio (#19442)
+TanStack/query,docs,rename the third 'onError' parameter from 'context' to 'onMutateResult' (#12194)
+nuxt/nuxt,fix,enable HMR for defineNuxtComponent in JSX (#35620)
+nestjs/nest,fix,stop discarding parser and handler lookup failures silently
+vitest-dev/vitest,test,add module diagnostic coverage (#10954)
+vitest-dev/vitest,refactor,remove explorer `queueMicrotask` logic (#10980)
+vitejs/vite,fix,fix `global` variable name conflict (#17809)
+angular/angular,test,mark <user> content projection diagnostic as known ngp failure
+nuxt/nuxt,fix,include builder-env types in nitro context when `nitroViteEnvironment` is enabled (#36558)
+vitejs/vite,fix,fs check with svg and relative paths (#19782)
+vitejs/vite,docs,delegate virtual modules convention explanation to Rolldown docs (#22872)
+TanStack/query,test,extract shared test setup into 'beforeEach' (#11028)
+vitest-dev/vitest,fix,correct `project.provide` type (#5959)
+nuxt/nuxt,fix,prevent assignment for rolldown's replacement plugin (#33526)
+nuxt/nuxt,docs,add documentation for module lifecycle hooks (#33115)
+vuejs/core,chore,upgrade rollup@2 to rollup@3 (#6990)
+vitejs/vite,chore,add changelog rearrange script (#21835)
+vitest-dev/vitest,docs,`singleThread` to mention `isolate: false` (#8822)
+vitejs/vite,refactor,remove `optimizeDeps.rollupOptions` (#23760)
+vitejs/vite,chore,v5.4.0
+angular/angular,refactor,do not retain UrlTree instances in RouterLink
+angular/angular,refactor,add method to emitter context
+vitest-dev/vitest,chore,rewrite UI tests using @vitest/browser (#5707)
+vuejs/core,fix,reset prevChildren to prevent memory leak (#13183)
+vuejs/core,refactor,cache modifier wrapper functions
+vitejs/vite,chore,v7.0.3
+conventional-changelog/commitlint,chore,pin github actions to commit-hash (#4343)
+nestjs/nest,chore,publish v11.1.21 release
+vuejs/core,chore,bump repl version
+vitest-dev/vitest,chore,upgrade @antfu/install-pkg (#6328)
+nestjs/nest,fix,take the scope of the class in `useClass()` overrides (#17952)
+TanStack/query,chore,add .vscode/mcp.json and .github/instructions/nx.instructions.md to .gitignore (#9325)
+vitest-dev/vitest,docs,add links to older migration guides (#9733)
+nestjs/nest,fix,preserve deferred SSE handlers
+vitejs/vite,fix,only treat EADDRINUSE as port conflict in wildcard pre-check (#21642)
+angular/angular,fix,Strips sensitive headers on cross-origin redirects
+vitejs/vite,docs,list overwrite flag in help (#22262)
+nuxt/nuxt,test,cover `nuxt/server` sessions end to end
+vuejs/core,fix,fix missed updates when passing text vnode to `<component :is>` (#8304)
+vitejs/vite,fix,require serialization for `HMRConnection.send` on implementation side (#18186)
+vuejs/core,refactor,replace `Object.assign` with `extend` (#8988)
+TanStack/query,chore,v5.71.0
+angular/angular,docs,fix NG05201 error page trigger and add it to the overview
+TanStack/query,fix,never revert to undefined data (#9577)
+vitest-dev/vitest,fix,show a better error if there is a pending dynamic import (#9676)
+angular/angular,refactor,guard i18n insertion assertion with ngDevMode
+angular/angular,docs,use control flow in template variable scope examples
+vitejs/vite,chore,add debug log when waiting for dep before init (#23566)
+vitest-dev/vitest,docs,deprecate old context augmentation and recommend test.extend (#7703)
+nestjs/nest,fix,collect configurable module alias dependencies (#17999)
+vitest-dev/vitest,docs,add warning about local expect when relying on test state (#8716)
+TanStack/query,chore,v5.74.5
+vitest-dev/vitest,fix,use typescript pool in toTestSpecification (#11451)
+TanStack/query,docs,document the 'hideDisabledQueries' devtools option and its 'false' default (#12155)
+vitejs/vite,feature,expose default mainFields/conditions (#18648)
+vitest-dev/vitest,fix,`extends: true` correctly inherits all root config properties (#7232)
+nuxt/nuxt,docs,update roadmap dates (#34166)
+nuxt/nuxt,docs,add a11y release (#34041)
+vitejs/vite,fix,escape ANSI escape sequence for `server.forwardConsole` (#23933)
+nuxt/nuxt,chore,fix stale error template path in `.gitattributes`
+nestjs/nest,fix,keep logged key names out of the redactor cache keys
+TanStack/query,test,add tests for online toggle (#10692)
+TanStack/query,refactor,remove extra spaces inside the cached posts comment (#12477)
+angular/angular,refactor,move out HMR dependency extraction logic
+nestjs/nest,fix,normalize slashes when mapping controllers for middleware (#18075)
+nuxt/nuxt,fix,listen to `link:prefetch` hook before onNuxtReady (#36271)
+angular/angular,docs,correct docs about the chain behavior.
+conventional-changelog/commitlint,feature,add --config to load a custom config file (#5125)
+nestjs/nest,feature,add MulterOptions and MulterField interfaces for express platform configuration
+nuxt/nuxt,chore,improve internal types
+vitejs/vite,chore,reduce diffs with v6 branch (#17942)
+vuejs/core,fix,nodes with v-once shouldn't be stringified (#13878)
+vitest-dev/vitest,fix,fix output limit over counting (#9965)
+nuxt/nuxt,feature,add `serialize` option to keep async data out of payload (#35779)
+TanStack/query,chore,update example dev containers to node 22 (#8370)
+nuxt/nuxt,fix,keep server auto-import scanning (#35938)
+angular/angular,fix,support updateOn blur and submit for custom FormValueControl
+angular/angular,refactor,revamp highlighter
+nestjs/nest,fix,answer requests whose exception filter throws (#18359)
+angular/angular,refactor,decouple preprocessor syntax extraction from resource and module resolution
+angular/angular,refactor,replace forEach with for...of in entry_point
+nestjs/nest,chore,fix misspelled spec filenames
+TanStack/query,chore,declare '<user>react/eslint-plugin' in the react packages and examples that use it instead of the root (#11726)
+nuxt/nuxt,chore,pass commit sha when triggering ecosystem ci
+vitest-dev/vitest,fix,ensure errors keep their message and stack after `toJSON` serialisation (#8053)
+vitejs/vite,chore,v7.1.11
+TanStack/query,test,"use precise time in 'advanceTimersByTimeAsync', and add 'expect' using 'toBeInTheDocument' (#9450)"
+vitejs/vite,chore,v8.0.1
+vitest-dev/vitest,fix,initiate FakeTimers on demand (#5450)
+vitejs/vite,fix,skip hot channel client normalization for wsServer  (#18782)
+TanStack/query,refactor,skip no-op hydration callbacks and export dehydrateQuery (#11253)
+nuxt/nuxt,refactor,use named imports from `defu` + `consola`
+vitest-dev/vitest,feature,added chai style assertions (#8842)
+vitest-dev/vitest,feature,support `--inspect` (#6433)
+angular/angular,fix,improve code selection contrast in dark mode
+nestjs/nest,fix,keep mqtt event listeners across reconnects (#17902)
+angular/angular,docs,document deprecated allowSignalWrites option in v19 update guide
+TanStack/query,test,use precise time in 'advanceTimersByTimeAsync' (#9429)
+vitest-dev/vitest,test,test oxc decorators and coverage (#9738)
+vitest-dev/vitest,docs,more migration changes in v3 (#7261)
+vitest-dev/vitest,chore,add a testing agent (#9788)
+nuxt/nuxt,refactor,filter virtual module load hooks by id (#36077)
+vuejs/core,fix,update compiler to ^7.24.5 (#10924)
+vitest-dev/vitest,fix,`postMessage` to send ports to workers (#9078)
+vitest-dev/vitest,fix,exit gracefully when the browser disconnects during cancellation (#10962)
+vitejs/vite,chore,add 97ad042 to .git-blame-ignore-revs (#23330)
+angular/angular,docs,close the unterminated code fences in the compatForm docs
+vitest-dev/vitest,chore,release v4.0.0-beta.10
+TanStack/query,test,"use precise time in 'advanceTimersByTimeAsync', and add 'expect' using 'toBeInTheDocument' (#9447)"
+nestjs/nest,chore,missing test bootstrap script in package.json
+nuxt/nuxt,fix,respond with a 500 to a dev request that throws (#36883)
+vitejs/vite,refactor,remove dead code (#21334)
+vitejs/vite,refactor,client-only top-level warmup (#18524)
+TanStack/query,test,switch to fake timers and replace 'sleep' with 'advanceTimersByTimeAsync' (#9372)
+vitest-dev/vitest,fix,`include/exclude` globs too eager (#9818)
+nuxt/nuxt,fix,load live data from `vfs` even if a file exists in `buildDir` (#31969)
+nuxt/nuxt,docs,migrate to @nuxt/content v3 (#31150)
+vuejs/core,chore,update lint (#10583)
+angular/angular,chore,run Renovate post-upgrade tasks for Cargo updates
+TanStack/query,test,add test for stopping listening to changes on 'onScopeDispose' (#11619)
+vitejs/vite,refactor,call `module.enableCompileCache()` (#18323)
+conventional-changelog/commitlint,docs,add package dependency graph
+angular/angular,docs,update Defer Trigger Misconfiguration with new examples
+TanStack/query,refactor,type the mock interceptor events and bodies as 'unknown' instead of 'any' (#12177)
+angular/angular,test,add NGP known-failure skip list to filesystem test helper (#71313)
+vuejs/core,chore,improve compileTemplate warn message (#11085)
+vitest-dev/vitest,docs,update migration guide (#10930)
+vuejs/core,chore,update build (#14465)
+vitejs/vite,chore,use allowBuilds (#22157)
+vuejs/core,chore,use relative import location instead of package (#9941)
+TanStack/query,test,"use precise time in 'advanceTimersByTimeAsync', and add 'expect' using 'toBeInTheDocument' (#9455)"
+conventional-changelog/commitlint,chore,deps (#4562)
+vitejs/vite,chore,v7.0.4
+TanStack/query,docs,Update overview.md (#9181)
+TanStack/query,docs,add Chrome extension information for TanStack Query devtools across multiple frameworks (#9275)
+vitejs/vite,docs,clarify tsconfig resolution for each file (#22744)
+vitejs/vite,chore,fix docs build
+vitest-dev/vitest,refactor,find dynamic imports with es-module-lexer (#12028)
+TanStack/query,docs,remove unnecessary 'replace' that doesn't match source content (#10193)
+nuxt/nuxt,test,use `vi.waitUntil` instead of custom retry logic
+conventional-changelog/commitlint,chore,add watch task (#483)
+nestjs/nest,chore,remove access flag
+conventional-changelog/commitlint,feature,adds support for plugins (#228) (#588)
+vuejs/core,chore,update vscode ts settings (#15250)
+vitejs/vite,docs,rewrite VS Code debugging section (#22974)
+angular/angular,refactor,remove synchronous *Sync preprocessor APIs
+vitejs/vite,docs,update code references in CONTRIBUTING.md to latest tag (#23056)
+TanStack/query,test,"remove 'vi.waitFor', and add 'advanceTimersByTimeAsync' (#9415)"
+vitejs/vite,feature,enable minification but keep pure annotations for es output with terser (#20522)
+nestjs/nest,feature,warn on late websocket adapter registration
+TanStack/query,chore,set up vitest environment with production fallback test (#10629)
+nuxt/nuxt,refactor,replace `runInNewContext` with AST walker
+vitejs/vite,chore,remove `<user>project/runtime` devDep (#20389)
+TanStack/query,chore,add infiniteQueryOptions tests from react-query (#9544)
+angular/angular,docs,close menù with click outside container
+vuejs/core,chore,update lint (#12424)
+TanStack/query,refactor,centralize NonUndefinedGuard type definition (#9187)
+vitejs/vite,chore,update deps in create-vite for 7.0-beta (#20148)
+nestjs/nest,chore,publish v11.1.15 release
+vitejs/vite,refactor,remove `rolldown` boolean flag (#21596)
+TanStack/query,docs,Add guides (#12454)
+TanStack/query,chore,bundle-size reporting
+vitejs/vite,docs,fix broken links (#22608)
+nestjs/nest,chore,publish v11.1.12 release
+vitest-dev/vitest,chore,release v4.0.16
+nuxt/nuxt,refactor,add explicit return types to runtime files (#35139)
+angular/angular,feature,add focusReset to NavigationBehaviorOptions
+vitest-dev/vitest,docs,update `vitepress-plugin-group-icons` (#9482)
+conventional-changelog/commitlint,docs,distribute license with all packages #426
+vitejs/vite,docs,update sourcemapIgnoreList Rolldown references (#23248)
+TanStack/query,docs,angular examples improvements (#8782)
+TanStack/query,test,use fake timers for useMutation.test.tsx (#9081)
+vitejs/vite,feature,update default browser target (#21193)
+vitest-dev/vitest,refactor,reduce the amount of dynamic imports (#8465)
+nuxt/nuxt,docs,clarify function signature requirement for custom `$fetch` in `createUseFetch` (#34564)
+angular/angular,docs,clarify provideZoneChangeDetection usage in v21+
+vitejs/vite,feature,update rolldown and support custom configs for native dynamic import vars plugin (#310)
+angular/angular,docs,Update error display for password field in signal forms playground
+angular/angular,docs,release notes for the v22.1.3 release
+angular/angular,refactor,Modify buildDirectiveForest to set default values for properties that will not be included in the forest returned by non-Angular frameworks.
+TanStack/query,docs,guard the react shadow-dom mount target (#10431)
+nuxt/nuxt,feature,support dynamic `expires` in `useCookie` (#35628)
+vitejs/vite,docs,"fix typo ""constrains"" to ""constraints"" (#18879)"
+angular/angular,refactor,"deduplicate explicitly deferred types to prevent syntax errors When `<user>.deferredImports` maps blocks to arrays of dependencies, an explicitly deferred dependency might be defined in multiple blocks (e.g. `block1: [CmpA], block2: [CmpA]`). Previously, these were appended to the `explicitlyDeferredTypes` array without deduplication. When generating the `setClassMetadataAsync` wrapper for development mode, the compiler used this array to generate callback parameters for dynamic imports. This resulted in duplicate parameter names in the callback signature `(CmpA, CmpA) => { ... }`, which causes an `Uncaught SyntaxError` when V8 parses the module in strict mode. This commit deduplicates `explicitlyDeferredTypes` in the `ngtsc` component handler, and adds a secondary deduplication check in the `r3_class_metadata_compiler` generator to ensure duplicate parameter names are never emitted."
+vuejs/core,chore,optimize size retrieval in createInstrumentations (#13759)
+TanStack/query,docs,add JSDoc for 'select' and 'defaultOptions' (#11562)
+TanStack/query,test,add test for independently toggling two pages (#10737)
+conventional-changelog/commitlint,docs,add every package manager (#4501)
+angular/angular,test,run template typecheck test suite against NGP (#71313)
+TanStack/query,chore,update actions/labeler (#10278)
+vitest-dev/vitest,feature,collect mock.contexts (#5955)
+nuxt/nuxt,feature,allow forcing `start`/`set` in loading indicator (#30989)
+angular/angular,refactor,remove unused skipped inputs set
+nestjs/nest,feature,add graceful shutdown option
+vitest-dev/vitest,chore,update vite 8 (#10287)
+vitejs/vite,feature,include column in config incompatibility location (#23064)
+conventional-changelog/commitlint,chore,add weekly non-blocking pnpm audit (#4766)
+TanStack/query,refactor,"add ""Set"" instead of ""includes"" (#9221)"
+vuejs/core,chore,remove unnecessary imports (#8262)
+TanStack/query,chore,v5.62.3
+vitejs/vite,chore,v7.1.16
+vitest-dev/vitest,docs,Fix minor grammar on Browser Mode docs (#9312)
+vitest-dev/vitest,docs,fix `IntersectionObserver` example (#9045)
+nestjs/nest,feature,add structured logging params support
+TanStack/query,docs,remove stale 'suspense' references left over from the v5 suspense split (#11200)
+vitest-dev/vitest,feature,draft implementation
+conventional-changelog/commitlint,refactor,load typescript configs with jiti directly (#5052)
+TanStack/query,docs,"add 'auto-refetching', 'pagination', 'load-more-infinite-scroll', 'infinite-query-with-max-pages' and 'prefetching' examples (#12403)"
+vuejs/core,chore,v3.3.1
+TanStack/query,chore,add 'vueConfig' with native 'vue' rules for 'vue-query' and 'vue-query-devtools' (#12450)
+TanStack/query,test,switch 'success' and 'reset' tests to '<user>' + 'render' pattern (#10566)
+vuejs/core,chore,pin @rollup/plugin-replace to 5.0.4
+TanStack/query,docs,fix `variables` obtaining path (#8589)
+angular/angular,refactor,type async validator subscription
+vitejs/vite,chore,avoid recompiling regex in mergeChangelog script (#23456)
+nuxt/nuxt,docs,add mcp server and llms.txt (#33371)
+TanStack/query,test,assert 'updateState' sets keys missing from the update to 'undefined' (#11609)
+TanStack/query,test,assert that the work settles in the cache after unmount while the component state stays unchanged (#12341)
+conventional-changelog/commitlint,docs,upgrade guide for v12
+vitest-dev/vitest,feature,"v8 to ignore empty lines, comments, types (#5457)"
+vitejs/vite,chore,v7.0.0-beta.1
+TanStack/query,test,add tests for resize handle (#10691)
+vitest-dev/vitest,chore,add semgrep (#10844)
+vitest-dev/vitest,refactor,don't provide extends/workspaceConfigPath in the config (#6904)
+vuejs/core,chore,unpin rollup
+TanStack/query,test,simplify 'queryFn' (#9495)
+angular/angular,docs,add debouncing section to signal forms async operations
+vitest-dev/vitest,chore,release v4.0.0-beta.11
+TanStack/query,chore,v5.59.9
+vitejs/vite,docs,unify `__dirname` usage (#19176)
+vitest-dev/vitest,feature,annotation API (#7953)
+nuxt/nuxt,docs,use `vs.` consistently (#31760)
+TanStack/query,chore,update useQueryFocusAware docs (#8205)
+angular/angular,chore,cut the v22.2.0-next.6 release
+vitest-dev/vitest,docs,add vanilla example (#7049)
+nuxt/nuxt,feature,support grouping folders in component directories (#35699)
+angular/angular,feature,compile non-exported classes if standalone (#68454)
+TanStack/query,docs,add JSDoc examples for optimistic update rollback and parallel 'mutateAsync' calls (#11431)
+angular/angular,docs,add native html validation clarification in signal forms docs
+nuxt/nuxt,chore,update nitro (main) (#36433)
+vitest-dev/vitest,test,faster bench fixture (#5527)
+vuejs/core,chore,enable pnpm trustPolicy: no-downgrade (#15330)
+nuxt/nuxt,refactor,scan app sources of every layer for dependency pre-bundling (#36777)
+vitejs/vite,docs,add overrides note in vite 8 beta post (#21201)
+vitest-dev/vitest,chore,SECURITY.md (#7476)
+TanStack/query,test,add test for promise not rejecting when 'experimental_prefetchInRender' is enabled (#10887)
+angular/angular,docs,improve signal demo example
+vuejs/core,chore,upgrade rollup & magic-string (#7326)
+conventional-changelog/commitlint,chore,pin dependencies (#507)
+vitejs/vite,docs,add color to astro logo (#18275)
+nestjs/nest,chore,update readme and package.json
+vitejs/vite,feature,use lightningcss by default for cssMinify
+TanStack/query,refactor,make 'postId' a required input and remove the always-true 'enabled' in 'PostComponent' (#12170)
+nuxt/nuxt,refactor,decrease if checks when prerendering (#32455)
+nuxt/nuxt,refactor,hoist static head of `app.vue` into server renderer (#37048)
+vitest-dev/vitest,refactor,remove jsx examples in favour of browser examples (#6630)
+vitest-dev/vitest,docs,fix broken link (#7276)
+TanStack/query,test,rename 'mutationFn' param to '_variables' in 'MutationFunctionContext' tests (#11448)
+TanStack/query,docs,add 'Server Rendering & Hydration' guide (#11380)
+TanStack/query,test,use 'toStrictEqual' to assert the exact state shape (#11047)
+nuxt/nuxt,chore,reorder options object
+angular/angular,test,clean up invalid tests
+TanStack/query,docs,small grammar fix in advanced-ssr docs (#10507)
+vitejs/vite,docs,mention pkg.pr.new for unreleased commits (#19424)
+vuejs/core,refactor,"(wip) split compileScript logic, use context, move defineProps"
+TanStack/query,docs,restore real timers in 'afterEach' in the fake timers example (#12198)
+TanStack/query,docs,add missing JSDoc to observer methods (#11837)
+nuxt/nuxt,docs,improve `refreshNuxtData` docs (#31448)
+vuejs/core,chore,default isCustomElement for sfc playground
+vuejs/core,chore,comments [ci skip]
+vitejs/vite,feature,show error when accessing variables not exposed in CJS build (#18649)
+nestjs/nest,test,fix outdated test
+conventional-changelog/commitlint,refactor,variable instead of literal
+vuejs/core,chore,disable reexportProtoFromExternal in rollup config
+vitest-dev/vitest,chore,allow ci on non main PR (#7320)
+angular/angular,docs,move server-side security and host validation documentation from `ssr.md` to `security.md`.
+TanStack/query,test,move 'vi.useRealTimers' to the end of 'afterEach' so cleanup runs under fake timers (#10920)
+vitest-dev/vitest,feature,add `--repeats` CLI option (#10504)
+nuxt/nuxt,chore,ignore webpagetest.org when scanning links
+vitejs/vite,feature,change `minify` to be async (#505)
+vuejs/core,chore,fix ci
+conventional-changelog/commitlint,chore,update typescript (#3433)
+angular/angular,refactor,expose `consequentialHint` annotation
+vitest-dev/vitest,chore,add more packages to `trustPolicyExclude` (#9110)
+angular/angular,refactor,declare explicit reactive node prototypes types
+vuejs/core,chore,use single thread for e2e tests on ci
+vitejs/vite,feature,implement hook filters (#19602)
+TanStack/query,docs,prefer using satisfies instead of type cast in persistQueryClient docs (#8551)
+conventional-changelog/commitlint,docs,use correct variable in Gitlab CI example (#3083) (#3084)
+vuejs/core,chore,replace deprecated `initEvent` (#8490)
+TanStack/query,chore,use 'pnpm run' for prettier script for consistency (#9348)
+vuejs/core,chore,v3.4.0-beta.3
+vitejs/vite,docs,size the version check input to its content (#23505)
+TanStack/query,docs,add missing JSDoc to solid-query and solid-query-devtools (#11841)
+TanStack/query,feature,add 'DefinedInitialDataInfiniteOptions' overload for 'createInfiniteQuery'/'infiniteQueryOptions' (#11356)
+vitest-dev/vitest,chore,disable organic comment (#10424)
+angular/angular,refactor,implement Angular signal graph tool
+vitejs/vite,refactor,run `dev.createEnvironment` and `build.createEnvironment` concurrently (#20699)
+vitejs/vite,chore,generate sourcemaps in import-meta-current-dirname plugin (#23904)
+angular/angular,refactor,base implementation of custom control binding in NgControl
+vuejs/core,chore,fix canary release workflow (#11516)
+nuxt/nuxt,refactor,"without pages, skip client plugins that require routing (#35794)"
+angular/angular,chore,disable strict release age checks in pnpm workspaces
+vitest-dev/vitest,docs,clarify `expect` docs (#7853)
+angular/angular,docs,document primary and secondary entry points for libraries
+vuejs/core,chore,use /*@__PURE__*/ annotation consistently
+nuxt/nuxt,test,add benchmark for vite client build (#31118)
+vuejs/core,chore,fix typo (#11535) [ci skip]
+TanStack/query,test,remove unnecessary async keywords (#8784)
+vuejs/core,refactor,simplify logic
+vuejs/core,chore,update lint (#14464)
+TanStack/query,chore,extend root eslint config and apply autofix like other adapters (#11698)
+vuejs/core,chore,constraint deep passes boolean (#9952)
+nestjs/nest,feature,introduce param decorator options
+nestjs/nest,docs,run the one-file quick start with the nest cli (#18540)
+nuxt/nuxt,feature,expose environment name on `import.meta` (#34844)
+nuxt/nuxt,test,provide nuxt extensions in unit test
+vuejs/core,chore,v3.4.19
+vitejs/vite,feature,load postcss config within workspace root only (#18440)
+TanStack/query,docs,"add 'auto-refetching', 'infinite-query-with-max-pages', 'load-more-infinite-scroll', 'optimistic-updates' and 'prefetching' examples (#12456)"
+TanStack/query,docs,Change the word 'Vue' to 'Solid' (#9287)
+angular/angular,docs,update signal form tutorial
+TanStack/query,docs,fixed cancellation typo (#8883)
+vitejs/vite,chore,mark builder api experimental (#18436)
+vitest-dev/vitest,docs,fix `mock.instances` docs example to use a constructible mock implementation (#10288)
+nuxt/nuxt,refactor,crawl client module graph when warming dev server (#35870)
+TanStack/query,feature,refactor and add mutation-property-order rule (#9191)
+TanStack/query,docs,add optimistic-updates example (#12404)
+vitejs/vite,docs,fix Vite 5 migration blog links (#22206)
+conventional-changelog/commitlint,docs,simplify intro experience
+nuxt/nuxt,chore,add autofix action tag in comment
+vuejs/core,chore,update build (#12464)
+nuxt/nuxt,test,use `srvx` and random port for remote provider (#31432)
+nuxt/nuxt,refactor,replace island teleports in a single html pass (#35515)
+vitejs/vite,chore,move all pnpm settings to `pnpm-workspace.yaml` (#19895)
+vitest-dev/vitest,chore,update vitest ui with the new brand theme icons (#9466)
+vuejs/core,chore,fix broken vite plugin url in warning message (#8224)
+TanStack/query,test,split 'isValidTimeout' rejection cases into separate 'it' blocks (#11071)
+TanStack/query,chore,v5.85.9
+TanStack/query,test,hydration test case for overwriting with promise
+TanStack/query,docs,"remove redundant page title heading from InfiniteQueryObserver, QueriesObserver, and QueryClient (#11197)"
+nestjs/nest,test,Add unit tests for extendArrayMetadata
+TanStack/query,chore,v5.51.19
+vitest-dev/vitest,chore,release v5.1.1 (#12004)
+vitejs/vite,chore,update rolldown-related dependencies (#20536)
+vitejs/vite,feature,use rolldown in the dep optimizer
+angular/angular,docs,fix aria-label parsing breaking headings
+angular/angular,docs,preserve navigation origin when clicking cross-category links
+TanStack/query,docs,add missing JSDoc descriptions and enforce 'jsdoc/require-description' (#11860)
+angular/angular,docs,update ng-content syntax to self-closing tags in content projection and component harnesses guides
+vitest-dev/vitest,docs,"split migration into multiple pages, add a button to copy the prompt (#11129)"
+TanStack/query,chore,add injection context tests (#7993)
+vitejs/vite,docs,correct 'rollup' to 'Rolldown' (#23202)
+vitejs/vite,feature,export `Visitor` and `ESTree` from `rolldown/utils` (#21664)
+nestjs/nest,docs,fix subject-verb agreement in contributing guide (#18269)
+nestjs/nest,refactor,add warn for post-initialization configuration
+TanStack/query,docs,expand agent contribution guidance (#12586)
+TanStack/query,chore,remove redundant word in comment (#9231)
+vuejs/core,chore,re-fix size report (#11204)
+vitest-dev/vitest,docs,default value for the `--pool` CLI option (#7038)
+nuxt/nuxt,chore,align global components indent (#33340)
+vitejs/vite,feature,support `this.environment` in `options` and `onLog` hook (#18142)
+vuejs/core,test,bigint test for non-observable values (#6177)
+vuejs/core,feature,enable reactive props destructure by default and deprecate withDefaults() (#7986)
+angular/angular,docs,fix the docregion marker in the apache config example
+angular/angular,docs,streamline and update mcp server setup documentation
+nestjs/nest,feature,accept module metadata as the root module (#18523)
+TanStack/query,test,add type tests for default 'MutationState' and 'select' inference (#10504)
+vitest-dev/vitest,chore,reference local knip schema instead of unpkg (#10921)
+vitejs/vite,test,run only in the bundled-dev suite (#23692)
+vitejs/vite,chore,remove publishCI diff
+angular/angular,docs,normalize product name casing across docs
+nuxt/nuxt,feature,add augmentable `NuxtPageMeta` interface for `NuxtPage.meta` (#34816)
+nuxt/nuxt,chore,add `pathe` to nitro's dependencies for strict installs
+vuejs/core,chore,check prettier format (#6830)
+TanStack/query,docs,align the JSDoc description with the other adapters (#11624)
+TanStack/query,refactor,write durations in 'count * unit * 1000' order (#12382)
+TanStack/query,docs,add 'shadow-dom' and 'devtools-panel' examples (#12399)
+conventional-changelog/commitlint,feature,enable multiple scopes in scope-enum and scope-case rules (#901)
+vitejs/vite,chore,v7.2.1
+vuejs/core,chore,fix wrong test name for useShadowRoot (#11550)
+vuejs/core,refactor,use Symbol.for for runtime Symbols
+vuejs/core,feature,remove reactivity transform (#9321)
+vitejs/vite,refactor,use `applyToEnvironment` in internal plugins (#19588)
+nestjs/nest,refactor,improve is-static method readability
+TanStack/query,feature,Add bulk edit option for simple objects and arrays (#8095)
+nuxt/nuxt,refactor,render internal `<NuxtLink>` anchors directly on server (#36015)
+TanStack/query,test,replace 'runAllTimersAsync' with 'advanceTimersByTimeAsync' (#9436)
+vuejs/core,chore,update snap
+TanStack/query,docs,render reference property lists as tables (#11533)
+angular/angular,docs,add clarification around plain object models
+TanStack/query,docs,"describe how 'enabled' tracks a 'ref', a getter, a plain boolean, and the '(query) => boolean' callback (#12547)"
+vitejs/vite,refactor,avoid encoding intermediate source maps (#23461)
+TanStack/query,refactor,improve type safety and performance in `getMutationDefaults` (#8669)
+vitest-dev/vitest,test,fix flaky benchmark summary (#5497)
+nuxt/nuxt,refactor,lazy-load bundler deps + start bundler import eagerly (#37045)
+vitest-dev/vitest,chore,add more rules to AGENTS.md regarding ai contributions (#11142)
+vitest-dev/vitest,refactor,replace `debug` with `obug` (#9057)
+nuxt/nuxt,feature,add a factory function for `useFetch` and `useAsyncData` (#32300)
+TanStack/query,docs,clarify query client query methods (#10725)
+vuejs/core,feature,support passing custom-element-specific options via 2nd argument of defineCustomElement
+TanStack/query,docs,add missing JSDoc to 'TimeoutManager' methods and escape '@tanstack/query-core' (#11836)
+vitest-dev/vitest,chore,fix typos in docs and comments (#9527)
+nuxt/nuxt,feature,enable `typedPages` with `compatibilityVersion: 5` (#35789)
+angular/angular,docs,combine multiple documentation typo fixes
+vitejs/vite,docs,explain browser target using words used by baseline-browser-mapping (#23041)
+vuejs/core,chore,delete an unnecessary parameter + add jsdoc to build script (#8527)
+angular/angular,chore,cut the v22.0.0-next.1 release
+vitejs/vite,test,correct esbuild `useDefineForClassFields` test (#206)
+vitejs/vite,chore,v7.0.12
+TanStack/query,test,use fake timers for useMutation.test.tsx (#9094)
+nuxt/nuxt,refactor,parse each module once in the keyed-functions transform (#37042)
+vuejs/core,chore,split changelog to fix github rendering [ci skip]
+vitest-dev/vitest,chore,ignore pretty-format when publishing
+vitest-dev/vitest,chore,release v4.1.0-beta.6
+vitest-dev/vitest,feature,add `onUnhandledError` callback (#8162)
+angular/angular,feature,Disabling nullishCoalescingNotNullable & optionalChainNotNullable on ng update Related to angular#67959 disabling two diagnostics errors by `ng update`:
+vitest-dev/vitest,docs,add custom browser command example to show how to validate input (#10443)
+vitejs/vite,docs,add `withFilter` +  performance chapter (#19890)
+vuejs/core,feature,deprecate reactivity transform
+angular/angular,refactor,complete removal of deprecated `createNgModuleRef` alias
+TanStack/query,chore,v5.89.0
+angular/angular,refactor,support cold-start project discovery for html templates
+nuxt/nuxt,refactor,migrate to `oxc-walker` (#32250)
+nestjs/nest,chore,publish v12.1.0 release
+vuejs/core,chore,improve type safety in watch functions and instanceWatch (#13918)
+vuejs/core,chore,update playground (#10356)
+angular/angular,docs,add troubleshooting for MCP setup issues
+conventional-changelog/commitlint,test,recursive extends with ts file
+angular/angular,refactor,track cycle count and latest duration directly in CD analyzer
+vitejs/vite,chore,run typecheck in unit tests (#18858)
+nuxt/nuxt,chore,migrate resolutions to `pnpm-workspace.yaml`
+vuejs/core,feature,improve support of getter usage in reactivity APIs (#7997)
+TanStack/query,chore,replace the legacy '.eslintrc' with a flat config and run 'test:eslint' (#11995)
+vuejs/core,chore,remove unused variable (#11842)
+vuejs/core,chore,v3.4.33
+angular/angular,docs,add documentation for NG8023
+TanStack/query,test,"add type tests for page params, 'initialData', 'select', and 'Accessor<QueryClient>' (#10503)"
+vitejs/vite,feature,integrate devtools (#21331)
+vitejs/vite,feature,update rolldown (#259)
+vitest-dev/vitest,docs,add tip for using HTML reporter on CI (#10023)
+nuxt/nuxt,refactor,use `flru` for prerender cache (#36340)
+vitest-dev/vitest,docs,use `extends` instead of `configFile` in `injectTestProjects` (#7860)
+TanStack/query,test,replace 'async/await sleep' with 'sleep().then()' in test 'queryFn' and 'mutationFn' (#10400)
+TanStack/query,test,assert the forwarded 'onClose' callback in the panel instead of 'expect.any(Function)' (#11029)
+vitest-dev/vitest,refactor,fix tsconfig file in ui (#7221)
+nuxt/nuxt,docs,document the new `nuxt/server` helpers and what stays on nitro
+conventional-changelog/commitlint,docs,sort commit type list (#2885)
+vuejs/core,chore,include terser in workspace deps [ci skip]
+angular/angular,chore,add id-token: write permission to release workflow
+vitest-dev/vitest,docs,update migration guide (#10682)
+TanStack/query,chore,enable '<user>eslint/array-type' and '<user>eslint/no-unnecessary-type-assertion' (#11925)
+conventional-changelog/commitlint,chore,switch to official cosmiconfig-typescript-loader #2912 (#2914)
+TanStack/query,chore,Version Packages (#10706)
+nuxt/nuxt,chore,continue autofix workflow when `test:engines` fails
+vitejs/vite,chore,update rolldown-related dependencies (#20270)
+TanStack/query,chore,add '<user> skip' banner so the app's 'solid-refresh' does not wrap the bundled Solid runtime (#12517)
+vitejs/vite,refactor,skip native config compat check when warning is ignored (#23000)
+angular/angular,refactor,index bound directive inputs and outputs in templates
+angular/angular,refactor,replace deprecated tree APIs in the component tree
+nuxt/nuxt,feature,add top-level `prerender` alias for `nitro.prerender` (#32356)
+vitest-dev/vitest,refactor,rename TestFile to TestModule (#6356)
+angular/angular,test,migrate integration tests to zoneless scheduling
+TanStack/query,chore,v5.90.2
+conventional-changelog/commitlint,chore,enable CodeSandbox CI (#3946)
+vitest-dev/vitest,feature,support Vite 7 (#8003)
+nuxt/nuxt,refactor,only run babel on server modules with decorators (#37053)
+vuejs/core,chore,update build (#12834)
+vitejs/vite,chore,v7.2.8
+vuejs/core,chore,use fresh containers for app mount tests
+vitest-dev/vitest,test,fix column test in rolldown (#9892)
+vitest-dev/vitest,chore,"remove dead code that the ""./src/*"" export was hiding from knip (#10919)"
+nuxt/nuxt,docs,replace dead Vue Router docs links (#32779)
+nuxt/nuxt,refactor,move server type declarations into schema (#36293)
+TanStack/query,test,rename 'console.error' spy from 'onErrorMock' to 'consoleMock' to align with react-query (#11603)
+angular/angular,docs,update our test authoring guidance
+vitest-dev/vitest,docs,mention SpyInstance
+vitest-dev/vitest,docs,add `--static-parse` to docs
+nestjs/nest,refactor,avoid AsyncResource.bind() per request in interceptor chain (#18136)
+nuxt/nuxt,refactor,load default error template without `defineAsyncComponent` (#36985)
+vitejs/vite,test,return empty object for `browser: false` mapped modules (#22842)
+angular/angular,docs,clarify route resource parameters
+nuxt/nuxt,docs,provide deno package manager examples (#34070)
+vitest-dev/vitest,feature,support `meta` in test options (#9535)
+vitest-dev/vitest,test,test css import (#7653)
+nuxt/nuxt,docs,clarify --preset option in nuxt build command (#34335)
+vitest-dev/vitest,feature,set mode to `todo` if no function is passed down to `test` or `describe` (#8346)
+angular/angular,refactor,Export hybrid analysis from bin
+angular/angular,docs,update README to clarify app setup confirmation
+TanStack/query,test,assert refetch queryKey outside the discarded promise callback (#11461)
+angular/angular,docs,fix signal forms compat examples
+vitest-dev/vitest,feature,`--silent=passed-only` to log failed tasks only (#7530)
+TanStack/query,docs,pass filters to 'cancelQueries' and fix the imports of the 'HttpClient' example (#12179)
+angular/angular,docs,update default value for strictTemplates
+nuxt/nuxt,refactor,answer a redirect rule without h3
+TanStack/query,test,replace 'advanceTimersByTimeAsync' with 'advanceTimersByTime' (#9337)
+angular/angular,refactor,restructure profiler and directive forest code
+angular/angular,refactor,Move the attribute comment to the HTML AST
+conventional-changelog/commitlint,feature,add nx version ^15.0.0 as peerDependency (#3416)
+conventional-changelog/commitlint,docs,Update nx project filtering documentation (#4037)
+TanStack/query,test,add test for outside scope warning in development mode (#10240)
+angular/angular,docs,simplify testing setup examples
+vitejs/vite,docs,fix typo builtin -> built-in in plugins guide (#23525)
+vitest-dev/vitest,refactor,remove old and outdated examples (#5611)
+vitejs/vite,feature,add rush lockfile support (#20833)
+nestjs/nest,refactor,update test to match rmq constant rename
+angular/angular,docs,add clear buttons inside autocomplete examples
+vitest-dev/vitest,docs,add VoidZero org to Vladimir and Hiroshi (#7280)
+vitejs/vite,docs,optimize home page styles (#18539)
+vitejs/vite,feature,update rolldown (#252)
+angular/angular,docs,fix layout shift when refreshing the stagger example
+vuejs/core,refactor,add `__NO_SIDE_EFFECTS__` comments (#9053)
+TanStack/query,test,add test for 'trackResult' property tracking synchronization across all observers (#10185)
+vitejs/vite,docs,refactor environment api docs (#18316)
+vitejs/vite,feature,support React Compiler (#20704)
+TanStack/query,feature,add mutationOptions (#8316)
+angular/angular,docs,fix directives guide issues and inaccuracies
+angular/angular,docs,fix signal forms async validator typings
+vitejs/vite,feature,export `defaultExternalConditions` (#20279)
+TanStack/query,docs,fix relative links (#9262)
+TanStack/query,test,add tests for in-page panel visibility while a PiP window is open (#10762)
+TanStack/query,refactor,replace deprecated 'JSX.CSSProperties' with 'CSSProperties' from Preact namespace (#10622)
+TanStack/query,test,"replace 'advanceTimersByTimeAsync' with 'sleep' in 'queryFn', remove 'await' from 'fetchQuery' and related methods (#9443)"
+angular/angular,refactor,run router tree tests zoneless
+vuejs/core,feature,provide full props to props validator functions (#3258)
+vitest-dev/vitest,feature,simplify default exclude pattern (#6287)
+angular/angular,refactor,skip redundant didChange notifications in TsGoFacade
+nuxt/nuxt,docs,add warning about `source` from `<NuxtIsland>`
+TanStack/query,feature,add solid devtools panel export to solid devtools (#9551)
+vitejs/vite,test,remove `runInBuild` flag from `withRetry` (#18698)
+nuxt/nuxt,refactor,remove deprecated `baseUrl` handling
+nestjs/nest,test,remove debug console.log in server-kafka spec
+angular/angular,docs,remove note regarding lack of support for ng test --debug in browser mode
+TanStack/query,docs,update Next.js TypeScript docs reference (#10753)
+angular/angular,docs,fix the platform injector example in the hierarchical injectors diagram
+TanStack/query,docs,add 'select' example to 'useQuery' (#11343)
+vitest-dev/vitest,docs,add comprehensive Component Testing guide (#8409)
+vitejs/vite,docs,fix build() return type and loadConfigFromFile description for Rolldown (#22785)
+vitest-dev/vitest,docs,"show icons in code-groups and code titles, update sidebar (#6970)"
+TanStack/query,refactor,add 'shouldRedactErrors' to the query client as in the advanced SSR guide (#12076)
+TanStack/query,test,add 'advanceTimersByTimeAsync' and remove 'vi.waitFor' (#9326)
+vitejs/vite,feature,improve bad character warning (#19683)
+conventional-changelog/commitlint,feature,support config .cts  extension (#3461)
+vitejs/vite,docs,add EdgeOne pages (#21233)
+vitejs/vite,docs,note ssr-only module reload (#18755)
+vitest-dev/vitest,docs,add a warning about aliasing (#5618)
+vitest-dev/vitest,docs,fix doucment's some typo (#10083)
+vitest-dev/vitest,feature,Extend existing list command to output only a list of file names (#6392)
+vitest-dev/vitest,feature,add pluggable benchmark provider API (#10799)
+angular/angular,refactor,clean up and simplify url resolution utility
+angular/angular,feature,update Stack Overflow icon to new logo
+vitejs/vite,docs,clarify GitHub Pages instructions (enable + workflow) (#21020)
+vitejs/vite,docs,update haoqunjiang's info in team emeriti section (#18613)
+angular/angular,docs,capitalize `FormField` in `form-logic.md` `imports: [...]`
+conventional-changelog/commitlint,docs,remove GitLab clone depth limitation (#4105)
+angular/angular,test,fix view injector integration spec
+TanStack/query,docs,update links to ESLint rules (#8758)
+nestjs/nest,refactor,keep constants import on one line for prettier
+nuxt/nuxt,feature,register server handlers and plugins per server API (#36317)
+angular/angular,refactor,update generated code signatures
+conventional-changelog/commitlint,docs,English syntax correction (#3380)
+TanStack/query,docs,add an 'Oxlint' section for using the plugin through 'jsPlugins' (#12041)
+vuejs/core,feature,add slots types for built-in components (#6033)
+vitest-dev/vitest,test,update snapshot (#9613)
+vuejs/core,refactor,optimize `unrollBuffer` by avoiding promises (#11340)
+vuejs/core,refactor,avoid calling markRaw on component instance proxy
+angular/angular,feature,Adds deep linking from Chrome Performance panel
+TanStack/query,test,replace fake hosts with 'LitElement' hosts and add 'generateElementName' helper (#11681)
+vitest-dev/vitest,refactor,"reuse full name in reported tasks, update generator types (#6666)"
+vitejs/vite,feature,print `port` in the logged error message after failed WS connection with `EADDRINUSE` (#19212)
+vitest-dev/vitest,docs,use unified `<Experimental>` label (#10372)
+angular/angular,docs,release notes for the v20.3.18 release
+vitejs/vite,feature,support preprocessor with lightningcss (#19071)
+vitest-dev/vitest,feature,add `--last-failed` to run only failed tests (#11558)
+angular/angular,refactor,remove `checkNoChanges` from the public API.
+TanStack/query,test,"switch to fake timers, remove 'waitFor' and add 'advanceTimersByTimeAsync' (#9354)"
+vitejs/vite,docs,update fs.deny default in JSDoc (#18514)
+conventional-changelog/commitlint,docs,"decode ""%40"" to ""@"" that unnecessarily encoded (#2489)"
+angular/angular,feature,allow reading `Injector` from a view or content query
+vitejs/vite,test,reduce diff with normal Vite (#161)
+vitejs/vite,docs,fix browser target grammar (#22953)
+vitejs/vite,feature,generate code frame for parse errors thrown by terser (#20642)
+angular/angular,refactor,remove unused internal code
+angular/angular,docs,add spacing between reference option and description
+TanStack/query,test,rename 'src/tests' to 'src/__tests__' to align with other adapters (#11693)
+vitest-dev/vitest,feature,use BlazeDiff instead of pixelmatch (#9514)
+angular/angular,refactor,implement toggleWatchSignal for DevTools signal debugging
+vitest-dev/vitest,docs,clarify order of `before*` hooks cleanup functions (#10230)
+conventional-changelog/commitlint,test,migrate read tests from ava to jest (#904)
+angular/angular,feature,add TestBed.getFixture
+conventional-changelog/commitlint,feature,add scope-delimiter-style (#4580)
+TanStack/query,test,add tests for 'clientPersisterOnSuccess' and the 'unmount' returned by 'clientPersister' (#11623)
+conventional-changelog/commitlint,docs,typo (#3782)
+nuxt/nuxt,refactor,use dev exports for no-build type-checking  (#35605)
+TanStack/query,test,remove unnecessary type assertions and their 'oxlint-disable' comments (#12330)
+angular/angular,refactor,match multi-select identities in a single pass
+nuxt/nuxt,docs,update testing guide to test-utils v4.2.0 (#36234)
+nestjs/nest,test,Add unit tests for assignCustomParameterMetadata
+TanStack/query,test,add tests for resetting 'CopyButton' state after success and failure (#10738)
+vuejs/core,docs,comments on reactivity functions (fixes #4832) (#4836)
+TanStack/query,docs,Update preact-query version in examples (#10483)
+TanStack/query,docs,add JSDoc to the properties of the exported interfaces and type aliases (#11899)
+vitest-dev/vitest,docs,add artifacts and annotations to TestCase (#9104)
+angular/angular,refactor,rename element to tagName and keep nativeElement flat
+TanStack/query,docs,fix Vue example README headings (#10432)
+vitejs/vite,feature,align tsconfigs in svelte-ts template with others (#18995)
+TanStack/query,test,"switch to fake timers, and replace 'waitFor' with 'vi.waitFor' (#9388)"
+vitejs/vite,docs,update `vitepress-plugin-group-icons` (#21439)
+nuxt/nuxt,feature,add `ignore` option to `resolveFiles` (#32858)
+vuejs/core,test,"configure test hooks sequence order, remove workaround"
+TanStack/query,test,add 'assertType' and 'expectTypeOf' to type tests with no assertions (#10450)
+angular/angular,docs,add mention of identity tracking for field iterations
+nuxt/nuxt,feature,add `handleCors` to `nuxt/server`
+vitejs/vite,feature,enable dev server integration (#23333)
+vuejs/core,feature,Trusted Types compatibility (#10844)
+TanStack/query,test,add a test to ensure new meta gets accepted by fetchQuery
+conventional-changelog/commitlint,refactor,port core to typescript (#961)
+TanStack/query,docs,add JSDoc to the properties of the exported interfaces and type aliases (#11897)
+angular/angular,refactor,use native `Promise.withResolvers()` in remaining tests
+angular/angular,refactor,Address more feedback
+vitest-dev/vitest,test,relocate cli dts fixtures (#9566)
+vitest-dev/vitest,feature,allow run individual test/suites (#9465)
+angular/angular,docs,use the remote-cache config in the bazel caching guide
+conventional-changelog/commitlint,docs,remove double quote character added by #2391 (#2456)
+vuejs/core,docs,fix typo (#11105)
+TanStack/query,test,assert the exact infinite query result with 'toEqual' (#11045)
+vuejs/core,test,test cases when the value of the `$stable` flag is false (#11485)
+nuxt/nuxt,feature,store generated project build info `buildDir` (#36746)
+nestjs/nest,test,fix shared utils test
+vitest-dev/vitest,docs,"add ""getting started"" section for the browser mode"
+TanStack/query,docs,replace invalid _build image paths with public asset URLs (#9248)
+TanStack/query,docs,fix error in code snippet (#9645)
+vitejs/vite,feature,use more extends in eslint config (#20008)
+vitest-dev/vitest,feature,support excluding projects with `--project=!pattern` (#6924)
+TanStack/query,docs,fix QueryClient field in paginated guide (#10147)
+angular/angular,docs,add documentation for de-duplicate host directives
+vitest-dev/vitest,docs,prefer test.for over test.each (#10588)
+vitejs/vite,refactor,remove rolldown lazy stub module workaround (#23129)
+TanStack/query,docs,more guides (#12478)
+angular/angular,refactor,widen ɵɵclassProp value parameter type to any
+vitejs/vite,docs,plugin authors guide for rolldown-vite (#19759)
+nuxt/nuxt,feature,warn if core auto-import presets are overridden (#29971)
+nuxt/nuxt,docs,remove Nuxtr from recommendations (#34045)
+TanStack/query,test,replace deprecated 'toBeCalledTimes' with 'toHaveBeenCalledTimes' (#10940)
+angular/angular,refactor,remove remaining references to ngtsc in preprocessor
+vitest-dev/vitest,test,skip test with rolldown inside vmThreads + update snapshot (#9415)
+nestjs/nest,feature,inject requests into the node adapter like the fastify one (#18435)
+angular/angular,docs,update API reference links in aria guides
+nuxt/nuxt,refactor,move server references to `nitro:prepare:types` hook (#33286)
+nuxt/nuxt,docs,remove docs for migration to nuxt v4
+vuejs/core,refactor,move patchFlag text generation to codegen phase
+vitest-dev/vitest,docs,add example of unhandled error with `expect.toThrow` (#10006)
+TanStack/query,docs,correct 'errorTypes' type to array (#10634)
+angular/angular,feature,improve value highlighting in object previews
+vuejs/core,feature,improve readability of displayed types for props
+vitejs/vite,feature,show friendly error for malformed `base` (#19616)
+TanStack/query,test,add type tests for 'MutationObserver' and its result branches (#11491)
+vitest-dev/vitest,docs,clarify context reuse between test files (#11905)
+vuejs/core,refactor,improve the performance of getNow (#5944)
+nuxt/nuxt,feature,add `nuxt.request` tracing channel (#36483)
+angular/angular,refactor,simplify cold-start html project discovery with openFiles
+vitest-dev/vitest,docs,warn that artifacts may have empty attachments (#9605)
+angular/angular,docs,link MDC migration guide in Material v17 update step
+vitejs/vite,docs,add document for `this.meta.viteVersion` and `*version` variables (#21824)
+angular/angular,refactor,change upstream and downstream signal deps icons
+angular/angular,test,remove `addEventListener` call count check
+vitejs/vite,refactor,use `import.meta.dirname` everywhere (#21509)
+vitejs/vite,docs,add bluesky profiles (#18568)
+vuejs/core,test,add tests for reactive and non-reactive objects (#12576)
+vuejs/core,refactor,use binary-search to get line and column (#14222)
+vitejs/vite,feature,add nub package manager support (#23019)
+TanStack/query,docs,write snippet durations in 'count * unit * 1000' order (#12381)
+nuxt/nuxt,feature,add experimental early404 for unmatched page routes (#36117)
+TanStack/query,test,add test for skipping 'notify' when 'setOptions' is called with same options (#10098)
+nestjs/nest,feature,graceful shutdown for the rmq server (#18525)
+vitest-dev/vitest,feature,support `--inspect-brk` (#6434)
+angular/angular,refactor,resolve warning with internal tooling
+TanStack/query,test,"change 'queryFn' to return a 'Promise', replace 'advanceTimersByTime' with 'advanceTimersByTimeAsync', and add 'expect' (#9444)"
+TanStack/query,test,add test for removing a cache without a timestamp in 'persistQueryClientRestore' (#10877)
+vitejs/vite,feature,update target to es2023 in `tsconfig.node.json` (#20078)
+TanStack/query,test,add tests for 'getSidedProp' (#10647)
+vitest-dev/vitest,refactor,use createFileOnlyEntry to create module nodes (#6400)
+nuxt/nuxt,refactor,add `/h3` subpath export for forward-compat (#34383)
+vitejs/vite,feature,add SSR support for `.wasm?init` (#21102)
+vuejs/core,refactor,remove magic-string trim on script
+TanStack/query,refactor,share the posts query between 'getStaticProps' and 'usePosts' with 'queryOptions' (#11989)
+TanStack/query,test,simplify 'queryFn' and replace 'queryByText' with 'getByText' (#9489)
+vitejs/vite,test,don't use `__dirname` in tailwind config (#18969)
+vitejs/vite,refactor,inline dev-id value in CSS selector (#22736)
+vitejs/vite,refactor,use `crypto.hash` when available (#18317)
+nuxt/nuxt,refactor,optimize `nuxt:ssr-styles` plugin (#33862)
+vitejs/vite,refactor,only bundle node version `debug` (#19715)
+nuxt/nuxt,test,skip testing spa-preloader in dev
+TanStack/query,test,simplify 'queryFn' and add 'expect' using 'toBeInTheDocument (#9478)
+vitejs/vite,test,sass exports field deep (#20606)
+vitest-dev/vitest,feature,export aria tree utils (#10171)
+TanStack/query,refactor,remove double negative (#8952)
+vuejs/core,test,clean snapshot
+TanStack/query,test,add tests for query details panel and query actions (#10685)
+TanStack/query,test,use 'toHaveStyle' matcher in the 'style' merge cases (#10846)
+vitejs/vite,feature,ping from SharedWorker (#19057)
+vitejs/vite,feature,improve lightningcss messages (#19880)
+vitest-dev/vitest,feature,provide `task` in `MatchState` (#9022)
+vitest-dev/vitest,refactor,fork jest-dom instead of bundling it (#7605)
+conventional-changelog/commitlint,feature,added @commitlint/config-nx-scopes for nx monorepos (#3913)
+TanStack/query,test,replace 'queueMicrotask' with 'advanceTimersByTimeAsync' (#9329)
+vitest-dev/vitest,refactor,reset only mocks that were called or reconfigured (#11197)
+nuxt/nuxt,test,ensure builder tests run sequentially
+vitejs/vite,refactor,use `urlId` of `import.meta.ROLLDOWN_FILE_URL` in wasm plugin (#22962)
+nuxt/nuxt,test,update tests for new version of nuxt/test-utils (#33842)
+nuxt/nuxt,refactor,avoid quadratic nested dir check for `fs.allow` (#36702)
+vitejs/vite,feature,rename `server.hmr` options to `server.ws` options (#21357)
+vitest-dev/vitest,refactor,prefer pretty-print for objects (#5928)
+nestjs/nest,refactor,improve module typings
+TanStack/query,test,add identity tests for getter overloads (#10468)
+angular/angular,refactor,remove two more unreferenced guide images
+vitejs/vite,feature,label network URLs with their interface name (#22830)
+nuxt/nuxt,feature,support async constructor for adding plugins (#33619)
+angular/angular,test,clean up viewport hydration observer
+vitest-dev/vitest,feature,allow `vitest list` to statically collect tests instead of running files to collect them (#9630)
+vitejs/vite,refactor,fix logic errors found by no-unnecessary-condition rule (#18891)
+TanStack/query,refactor,move the data layer into 'services/data' with a query factory (#12369)
+TanStack/query,test,add optimistic update tests with success and rollback on error (#10492)
+TanStack/query,test,"replace 'runAllTimersAsync', 'advanceTimersByTime' with 'advanceTimersByTimeAsync' (#9438)"
+vitejs/vite,test,add timeout to `untilBrowserLog` (#20905)
+vitejs/vite,refactor,use native binary for getting process start time on windows (#24087)
+nestjs/nest,test,add e2e tests for dynamic-modules sample
+vitejs/vite,feature,improve dependency optimization error messages with esbuild formatMessages (#20525)
+angular/angular,refactor,remove img/video src attribute from the URL security context.
+vuejs/core,refactor,simplify checkRecursiveUpdates (#11856)
+TanStack/query,test,add tests for 'getQueryStatusColor' (#10670)
+nuxt/nuxt,feature,add `refresh` option to useCookie (#33814)
+TanStack/query,test,switch 'isRestoring' test to '<user>' + 'render' pattern (#10563)
+nestjs/nest,test,RMQ Client and Server queue bind
+conventional-changelog/commitlint,test,eslint setup (#981)
+vitejs/vite,refactor,remove tslib from svelte-ts template (#19015)
+TanStack/query,test,remove redundant 'vi.mocked' around the 'console.error' spy (#11634)
+angular/angular,refactor,Update determineLongestAnimation to account for playback rate
+TanStack/query,test,replace hardcoded query keys with 'queryKey()' utility (#10416)
+angular/angular,feature,allow template to access private props
+vuejs/core,test,add test case for #11928
+angular/angular,refactor,ensure eager dependencies used inside defer blocks are not dropped
+TanStack/query,test,"add type tests for 'MutationCache', its config and notify events (#11486)"
+angular/angular,test,add test for external component resources with UTF-8 BOM
+angular/angular,feature,allow throwing RedirectCommand to trigger redirects
+vitejs/vite,feature,add custom Angular variants (#18410)
+angular/angular,test,deduplicate compliance goldens and run against compliance test_cases
+TanStack/query,test,add tests for 'mutationSortFns' (#10651)
+nestjs/nest,refactor,change console logger helpers to protected
+angular/angular,refactor,use when consistently for conditional rules and validators
+nestjs/nest,test,add e2e tests for serve-static sample
+vitejs/vite,test,tweak generateCodeFrame test (#19812)
+vitejs/vite,feature,bump modern browser threshold to `import.meta.resolve` support (#21662)
+vitest-dev/vitest,feature,v8 to support `ignoreNode` option (#11688)
+angular/angular,refactor,template type-checking support for `<user>` (#70463)
+vitejs/vite,feature,support native `webWorkerPostPlugin` (#183)
+angular/angular,refactor,use responsive split for the components tab
+vitejs/vite,refactor,use `http-proxy-3` (#20402)
+TanStack/query,test,add tests for optimistic update rollback and parallel 'mutateAsync' calls (#11430)
+vitejs/vite,test,wait for first bundle and client before assertions (#23077)
+angular/angular,refactor,add validation rules for date constraints (#68001)
+TanStack/query,feature,useInfiniteQuery options support maybe ref type (#8956)
+vitest-dev/vitest,feature,print a deprecation warning if suite or test uses object as the third argument (#7031)
+vitest-dev/vitest,refactor,simplify IPC channel serialization (#8999)
+vuejs/core,refactor,remove unnecessary check as filter is always non-null (#11599)
+TanStack/query,test,add 'mutateAsync' callback tests for when 'useMutation' has no callbacks (#10915)
+TanStack/query,test,"add type tests for 'createRetryer', its config and retry value types (#11488)"
+angular/angular,refactor,enable foreign components to render content lazily
+angular/angular,refactor,address review comments on NG0750 error message
+nuxt/nuxt,test,cover add regression test for hmr in sibling local layers (#35125)
+angular/angular,test,add golden test for NgModule transitive ModuleWithProviders helper
+vitest-dev/vitest,feature,allow passing down test cases to `toTestSpecification` (#9627)
+TanStack/query,feature,size-limit (#9993)
+vitejs/vite,refactor,extract prepareOutDir as a plugin (#20373)
+angular/angular,test,Update tests to use `currentNavigation()`
+vitest-dev/vitest,test,fix snapshot (#9597)
+nuxt/nuxt,feature,add `devServer.allowedHosts`
+angular/angular,refactor,optimize signal graph nodes value inspection
+angular/angular,refactor,pass AbortSignal to WebMCP tools to handle cancellation
+vitest-dev/vitest,refactor,reduce matching screenshot overhead (#10278)
+TanStack/query,test,add type tests for getter overloads (#10466)
+vitest-dev/vitest,feature,replace navigation tree with test explorer (#5907)
+angular/angular,refactor,remove unused home animation engine
+TanStack/query,test,"fix typo - remove duplicate ""should run"" in mutation test name (#9328)"
+angular/angular,refactor,Make Fetch API the default in `HttpBackend`
+vitejs/vite,refactor,remove data uri plugin (#130)
+angular/angular,test,add golden test for JIT constructor parameters metadata
+TanStack/query,test,fix async to promise and remove unnecessary await (#8887)
+vitejs/vite,refactor,move the condition related to `enableNativePlugin` to the plugin file side (#239)
+vuejs/core,feature,support css `:host` selector by applying css vars on host element (#8830)
+nuxt/nuxt,test,run playwright tests in dev mode too (#35329)
+vitejs/vite,refactor,remove `listenersForEvents` variable (#20977)
+vitest-dev/vitest,refactor,resolve CLI file filters once instead of per test file (#11935)
+vitejs/vite,feature,use `import.meta.ROLLDOWN_FILE_URL_*` for other plugins (#22894)
+vuejs/core,feature,support ExtractPropTypes when resolving types
+vitest-dev/vitest,feature,"add ""provide"" option (#6253)"
+TanStack/query,test,add runtime test for identity function (#10178)
+vuejs/core,test,component type check when props is an empty object (#7419)
+TanStack/query,test,assert exact spy arguments instead of 'objectContaining'/'stringContaining' (#11052)
+conventional-changelog/commitlint,feature,add strict mode (#3384) (#3385)
+vitejs/vite,feature,add legacy inconsistent cjs interop (#464)
+vitest-dev/vitest,feature,add configuration for diff truncation (#5073) (#5333)
+angular/angular,refactor,remove example code that nothing references
+nestjs/nest,test,Add comprehensive tests for TreeNode class
+vitest-dev/vitest,refactor,reuse cached modules during vitest run (#11914)
+vitejs/vite,feature,enable dependencies discovery and pre-bundling in ssr environments (#18358)
+TanStack/query,test,add test for resolving a dependent query whose 'queryKey' changed before 'suspense' in 'onServerPrefetch' (#11618)
+TanStack/query,test,fix async to promise (#8889)
+angular/angular,refactor,remove karma-js.conf.js
+TanStack/query,test,add tests for optimistic update rollback and concurrent 'mutate'/'mutateAsync' calls (#11403)
+TanStack/query,test,add refetch test for createQuery (#7810)
+TanStack/query,test,"switch to fake timers, use 'sleep(10)' and 'queryKey()', and unify test names with 'should' (#11669)"
+vitejs/vite,feature,buildApp hook (#19971)
+vitest-dev/vitest,feature,add `sequence.groupOrder` option (#7852)
+vuejs/core,refactor,improve handling of out-of-range start and end values in generateCodeFrame (#10883)
+TanStack/query,test,wire the mock 'queryFn' into the fresh-data 'suspense' test (#11600)
+vitest-dev/vitest,feature,enable failure-only trace view by default (#11766)
+vuejs/core,feature,useShadowRoot() helper
+angular/angular,feature,make route resources reactive and support parallel dependent loading
+vitejs/vite,feature,make vitePreprocess not the default in svelte (#21637)
+vitejs/vite,test,add sourcemap visualizer link to sourcemap snapshots (#20645)
+angular/angular,refactor,deprecate ServerXhr
+vuejs/core,feature,support accessing Error as global in template expressions (#7018)
+vitejs/vite,refactor,rebuild only when affected (#20559)
+angular/angular,refactor,clean up dead code and comments in ng-analyze
+TanStack/query,test,add tests for 'defaultExpanded' and pagination behavior (#10727)
+TanStack/query,test,add hashKey test code (#8735)
+TanStack/query,test,"add type tests for 'useQueries', 'query' with 'enabled: false' and 'skipToken', and undefined 'initialData' (#12309)"
+vitejs/vite,feature,update rolldown (#190)
+vitest-dev/vitest,feature,`--merge-reports` to support coverage (#5736)
+angular/angular,feature,scope type-checking of keyed defer blocks
+angular/angular,refactor,simplifying the ComponentFactory usage
+nuxt/nuxt,refactor,use browser cache for payloads (#31379)
+angular/angular,refactor,avoid creating unused field injectors
+TanStack/query,test,switch react-scripts to webpack (#8329)
+vitejs/vite,test,mark the optimize-deps playground as unsupported under bundled dev (#23857)
+vitejs/vite,refactor,add filter to asset plugin (#118)
+vitest-dev/vitest,refactor,inline `expect` package (#10221)
+TanStack/query,test,remove PiP auto-open and popup-blocker cases now covered by 'PiPContext.test.tsx' (#10805)
+TanStack/query,test,use fake timers for QueryClientProvider.test.tsx (#9074)
+nuxt/nuxt,feature,describe the deploy target on the server build (#36964)
+vuejs/core,refactor,use String's built-in repeat method (#6700)
+vitest-dev/vitest,feature,switch to `@vitest/istanbuljs` packages (#11053)
+vitest-dev/vitest,test,give prepare duration test more margin (#11801)
+vitejs/vite,feature,add support for .cur type (#18680)
+conventional-changelog/commitlint,feature,add exclamation mark support for breaking changes (#4655)
+TanStack/query,test,fix typo 'persiste' to 'persist' and 'persistance' to 'persistence' (#10548)
+vitejs/vite,test,"enable fs-serve, resolve, dynamic-import and assets-sanitize cases (#23246)"
+vitejs/vite,refactor,simplify some conditions (#24125)
+vitejs/vite,refactor,revert #313
+vuejs/core,refactor,make ast.helpers a Set (#6774)
+angular/angular,test,enable more tests
+vitejs/vite,feature,support bun text lockfile (#18403)
+TanStack/query,refactor,replace magic number with named constant in suspense timers (#9607)
+TanStack/query,test,add test case for hydration (#8949)
+vuejs/core,refactor,use more descriptive name for v-show original display key
+nuxt/nuxt,test,use fake timers for watch params test
+TanStack/query,test,add test for rendering without a 'ThemeContext.Provider' (#10785)
+TanStack/query,test,"replace inline 'Promise' delays with 'sleep', and add 'expect' using 'toBeInTheDocument' (#9466)"
+vitest-dev/vitest,refactor,bundle vitest's own dependencies (#10685)
+angular/angular,refactor,Also throw an error on iframe attributes set to `undefined`
+TanStack/query,test,add reactive 'mutationKey' test for getter overload (#10474)
+vitest-dev/vitest,test,tweak browser non US key input test (#7490)
+TanStack/query,test,remove 'vi.waitFor' and add 'advanceTimersByTimeAsync' (#9343)
+angular/angular,refactor,abstract control flow discovery utilities (#66167)
+angular/angular,refactor,don't depend on ngtsc for error codes
+TanStack/query,refactor,prefetch the projects in the click handler instead of inside the 'setShowProjects' updater (#12056)
+nuxt/nuxt,test,wait for the error page to reload itself after a compile fix
+vitest-dev/vitest,feature,`thresholds` to support maximum uncovered items (#7061)
+angular/angular,refactor,add optional injector property to DevToolsNode and IndexedNode types
+vitejs/vite,refactor,optimize hero.png (#22203)
+vitejs/vite,test,change assets-runtime-base outDir to different one (#18727)
+vitest-dev/vitest,feature,add `onTestsRerun` method to global setup context (#6803)
+vitejs/vite,refactor,make properties of ResolvedServerOptions and ResolvedPreviewOptions required (#18796)
+TanStack/query,test,replace 'reparent' with 'reconnect' in the provider switch test titles (#12298)
+angular/angular,refactor,remove all deep imports in language service
+nuxt/nuxt,test,add unit tests for watch strategies (#32138)
+angular/angular,refactor,use shell: false and quote args in benchmark-compare workflow
+vitest-dev/vitest,refactor,use bg* colors in reporter instead of reversing (#7785)
+vitest-dev/vitest,test,fix export
+angular/angular,refactor,add increment/decrement to output AST
+TanStack/query,test,replace 'toBeDefined'/'toBeFalsy' with exact-value assertions (#11123)
+nestjs/nest,test,Add unit tests for @nestjs/testing package
+vitest-dev/vitest,feature,update to sinon/fake-timers v15 and add `setTickMode` to timer controls (#8726)
+angular/angular,refactor,update directive forest chevrons positioning method
+vitejs/vite,feature,add `import.meta.resolve` support for ESM config (bundle config loader) (#20962)
+nuxt/nuxt,refactor,remove `mlly` from dependencies (#35946)
+nuxt/nuxt,test,reduce flakiness on hydration tests (#35457)
+nuxt/nuxt,refactor,extract `@nuxt/nitro-server` package (#33462)
+TanStack/query,test,add tests for counting all queries and mutations when filters are omitted (#11750)
+TanStack/query,test,"switch to fake timers, use 'sleep(10)' and 'queryKey()', and unify test names with 'should' (#11672)"
+angular/angular,feature,Namespace CSS variables to the app (#68846)
+vitest-dev/vitest,refactor,cut per-file round trips (#10730)
+angular/angular,feature,greet visitors with Angie in the cookie popup
+angular/angular,refactor,remove remaining redundant standalone: true
+nestjs/nest,test,cover a mid-pattern rmq '#' with a real broker (#18105)
+vitest-dev/vitest,test,tweak timeout to fix flake (#7800)
+vuejs/core,refactor,improve conditional branching (#11185)
+vitest-dev/vitest,feature,mock modules through an import map (#11534)
+nuxt/nuxt,feature,prefetch server page islands via `<NuxtLink>` (#35808)
+angular/angular,refactor,use resource() to highlight code in the home page code block
+angular/angular,feature,add migration from injectable to service
+vitejs/vite,feature,support source phase imports (#22675)
+angular/angular,refactor,remove tools/contributing-stats
+angular/angular,test,add test coverage for route resource reloading and input binding
+TanStack/query,feature,Add ReactQueryDevToolsPanel support (#7788)
+vitest-dev/vitest,feature,make test-specification options writable (#10154)
+TanStack/query,test,"add type tests for initialData, type parameters, and 'select' (#11768)"
+nuxt/nuxt,refactor,do not normalise templates in loop if `dst` is present (#33200)
+nuxt/nuxt,feature,extract `defineRouteRules` to page `rules` property (#32897)
+vitejs/vite,feature,add`build.rolldownOptions.output.sourcemapBaseUrl` support
+vuejs/core,feature,revert withDefaults() deprecation
+vitejs/vite,test,add asset test case (#21508)
+TanStack/query,test,switch to fake timers and replace 'waitFor' with 'vi.waitFor' (#9380)
+nuxt/nuxt,test,do not run type checking when benchmarking nuxt build
+vitejs/vite,feature,show `mode` on server start and add env debugger (#18808)
+vitest-dev/vitest,test,retry temp directory cleanup (#11936)
+vitest-dev/vitest,feature,add browser iframe mouse interaction (#5815)
+vitest-dev/vitest,feature,add `toTestSpecification` to reported tasks (#9464)
+TanStack/query,test,replace 'async' arrow functions without 'await' with 'Promise.resolve' in the fixtures (#12286)
+vitejs/vite,feature,support files with more than 1000 lines by `generateCodeFrame` (#20508)
+TanStack/query,test,remove duplicate error test already covered by 'should reject and update signal' (#10588)
+angular/angular,refactor,mark date and limit signal forms APIs public
+angular/angular,test,update i18n bundling golden symbols
+angular/angular,test,cover the deprecated disabled signatures
+TanStack/query,test,move type-only tests to 'useQueries.test-d.tsx' (#10958)
+nuxt/nuxt,refactor,remove unused `event.context.webpack` code (#34502)
+vitejs/vite,feature,update rolldown (#502)
+vitest-dev/vitest,feature,add `--exclude-after-remap` (#6309)
+TanStack/query,test,add tests for cancelling the query function when disconnected and for replacing 'skipToken' (#11761)
+angular/angular,refactor,remove ComponentFactoryResolver & ComponentFactory from the api surface
+angular/angular,test,run all ngtsc tests against preprocessor
+TanStack/query,test,replace 'vi.waitFor' with 'vi.advanceTimersByTimeAsync' and use 'queryKey' helper for infinite query tests (#10944)
+vuejs/core,test,Replace deprecated 'clickCount' property with 'count' (#12778)
+nuxt/nuxt,refactor,migrate more build-time warnings -> nostics (#36138)
+vuejs/core,test,test case for #6966
+conventional-changelog/commitlint,refactor,port load to typescript (#786)
+TanStack/query,test,"add single callback tests for 'onSuccess', 'onError', and 'onSettled' (#10487)"
+angular/angular,feature,export experimental `declareWebMcpTool` support
+nestjs/nest,feature,nats v3 migration
+angular/angular,refactor,remove unused styles
+TanStack/query,test,replace the fake host with a 'LitElement' host (#11688)
+TanStack/query,test,add tests for forwarding option changes after mount (#11021)
+vitest-dev/vitest,test,fix crash on windows (#9060)
+angular/angular,refactor,share the angular.dev origin constant
+nestjs/nest,refactor,extract the default message parser to a module constant
+nuxt/nuxt,test,raise route-HMR polling timeout to reduce e2e flakiness
+angular/angular,refactor,ComponentDef should allow abstract types too
+TanStack/query,test,assert the 'loading' fallback is rendered when gcTime is 0 (#11076)
+nuxt/nuxt,refactor,use oxc for `onPrehydrate` transform (#32045)
+TanStack/query,refactor,type the planets response and move the query into 'src/lib/api.ts' with 'infiniteQueryOptions' (#12123)
+vitejs/vite,feature,add `import.meta.main` support for Node.js module runner (#20517)
+nuxt/nuxt,refactor,replace `useServerHead` in `onPrehydrate` with `useHead` (#31585)
+vitest-dev/vitest,refactor,improve performance of forks pool (#5592)
+vitest-dev/vitest,feature,clickable dashboard numbers (#7406)
+TanStack/query,test,add tests for the non-development fallback (#10848)
+vitejs/vite,test,fix use `tinyexec` instead of `execa` (#24082)
+angular/angular,refactor,introduce default constant for legacyOptionalChaining flag
+angular/angular,refactor,convert remaining console calls to the custom log
+TanStack/query,test,advance timers by the time the awaited work takes (#11657)
+TanStack/query,test,lowercase 'Should' to 'should' in 'it' descriptions for consistency (#10560)
+angular/angular,refactor,add tests for increment/decrement expressions
+vuejs/core,feature,add type TemplateRef (#12645)
+nuxt/nuxt,refactor,use augments for nitro schema types (#34039)
+vitest-dev/vitest,test,use `startVitest` instead of `execa` (#5439)
+vuejs/core,test,add test for ref/shallowRef generic casting
+TanStack/query,test,add tests for setters (#10676)
+nuxt/nuxt,refactor,move cors handling -> nitro builder (#34048)
+TanStack/query,test,add tests for forwarding 'buttonPosition' and 'position' props to the devtools instance (#10819)
+vuejs/core,feature,support nonce option for injected style tags
+vitest-dev/vitest,refactor,let environments opt out of the module graph prewarm (#11078)
+TanStack/query,feature,support useQuery options getter (#9866)
+vitejs/vite,feature,detect port conflicts on wildcard hosts (#21381)
+vuejs/core,feature,"support jsxImportSource, avoid global JSX conflict (#7958)"
+vitejs/vite,refactor,use JSON import attributes instead of readFileSync in constants (#23258)
+nuxt/nuxt,feature,migrate to unhead v3 (#34793)
+TanStack/query,test,add test for 'getObservers' method (#10248)
+vitejs/vite,refactor,defer `net use` until a UNC path is resolved on Windows (#24014)
+angular/angular,feature,add Stack Overflow link to navigation social menu
+vuejs/core,feature,support passing template parsing options when parsing sfc
+vitest-dev/vitest,feature,promote parseSpecifications out of experimental (#11087)
+angular/angular,refactor,"correct typos in comments, docs, and error messages"
+vitest-dev/vitest,feature,introduce `toMatchScreenshot` for Visual Regression Testing (#8041)
+TanStack/query,test,use fake timers for mutations.test.tsx (#8806)
+nestjs/nest,test,Add tests for SilentLogger utility
+TanStack/query,test,simplify 'queryFn' and replace 'queryByText' with 'getByText' (#9490)
+vuejs/core,refactor,memoIndex -> cacheIndex
+nuxt/nuxt,test,set locale to en for nuxt-time tests (#33343)
+TanStack/query,test,add runtime and type tests for 'skipToken' dependent query (#11414)
+nuxt/nuxt,refactor,do not refetch css inlined into the response (#36900)
+nuxt/nuxt,feature,allow setting layout props in `definePageMeta` (#34262)
+vitejs/vite,refactor,remove deprecated env api properties (#19986)
+vitejs/vite,feature,add `isSsrTargetWebWorker` flag to `configEnvironment` hook (#18620)
+TanStack/query,test,replace 'İstanbul' with 'İpek' in the Unicode lowercasing fixtures to clear 'cspell' warnings (#12549)
+vuejs/core,refactor,defineOptions avoid redundant conditional judgments (#9453)
+TanStack/query,test,add test for not cancelling an ongoing 'fetchNextPage' with 'cancelRefetch: false' (#11800)
+nuxt/nuxt,refactor,remove obsolete `shortPath` property (#33384)
+TanStack/query,test,add filter test by 'queryKey' (#10594)
+conventional-changelog/commitlint,feature,rewrite codebase to use inquirer - UPDATED with current master (#2697)
+vitest-dev/vitest,refactor,lowers peak memory usage when using `--changed` on a large graph (#10866)
+conventional-changelog/commitlint,refactor,port test utils to typescript (#906)
+nestjs/nest,refactor,resolve route params without a promise when no pipe runs (#18147)
+nuxt/nuxt,refactor,re-organize internal `runtime/nitro` files (#31131)
+conventional-changelog/commitlint,refactor,remove unexpected meow parameter
+TanStack/query,refactor,build with tsup and remove devtools component (#8284)
+angular/angular,refactor,rely on esbuild to downlevel async generators
+vitest-dev/vitest,test,remove .only
+vitejs/vite,feature,support `vite-ignore` attribute to opt-out of processing (#18494)
+angular/angular,feature,graduate signal forms APIs to public API
+vitest-dev/vitest,refactor,remove unnecessary async/await (#5661)
+vuejs/core,refactor,safer currentInstance reset
+vitejs/vite,feature,use terser types from terser package (#20274)
+vitest-dev/vitest,refactor,map only first frame for trace locations (#11613)
+nuxt/nuxt,refactor,skip unreachable `excludes` in app and server tsconfig (#37145)
+nestjs/nest,test,add e2e tests for mongo-typeorm sample
+nuxt/nuxt,refactor,hoist `purgeCachedData` check to improve tree-shaking (#31785)
+vitest-dev/vitest,feature,allow hide/show node_modules in module graph tab (#7217)
+vuejs/core,feature,improve ssr hydration mismatch checks (#5953)
+TanStack/query,test,remove unnecessary async (#9027)
+angular/angular,feature,support synchronous WASM execution in preprocessor (#71313)
+angular/angular,feature,Angular expressions with optional chaining returns `undefined`
+vitest-dev/vitest,feature,add `tripleClick` to interactive api (#5987)
+vitejs/vite,feature,introduce RunnableDevEnvironment (#18190)
+vitest-dev/vitest,feature,Introduce `%$` option to add number of the test to its title (#7412)
+nuxt/nuxt,test,share the fixture copy editor between vitest and playwright suites (#36958)
+vitest-dev/vitest,feature,"support clipboard api `userEvent.copy, cut, paste` (#6769)"
+vitejs/vite,refactor,make internal invoke event to use the same interface with `handleInvoke` (#18902)
+conventional-changelog/commitlint,feature,implement print-config cli flag (#2391)
+vuejs/core,feature,add defineOptions macro (#5738)
+TanStack/query,test,add test for resolving 'provideIsRestoring' value with 'injector' option (#10599)
+angular/angular,test,add same-file forward declaration case to ngmodule_reexports golden
+vitejs/vite,feature,add ember (#20069)
+TanStack/query,test,add test for rejecting promise when 'experimental_prefetchInRender' is disabled (#10249)
+TanStack/query,test,"switch to fake timers, replace 'waitFor' with 'advanceTimersByTimeAsync', and use 'sleep().then()' pattern (#9900)"
+vitejs/vite,feature,add `shouldTransformCachedModule` for compat (#150)
+TanStack/query,test,add type tests for 'FocusManager' public surface (#11481)
+vitejs/vite,test,fix two flaky hmr playground tests (#24092)
+vuejs/core,feature,useTemplateRef()
+angular/angular,refactor,refactor http options
+nuxt/nuxt,test,clean up Vue loader fixtures
+vitejs/vite,refactor,skip style.css extraction if code-split css (#18470)
+TanStack/query,test,add type test for generic indexed-access 'TData' regression guard (#10961)
+vitest-dev/vitest,feature,implement module mocking in browser mode (#5765)
+angular/angular,feature,introduce <user> decorator
+nuxt/nuxt,refactor,try non-subpath routes first to resolve nuxt modules (#31037)
+angular/angular,refactor,remove images no longer referenced by any doc
+vuejs/core,refactor,extract function `isReservedPrefix` (#3265)
+vitejs/vite,feature,widen `@vitejs/devtools` peer range to v0.5.0 (#23302)
+angular/angular,test,replace act with actAsync
+TanStack/query,test,add test for suspending when the faster query already has data (#10210)
+nuxt/nuxt,test,add basic runtime tests for `<NuxtErrorBoundary>`
+TanStack/query,test,add tests for forwarding option changes after mount (#11020)
+vuejs/core,feature,support relative imported types in macros
+vitejs/vite,feature,make oxc runtime helpers name mangle-able (#306)
+vitest-dev/vitest,feature,add schema validation matchers (#8527)
+TanStack/query,test,add test for reusing hydrated data on an already-connected host without an eager refetch (#11811)
+angular/angular,feature,add Angie to the embedded editor error state
+vitejs/vite,feature,separate `safeModulePaths` per environment (#23973)
+conventional-changelog/commitlint,test,enable import/no-extraneous-dependencies (#983)
+nuxt/nuxt,feature,make file names clickable 🖱️ (#35898)
+nuxt/nuxt,test,guard the cost of resolving a typed `$fetch` call (#36254)
+vitest-dev/vitest,test,verify `configureVitest` can modify coverage include/exclude (#8009)
+TanStack/query,test,replace hardcoded query keys with 'queryKey()' utility (#10420)
+vitest-dev/vitest,test,ignore failed responses from example.com (#8333)
+vuejs/core,test,revert to threads
+vitejs/vite,feature,use js alias plugin in dev environment (#231)
+nuxt/nuxt,test,fix time-based hydration test
+vitejs/vite,feature,support opening fileURL in editor (#20040)
+angular/angular,test,Adds and uses a waitFor helper
+TanStack/query,test,use fake timer for notifyManager.test.tsx (#8773)
+nuxt/nuxt,feature,add `useAnnouncer` composable and `<NuxtAnnouncer>` component (#34318)
+nuxt/nuxt,feature,add nuxt `appSecret` (#35874)
+nuxt/nuxt,feature,add `render:document` hook (#36989)
+TanStack/query,test,fix misleading test name for async component with 'solid-query' import (#10344)
+vitest-dev/vitest,feature,add filterMeta option to json reporter (#10078)
+vitest-dev/vitest,feature,introduce built-in locators (#6084)
+TanStack/query,test,use test-d file for useMutationState (#9075)
+vitejs/vite,feature,add fetchable environment interface (#19664)
+TanStack/query,test,"add type tests for the manager's member keyset, readonly methods and 'batchCalls' constraint (#11493)"
+vitejs/vite,feature,provide names for asset entrypoints (#19912)
+vuejs/core,test,update snapshot
+vitejs/vite,feature,avoid settling seen preload dependencies for performance (#23446)
+conventional-changelog/commitlint,feature,use special errorCode for missing rules/config #4142 (#4143)
+TanStack/query,test,"inline test helpers, remove shared 'queryClient', and use 'beforeEach'/'afterEach' for setup and teardown (#10352)"
+TanStack/query,test,add 'sleep' to callbacks and remove 'await' from 'executeMutation' using 'advanceTimersByTimeAsync' (#9506)
+TanStack/query,test,split 'should pass meta to mutation' into separate success and error tests (#10947)
+TanStack/query,test,simplify 'queryFn' and add 'expect' for 'loading' text (#9479)
+vitejs/vite,feature,set `generatedCode: 'es2015'`
+conventional-changelog/commitlint,feature,add config preset for npm and yarn workspaces (#4269)
+nuxt/nuxt,feature,add `ShallowRef` type to vue preset (#36266)
+vitejs/vite,feature,support `import.meta.hot.acceptExports` (#23463)
+TanStack/query,feature,export cache config types (#11263)
+vitest-dev/vitest,feature,rename indexScripts to orchestratorScripts (#5842)
+TanStack/query,test,improve branch coverage for useSuspenseQuery skipToken error handling (#9112)
+nestjs/nest,test,add e2e tests for context sample
+conventional-changelog/commitlint,feature,show input from a new line (#4727)
+vitejs/vite,test,"fix flaky ""should reload"" test (#17961)"
+vuejs/core,test,watching a reactive array (#10848)
+TanStack/query,test,add type tests for an optional 'initialData' object (#11593)
+vitest-dev/vitest,test,fix some types in `test/browser` (#7178)
+TanStack/query,test,"remove 'vi.waitFor', and add 'advanceTimersByTimeAsync', 'expect' (#9403)"
+vitejs/vite,feature,shortcuts case insensitive (#21224)
+vitest-dev/vitest,feature,add filters to `createSpecification` (#9336)
+vitejs/vite,feature,add the `builtins` environment `resolve` (#18584)
+nuxt/nuxt,feature,serve unmatched public asset paths on client-side navigation (#36169)
+vitest-dev/vitest,feature,add `enableCoverage` and `disableCoverage` methods (#8412)
+conventional-changelog/commitlint,feature,add config for rush monorepo (#2878)
+conventional-changelog/commitlint,feature,add cosmiconfig typescript loader
+vitejs/vite,feature,enable all native plugins by default (#168)
+vitejs/vite,feature,export `defaultAllowedOrigins` for user-land config and 3rd party plugins (#19259)
+vitejs/vite,feature,add closeServer and closePreviewServer hooks (#23110)
+vitest-dev/vitest,feature,support dom snapshot trace view (#10102)
+vuejs/core,feature,hoist literal constants for script (#5752)
+vitest-dev/vitest,feature,"make iframe scalable, improve documentation (#6257)"
+vitest-dev/vitest,feature,support `Temporal.Instant` and `Temporal.ZonedDateTime` in `vi.setSystemTime()` (#11321)
+vitejs/vite,feature,pass `decodedBase` to `nativeWasmHelperPlugin` (#300)
+vitest-dev/vitest,feature,support `--changed` option (#5314)
+TanStack/query,feature,Preact Adapter (#9935)
+vitest-dev/vitest,feature,support changing the viewport (#5811)
+vitejs/vite,feature,add `removeServerPluginContainer` future deprecation (#20437)
+conventional-changelog/commitlint,feature,allow specifying helpUrl via config (#2180)
+vitest-dev/vitest,feature,show test annotations and metadata in the test report tab (#8093)

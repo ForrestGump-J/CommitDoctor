@@ -7,6 +7,7 @@ const { predictDeadline } = require('./predict');
 const { checkDeadlineUrgency } = require('./notify');
 const { encryptToken } = require('./crypto');
 const { testRepoAccess, pollOneRepo } = require('./poller');
+const { classify, CONFIDENT } = require('./intent');
 const { connectWebhook } = require('./hooks');
 const { maskEmail } = require('./privacy');
 const { trackedRepo, otherReposWithData, clearProjectData } = require('./repository');
@@ -191,6 +192,8 @@ function createApiRouter({ db, config, mailer = null }) {
         branch: r.branch,
         url: r.url,
         is_merge: Boolean(r.is_merge),
+        // NLP label (src/intent.js); the dashboard marks low-confidence guesses.
+        intent: r.is_merge ? null : (({ intent, confidence }) => ({ intent, confidence, sure: confidence >= CONFIDENT }))(classify(r.message)),
         committed_at: r.committed_at,
         time: localTime(r.committed_at, tz),
         // files_*: known for every commit. lines_*: null unless this commit came

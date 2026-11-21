@@ -6,3 +6,5 @@ commitdoctor.db
 .env
 !.env.example
 .vscode/
+nlp/.venv/
+__pycache__/

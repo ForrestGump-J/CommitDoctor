@@ -1,0 +1,13 @@
+challenge,label,text
+misspelling,fix,fixd teh login bug
+misspelling,docs,udpate readme instalation steps
+slang,chore,wip dont merge yet lol
+slang,fix,finally squashed that nasty bug ngl
+abbreviation,fix,fix btn cfg w/ env vars
+taglish,fix,inayos na yung login
+taglish,feature,dinagdag ung dark mode sa settings
+unknown words,feature,add zxqv frobnicator to pipeline
+ambiguous,fix,update fix for docs
+ambiguous,refactor,clean up tests
+negation,fix,do not crash when config is missing
+vague,chore,stuff

@@ -201,6 +201,10 @@ function migrate(db) {
   addColumn('commits', 'lines_added', 'INTEGER');
   addColumn('commits', 'lines_deleted', 'INTEGER');
   addColumn('project_settings', 'webhook_secret', 'TEXT');
+  // Result of the background re-pull of a webhook-tracked repo (src/hooks.js).
+  addColumn('project_settings', 'last_sync_at', 'TEXT');
+  addColumn('project_settings', 'last_sync_error', 'TEXT');
+  addColumn('project_settings', 'last_sync_added', 'INTEGER');
 
   // Older versions stored committer emails and could use one as the contributor
   // label. Drop the stored emails and mask any email-shaped labels. Idempotent.
