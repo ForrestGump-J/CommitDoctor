@@ -41,6 +41,11 @@
 
   function show(name) {
     for (const n of SCREENS) $(`#screen-${n}`).hidden = n !== name;
+    // The way back to the dashboard is for the facilitator: hidden while a participant
+    // is answering, so the GitHub-only part isn't shown Commit Doctor.
+    const between = name === 'start' || name === 'done';
+    $('#back-link').hidden = !between;
+    $('#back-foot').hidden = !between;
     const total = s ? s.blocks.reduce((n, b) => n + b.tasks.length, 0) : 0;
     const done = s ? s.blocks.slice(0, s.blockIdx).reduce((n, b) => n + b.tasks.length, 0) + (name === 'task' ? s.taskIdx : 0) : 0;
     const prog = $('#progress');
