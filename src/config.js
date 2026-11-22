@@ -35,6 +35,9 @@ function loadConfig(env = process.env) {
     summary: {
       minCommits: Math.max(1, num(env.SUMMARY_MIN_COMMITS, 1)),
       comparisonDays: Math.max(1, num(env.SUMMARY_COMPARISON_DAYS, 7)),
+      // A day only counts as above/below its baseline when it differs by at least
+      // this many commits, so 3 commits vs. a usual 2 isn't called "40% above".
+      minDifference: Math.max(0, num(env.SUMMARY_MIN_DIFFERENCE, 3)),
     },
     prediction: {
       // Rolling window for the deadline projection's commit rate and code churn.

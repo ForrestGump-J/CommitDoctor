@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 const { ghFetch, API, LOOKBACK_MS, testRepoAccess, fetchNewCommits, parseApiCommit } = require('./poller');
 const { createStore } = require('./store');
-const { trackedRepo } = require('./repository');
+const { followedRepos, ensureRepo } = require('./repository');
 
 /**
  * Make sure config.webhookSecret is set. GITHUB_WEBHOOK_SECRET from .env wins;
@@ -50,13 +50,15 @@ async function connectWebhook({ repo, token, payloadUrl, secret }) {
  * dashboard has data the moment a repo is tracked instead of after the next
  * push. Public repos need no token. Only list calls are made (no per-commit
  * detail), which keeps an unauthenticated sync to two or three requests.
- * The outcome is saved on project_settings for the dashboard's indicator.
+ * The outcome is saved on the repo's row in repositories for the dashboard's indicator.
  */
 async function syncTrackedRepo({ db, config, repo, token = '' }) {
-  const save = db.prepare(
-    `UPDATE project_settings SET last_sync_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-       last_sync_error = ?, last_sync_added = ? WHERE id = 1`
+  ensureRepo(db, repo);
+  const update = db.prepare(
+    `UPDATE repositories SET last_sync_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+       last_sync_error = ?, last_sync_added = ? WHERE repo = ?`
   );
+  const save = { run: (error, added) => update.run(error, added, repo.toLowerCase()) };
   try {
     const { defaultBranch } = await testRepoAccess(repo, token);
     const since = new Date(Date.now() - LOOKBACK_MS).toISOString();
@@ -75,19 +77,23 @@ async function syncTrackedRepo({ db, config, repo, token = '' }) {
   }
 }
 
-/** Re-sync the tracked repo on a timer. Skips quietly while nothing is tracked. */
+/** Re-sync every followed repo on a timer. Skips quietly while nothing is followed. */
 function startRepoSync({ db, config, log = console, intervalMs = config.syncIntervalMs }) {
   if (!intervalMs) return () => {};
   let running = false;
+  const isPolled = db.prepare('SELECT 1 FROM tracked_repos WHERE repo = ?');
   const timer = setInterval(async () => {
-    const repo = trackedRepo(db, config);
-    // Polled repos (private, with a token) are kept current by the poller instead.
-    if (!repo || running || db.prepare('SELECT 1 FROM tracked_repos LIMIT 1').get()) return;
+    if (running) return;
     running = true;
     try {
-      const result = await syncTrackedRepo({ db, config, repo });
-      if (!result.ok) log.info(`[sync] ${repo}: ${result.error}`);
-      else if (result.added) log.info(`[sync] ${repo}: stored ${result.added} new commit(s)`);
+      for (const repo of followedRepos(db, config)) {
+        // Polled repos (private, with a token) are kept current by the poller instead.
+        if (isPolled.get(repo)) continue;
+        // eslint-disable-next-line no-await-in-loop
+        const result = await syncTrackedRepo({ db, config, repo });
+        if (!result.ok) log.info(`[sync] ${repo}: ${result.error}`);
+        else if (result.added) log.info(`[sync] ${repo}: stored ${result.added} new commit(s)`);
+      }
     } finally {
       running = false;
     }

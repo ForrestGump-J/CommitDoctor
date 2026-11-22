@@ -1,191 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Commit Doctor</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 13h6l2-7 4 13 2-6h8' fill='none' stroke='%23d22b47' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard · Commit Doctor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M22 12h-4l-3 9L9 3l-3 9H2' fill='none' stroke='%236366F1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <a class="skip" href="#summary">Skip to summary</a>
-
-  <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M1 13h6l2-7 4 13 2-6h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Commit Doctor</span>
-    </div>
-    <p class="status" id="status" role="status"><span class="dot" aria-hidden="true"></span><span id="status-text">Connecting…</span></p>
-  </header>
-
-  <main>
-    <!-- The one repository Commit Doctor follows -->
-    <section class="repo-card" id="repo-card" aria-label="Repository">
-      <!-- Connected: a single status line -->
-      <div class="repo-connected" id="repo-connected" hidden>
-        <p class="repo-line" id="repo-line" role="status"></p>
-        <div class="repo-actions">
-          <button type="button" class="btn" id="repo-change-btn">Change repository</button>
-          <button type="button" class="text-btn" id="repo-disconnect-btn">Disconnect</button>
-        </div>
-        <details class="manual" id="manual-setup" hidden>
-          <summary>Want instant updates? Add a webhook on GitHub</summary>
-          <p class="hint">Scans already work without a token. A webhook makes new pushes show up the moment they happen. <button type="button" class="text-btn" id="manual-token-btn">Have a token? Let Commit Doctor add it for you</button></p>
-          <p class="hint">Open <a id="manual-gh-link" href="#" target="_blank" rel="noopener">GitHub › Settings › Webhooks › Add webhook</a> and enter:</p>
-          <dl class="hook-fields">
-            <dt>Payload URL</dt><dd><code id="manual-url"></code> <button type="button" class="text-btn copy-btn" data-copy="manual-url">Copy</button></dd>
-            <dt>Content type</dt><dd><code>application/json</code></dd>
-            <dt>Secret</dt><dd><code id="manual-secret">…</code> <button type="button" class="text-btn copy-btn" data-copy="manual-secret">Copy</button></dd>
-            <dt>Events</dt><dd>Just the push event</dd>
-          </dl>
-          <p class="hint" id="manual-local-hint" hidden></p>
-        </details>
-      </div>
-
-      <!-- Not connected, or changing: two short steps -->
-      <form class="repo-form" id="repo-form" hidden novalidate>
-        <div id="repo-step1">
-          <h2 class="card-title">Connect your repository</h2>
-          <p class="hint">Commit Doctor follows one GitHub repository and summarizes its commits every day.</p>
-          <label class="field-label" for="repo-input">Repository</label>
-          <input type="text" id="repo-input" class="field" placeholder="owner/name or a GitHub link" autocomplete="off" spellcheck="false">
-          <fieldset class="choice">
-            <legend class="field-label">Is it private?</legend>
-            <label><input type="radio" name="repo-private" value="no" checked> No, it's public</label>
-            <label><input type="radio" name="repo-private" value="yes"> Yes, it's private</label>
-          </fieldset>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" id="repo-continue-btn">Continue</button>
-            <button type="button" class="text-btn" id="repo-cancel-btn" hidden>Cancel</button>
-          </div>
-        </div>
-
-        <div id="repo-step2" hidden>
-          <p class="step2-head">Connecting <strong id="step2-repo"></strong> <button type="button" class="text-btn" id="repo-back-btn">Back</button></p>
-          <p class="hint" id="method-explain"></p>
-          <ol class="token-steps" id="token-steps"></ol>
-          <label class="field-label" for="token-input">GitHub token</label>
-          <div class="field-row">
-            <input type="password" id="token-input" class="field" placeholder="Paste the token here" autocomplete="off" spellcheck="false">
-            <button type="submit" class="btn btn-primary" id="repo-connect-btn">Connect</button>
-          </div>
-          <details class="advanced" id="advanced">
-            <summary>Advanced</summary>
-            <fieldset class="choice">
-              <legend class="field-label">How should Commit Doctor get updates?</legend>
-              <label><input type="radio" name="repo-method" value="webhook"> Instantly: GitHub notifies this server on every push (webhook)</label>
-              <label><input type="radio" name="repo-method" value="poll"> Every few minutes: this server checks GitHub using a read-only token</label>
-            </fieldset>
-            <div id="adv-webhook">
-              <label class="field-label" for="payload-url">Address GitHub should send pushes to</label>
-              <input type="url" id="payload-url" class="field" placeholder="https://your-server.example/webhook/github">
-              <p class="hint" id="payload-hint" hidden></p>
-              <p class="hint">No token? <button type="button" class="text-btn" id="manual-connect-btn">Set up the webhook on GitHub myself</button></p>
-            </div>
-          </details>
-        </div>
-        <p class="form-error" id="repo-error" role="alert" hidden></p>
-      </form>
-    </section>
-
-    <section class="note" id="summary" aria-labelledby="day-title">
-      <div class="note-head">
-        <div>
-          <p class="repo" id="repo">Repository</p>
-          <h1 id="day-title">Today</h1>
-          <div class="deadline-row">
-            <label for="deadline-input" class="deadline-label">Deadline</label>
-            <input type="date" id="deadline-input">
-            <button type="button" class="btn" id="deadline-btn">Set</button>
-            <button type="button" id="deadline-clear-btn" class="text-btn" hidden>Clear</button>
-          </div>
-          <p class="prediction" id="prediction" hidden></p>
-        </div>
-        <div class="daynav" role="group" aria-label="Choose a day">
-          <button type="button" id="prev" aria-label="Previous day">‹</button>
-          <input type="date" id="date-input" aria-label="Day">
-          <button type="button" id="next" aria-label="Next day">›</button>
-          <button type="button" id="today" class="text-btn">Today</button>
-        </div>
-      </div>
-      <p class="provenance"><span id="provenance"></span> <button type="button" id="save-btn" class="text-btn" hidden>Save summary now</button></p>
-    </section>
-
-    <section class="trace" aria-labelledby="trace-title">
-      <h2 id="trace-title" class="sr-only">Commits per day, last 14 days</h2>
-      <div id="trace"></div>
-      <p class="trace-key">Spike height is the number of commits that day. Select a day to read its summary. A dot under the date means a summary was saved.</p>
-    </section>
-
-    <div class="cols">
-      <div class="col-main">
-        <div class="view-tabs" role="tablist" aria-label="How to show this day">
-          <button type="button" role="tab" id="tab-digest" aria-controls="panel-digest" data-view="digest">Digest</button>
-          <button type="button" role="tab" id="tab-team" aria-controls="panel-team" data-view="team">Team</button>
-          <button type="button" role="tab" id="tab-timeline" aria-controls="panel-timeline" data-view="timeline">Timeline</button>
-        </div>
-
-        <section class="view-panel" id="panel-digest" role="tabpanel" aria-labelledby="tab-digest" tabindex="0">
-          <ul class="digest" id="digest"></ul>
-          <div class="tiles" id="tiles"></div>
-          <h3 class="panel-sub">Flags</h3>
-          <ul class="flag-list" id="flags"></ul>
-        </section>
-
-        <section class="view-panel" id="panel-team" role="tabpanel" aria-labelledby="tab-team" tabindex="0" hidden>
-          <div class="team" id="team"></div>
-        </section>
-
-        <section class="view-panel" id="panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" tabindex="0" hidden>
-          <div id="hours"></div>
-          <dl class="vitals vitals-row" id="vitals"></dl>
-          <div id="timeline"></div>
-        </section>
-
-        <div class="feedback" id="feedback">
-          <span id="feedback-q">Was this view helpful?</span>
-          <button type="button" class="fb-btn" data-value="1" aria-pressed="false" aria-label="Yes, helpful">👍</button>
-          <button type="button" class="fb-btn" data-value="0" aria-pressed="false" aria-label="No, not helpful">👎</button>
-          <span class="fb-thanks" id="fb-thanks" hidden>Thanks!</span>
-        </div>
-      </div>
-
-      <aside class="col-side">
-        <section aria-labelledby="subs-title">
-          <h2 id="subs-title">Notify</h2>
-          <p class="muted sub-note">People who will get deadline reminders and flag alerts by email.</p>
-          <ul class="sub-list" id="sub-list"></ul>
-          <form class="sub-add" id="sub-form">
-            <input type="text" id="sub-name" placeholder="Name" aria-label="Subscriber name" autocomplete="off">
-            <input type="email" id="sub-email" placeholder="Email" aria-label="Subscriber email" autocomplete="off">
-            <button type="submit" id="sub-add-btn">Add</button>
-          </form>
-          <p class="track-hint" id="sub-hint" hidden></p>
-        </section>
-      </aside>
-    </div>
-
-    <details class="log" id="log">
-      <summary>System log: webhook deliveries, summary runs and view usage</summary>
-      <div class="log-body" id="log-body"><p class="muted">Open to load.</p></div>
-    </details>
-  </main>
-
-  <dialog class="confirm" id="switch-dialog" aria-labelledby="switch-title">
-    <form method="dialog">
-      <h2 id="switch-title">Switch repository?</h2>
-      <p id="switch-text"></p>
-      <div class="form-actions">
-        <button value="cancel" class="btn">Cancel</button>
-        <button value="ok" class="btn btn-danger" id="switch-ok">Switch and clear</button>
-      </div>
-    </form>
-  </dialog>
-
-  <script src="app.js"></script>
+<div id="root"><main class="content"><p class="empty">Loading…</p></main></div>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script src="js/tour.js"></script>
+<script src="js/dashboard.js"></script>
 </body>
 </html>

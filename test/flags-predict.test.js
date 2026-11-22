@@ -43,7 +43,7 @@ test('a contributor quiet for a full comparison window is flagged, an active one
   const flags = detectFlags(db, config, addDays(START, 8), buildSummary(db, config, addDays(START, 8)));
   const inactive = flags.filter((f) => f.type === 'contributor_inactive');
   assert.equal(inactive.length, 1);
-  assert.match(inactive[0].detail, /^bob has had no commits since 2026-09-01 \(8 days\)/);
+  assert.match(inactive[0].detail, /^bob has had no commits since Sep 1 \(8 days\)/);
 });
 
 test('saving a summary stores its flags, and re-saving replaces them', () => {
@@ -176,7 +176,7 @@ test('teams on pace get only gentle reminders at 7, 3 and 1 day(s) left', () => 
 
 test('deadline emails are calm when on pace and never invent a pace figure', () => {
   const calm = renderDeadlineEmail({ status: 'on-pace', urgency: 'final', deadline_date: '2026-12-01', days_remaining: 1, pace_ratio: 1.1 });
-  assert.match(calm.subject, /^Commit Doctor - Reminder: deadline in 1 day\(s\)$/);
+  assert.match(calm.subject, /^Commit Doctor - Reminder: deadline in 1 day$/);
   assert.match(calm.html, /on pace/);
   const early = renderDeadlineEmail({ status: 'insufficient-data', urgency: 'urgent', deadline_date: '2026-12-01', days_remaining: 3, pace_ratio: null });
   assert.ok(!/%/.test(early.html), 'no "0% of earlier pace" when there is no history');

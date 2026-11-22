@@ -1,4 +1,5 @@
 'use strict';
+const { buildAnalytics } = require('./analytics');
 const crypto = require('crypto');
 const express = require('express');
 const { localDate, localTime, addDays, daysBetween, isDateStr } = require('./time');
@@ -10,7 +11,10 @@ const { testRepoAccess, pollOneRepo } = require('./poller');
 const { classify, CONFIDENT } = require('./intent');
 const { connectWebhook, syncTrackedRepo } = require('./hooks');
 const { maskEmail } = require('./privacy');
-const { trackedRepo, otherReposWithData, clearProjectData } = require('./repository');
+const {
+  IN_REPO, norm, trackedRepo, repoMode, followedRepos, setActive, showRepo, listRepos,
+  deleteRepoData, getDeadline, setDeadline,
+} = require('./repository');
 const { createViewsRouter } = require('./views');
 const { createStudyRouter } = require('./study');
 const { transaction } = require('./db');
@@ -70,31 +74,39 @@ function createApiRouter({ db, config, mailer = null }) {
     return next();
   };
 
+  // Settings of the repository the dashboard is showing (each repo has its own deadline).
   const readSettings = () => {
-    const row = db.prepare('SELECT deadline_date, tracked_repo, updated_at FROM project_settings WHERE id = 1').get();
+    const row = db.prepare('SELECT updated_at FROM project_settings WHERE id = 1').get();
+    const repo = trackedRepo(db, config);
+    const deadline = getDeadline(db, repo);
     const today = localDate(Date.now(), tz);
-    const days_remaining = row && row.deadline_date ? daysBetween(today, row.deadline_date) : null;
     return {
-      deadline_date: row ? row.deadline_date : null,
-      days_remaining,
-      tracked_repo: (row && row.tracked_repo) || config.repo || null,
+      deadline_date: deadline,
+      days_remaining: deadline ? daysBetween(today, deadline) : null,
+      tracked_repo: repo || null,
+      repo_mode: repoMode(db),
       updated_at: row ? row.updated_at : null,
     };
   };
 
-  // Is GitHub actually delivering for the tracked repo? Judged from the newest
-  // delivery, so a later failure (e.g. a changed secret) shows up right away.
+  // Is GitHub actually delivering for the shown repo? Judged from the newest
+  // delivery that concerns it, so a later failure (e.g. a changed secret) shows up
+  // right away. Deliveries for the other followed repos don't count either way.
   //   waiting    nothing received yet
   //   failing    the newest delivery was rejected (bad secret, wrong content type)
-  //   other_repo deliveries are arriving, but from a different repository
-  //   connected  the newest delivery came from the tracked repo (ping or push)
-  const lastEvent = db.prepare('SELECT event, repo, status, detail, received_at FROM webhook_events ORDER BY id DESC LIMIT 1');
+  //   other_repo deliveries are arriving, but from a repository that isn't followed
+  //   connected  the newest delivery came from the shown repo (ping or push)
+  const lastEventFor = (repo) => {
+    const others = followedRepos(db, config).filter((r) => r !== repo);
+    const skip = others.length ? `WHERE repo IS NULL OR lower(repo) NOT IN (${others.map(() => '?').join(',')})` : '';
+    return db.prepare(`SELECT event, repo, status, detail, received_at FROM webhook_events ${skip} ORDER BY id DESC LIMIT 1`).get(...others);
+  };
   const lastOkFor = db.prepare(
     `SELECT event, received_at FROM webhook_events
      WHERE status = 'accepted' AND event IN ('ping', 'push') AND lower(repo) = ? ORDER BY id DESC LIMIT 1`
   );
   function webhookStatus(trackedRepo) {
-    const last = lastEvent.get();
+    const last = lastEventFor(trackedRepo);
     const ok = trackedRepo ? lastOkFor.get(trackedRepo) : null;
     const base = { last_ok_event: ok ? ok.event : null, last_ok_at: ok ? ok.received_at : null };
     if (!last) return { state: 'waiting', ...base };
@@ -110,21 +122,21 @@ function createApiRouter({ db, config, mailer = null }) {
 
   // Everything the dashboard header needs in one call.
   router.get('/overview', (_req, res) => {
+    const repo = trackedRepo(db, config);
     const totals = db
       .prepare(
         `SELECT COUNT(*) AS commits, COUNT(DISTINCT contributor) AS contributors,
                 COUNT(DISTINCT committed_date) AS days, MIN(committed_date) AS first_date
-         FROM commits`
+         FROM commits WHERE ${IN_REPO}`
       )
-      .get();
-    const lastPush = db
-      .prepare("SELECT received_at FROM webhook_events WHERE status = 'accepted' AND event = 'push' ORDER BY id DESC LIMIT 1")
-      .get();
-    const lastPing = db
-      .prepare("SELECT received_at, repo FROM webhook_events WHERE status = 'accepted' AND event = 'ping' ORDER BY id DESC LIMIT 1")
-      .get();
+      .get({ repo });
+    const lastAccepted = (event) => db
+      .prepare(`SELECT received_at FROM webhook_events WHERE status = 'accepted' AND event = ? AND (@repo = '' OR lower(repo) = @repo) ORDER BY id DESC LIMIT 1`)
+      .get({ repo }, event);
+    const lastPush = lastAccepted('push');
+    const lastPing = lastAccepted('ping');
     const settings = readSettings();
-    const lastSaved = db.prepare('SELECT date FROM summaries ORDER BY date DESC LIMIT 1').get();
+    const lastSaved = db.prepare('SELECT date FROM summaries WHERE repo = ? ORDER BY date DESC LIMIT 1').get(repo);
     const activityCounts = db
       .prepare(
         `SELECT (SELECT COUNT(*) FROM webhook_events) AS webhook_events_count,
@@ -135,6 +147,8 @@ function createApiRouter({ db, config, mailer = null }) {
       today: localDate(Date.now(), tz),
       timezone: tz,
       repo: settings.tracked_repo,
+      repo_mode: settings.repo_mode,
+      repositories: listRepos(db, config),
       rules: { min_commits: config.summary.minCommits, comparison_days: config.summary.comparisonDays },
       secret_configured: Boolean(config.webhookSecret),
       totals,
@@ -147,14 +161,21 @@ function createApiRouter({ db, config, mailer = null }) {
     });
   });
 
+  // Analytics page: activity, work mix, pace, churn and contributors over 30/60/90 days.
+  router.get('/analytics', (req, res) => {
+    const days = Number(req.query.days || 30);
+    if (![30, 60, 90].includes(days)) return res.status(400).json({ error: 'days must be 30, 60 or 90.' });
+    return res.json(buildAnalytics(db, config, { days }));
+  });
+
   router.get('/trend', (req, res) => {
     res.json(getTrend(db, config, clamp(req.query.days, 1, 60, 14)));
   });
 
   router.get('/summaries', (req, res) => {
     const rows = db
-      .prepare('SELECT date, total_commits, trigger, generated_at, data FROM summaries ORDER BY date DESC LIMIT ?')
-      .all(clamp(req.query.limit, 1, 100, 30));
+      .prepare('SELECT date, total_commits, trigger, generated_at, data FROM summaries WHERE repo = ? ORDER BY date DESC LIMIT ?')
+      .all(trackedRepo(db, config), clamp(req.query.limit, 1, 100, 30));
     res.json(
       rows.map((r) => ({
         date: r.date,
@@ -162,6 +183,7 @@ function createApiRouter({ db, config, mailer = null }) {
         trigger: r.trigger,
         generated_at: r.generated_at,
         headline: JSON.parse(r.data).headline,
+        intents: JSON.parse(r.data).intents || {},
       }))
     );
   });
@@ -176,14 +198,7 @@ function createApiRouter({ db, config, mailer = null }) {
     res.status(result.saved ? 200 : 409).json(result);
   });
 
-  router.get('/commits', (req, res) => {
-    const date = req.query.date || localDate(Date.now(), tz);
-    if (!isDateStr(date)) return res.status(400).json({ error: 'date must look like 2026-09-20.' });
-    const rows = db
-      .prepare('SELECT * FROM commits WHERE committed_date = ? ORDER BY committed_at DESC LIMIT ?')
-      .all(date, clamp(req.query.limit, 1, 500, 200));
-    return res.json(
-      rows.map((r) => ({
+  const publicCommit = (r) => ({
         sha: r.sha,
         short_sha: r.sha.slice(0, 7),
         message: r.message,
@@ -205,8 +220,32 @@ function createApiRouter({ db, config, mailer = null }) {
           lines_added: r.lines_added,
           lines_deleted: r.lines_deleted,
         },
-      }))
-    );
+  });
+
+  router.get('/commits', (req, res) => {
+    const date = req.query.date || localDate(Date.now(), tz);
+    if (!isDateStr(date)) return res.status(400).json({ error: 'date must look like 2026-09-20.' });
+    const rows = db
+      .prepare(`SELECT * FROM commits WHERE committed_date = ? AND ${IN_REPO} ORDER BY committed_at DESC LIMIT ?`)
+      .all({ repo: trackedRepo(db, config) }, date, clamp(req.query.limit, 1, 500, 200));
+    return res.json(rows.map(publicCommit));
+  });
+
+  // One commit (full or abbreviated SHA) of the shown repo, plus its neighbours by
+  // the same contributor, for the commit detail page.
+  router.get('/commits/:sha', (req, res) => {
+    const sha = String(req.params.sha || '').toLowerCase();
+    if (!/^[0-9a-f]{4,40}$/.test(sha)) return res.status(400).json({ error: 'sha must be 4-40 hex characters.' });
+    const repo = trackedRepo(db, config);
+    const matches = db.prepare(`SELECT * FROM commits WHERE sha LIKE ? AND ${IN_REPO} LIMIT 2`).all({ repo }, `${sha}%`);
+    if (!matches.length) return res.status(404).json({ error: 'Commit not found in this repository.' });
+    if (matches.length > 1) return res.status(409).json({ error: 'That short SHA matches more than one commit; use more characters.' });
+    const c = matches[0];
+    const related = db.prepare(
+      `SELECT * FROM commits WHERE sha <> ? AND contributor = ? AND ${IN_REPO}
+       ORDER BY abs(julianday(committed_at) - julianday(?)) LIMIT 3`
+    ).all({ repo }, c.sha, c.contributor, c.committed_at);
+    return res.json({ ...publicCommit(c), date: c.committed_date, related: related.map(publicCommit) });
   });
 
   // --- Project settings (currently just the manually-entered deadline, and the
@@ -222,19 +261,35 @@ function createApiRouter({ db, config, mailer = null }) {
     res.json(predictDeadline(db, config, date));
   });
 
+  // deadline_date applies to the shown repo (or `repo`, if given); repo_mode switches
+  // the layout between following one repository and several.
   router.post('/settings', requireAdmin, (req, res) => {
     const body = req.body || {};
     if ('tracked_repo' in body) {
-      return res.status(400).json({ error: 'Change the repository with POST /api/repository.' });
+      return res.status(400).json({ error: 'Change the repository with POST /api/repository or /api/repository/active.' });
     }
-    if (!('deadline_date' in body)) return res.status(400).json({ error: 'Send deadline_date (or null to clear it).' });
-    const value = body.deadline_date;
-    if (value !== null && !isDateStr(value)) {
+    const hasDeadline = 'deadline_date' in body;
+    const hasMode = 'repo_mode' in body;
+    if (!hasDeadline && !hasMode) return res.status(400).json({ error: 'Send deadline_date (or null to clear it) and/or repo_mode.' });
+    if (hasDeadline && body.deadline_date !== null && !isDateStr(body.deadline_date)) {
       return res.status(400).json({ error: 'deadline_date must look like 2026-09-20, or be null to clear it.' });
     }
-    db.prepare(
-      `UPDATE project_settings SET deadline_date = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`
-    ).run(value);
+    if (hasMode && body.repo_mode !== 'single' && body.repo_mode !== 'multi') {
+      return res.status(400).json({ error: 'repo_mode must be "single" or "multi".' });
+    }
+    const repo = body.repo == null ? trackedRepo(db, config) : norm(body.repo);
+    if (hasDeadline && body.repo != null && !db.prepare('SELECT 1 FROM repositories WHERE repo = ?').get(repo)) {
+      return res.status(404).json({ error: `${repo} is not a connected repository.` });
+    }
+    transaction(db, () => {
+      if (hasDeadline) setDeadline(db, repo, body.deadline_date);
+      if (hasMode) {
+        db.prepare(`UPDATE project_settings SET repo_mode = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(body.repo_mode);
+        // Going back to one repository pauses (hides) the others; nothing is deleted.
+        const shown = trackedRepo(db, config);
+        if (body.repo_mode === 'single' && shown) showRepo(db, shown);
+      }
+    })();
     return res.status(200).json(readSettings());
   });
 
@@ -253,16 +308,18 @@ function createApiRouter({ db, config, mailer = null }) {
     });
   });
 
-  // --- The one repository Commit Doctor follows -------------------------------------
-  // Connect by webhook (instant; GitHub must be able to reach this server) or by
-  // polling with a read-only token (works for private repos and on localhost).
-  // Switching to a different repo clears the previous project's data; the client
-  // must confirm that by sending replace: true.
+  // --- Repositories ---------------------------------------------------------------
+  // Connect by webhook (instant; GitHub must be able to reach this server), by a
+  // token-free public scan, or by polling with a read-only token (private repos,
+  // localhost). Several repositories can be connected; the dashboard shows one at a
+  // time (project_settings.tracked_repo). In single mode, showing another repo pauses
+  // and hides the previous one; in multi mode all stay followed. Nothing is deleted
+  // except through DELETE /api/repositories/:owner/:name.
 
-  const pollRow = () => db.prepare('SELECT * FROM tracked_repos LIMIT 1').get() || null;
+  const pollRow = (repo = trackedRepo(db, config)) => (repo ? db.prepare('SELECT * FROM tracked_repos WHERE repo = ?').get(repo) : null) || null;
 
-  function syncStatus() {
-    const row = db.prepare('SELECT last_sync_at, last_sync_error, last_sync_added FROM project_settings WHERE id = 1').get() || {};
+  function syncStatus(repo) {
+    const row = db.prepare('SELECT last_sync_at, last_sync_error, last_sync_added FROM repositories WHERE repo = ?').get(repo) || {};
     return {
       last_sync_at: row.last_sync_at || null,
       last_error: row.last_sync_error || null,
@@ -273,12 +330,13 @@ function createApiRouter({ db, config, mailer = null }) {
 
   function repositoryState() {
     const repo = trackedRepo(db, config) || null;
-    const row = pollRow();
+    const row = pollRow(repo);
     const method = !repo ? null : row ? 'poll' : 'webhook';
     return {
       repo,
       method,
-      commits: db.prepare('SELECT COUNT(*) AS c FROM commits').get().c,
+      mode: repoMode(db),
+      commits: db.prepare(`SELECT COUNT(*) AS c FROM commits WHERE ${IN_REPO}`).get({ repo: repo || '' }).c,
       poll: row ? {
         last_polled_at: row.last_polled_at,
         last_error: row.last_error,
@@ -286,25 +344,32 @@ function createApiRouter({ db, config, mailer = null }) {
       } : null,
       webhook: method === 'webhook' ? webhookStatus(repo) : null,
       // Token-free scans of a public repo through GitHub's API (src/hooks.js).
-      sync: method === 'webhook' ? syncStatus() : null,
+      sync: method === 'webhook' ? syncStatus(repo) : null,
+      repositories: listRepos(db, config),
     };
   }
 
   router.get('/repository', (_req, res) => res.json(repositoryState()));
+  router.get('/repositories', (_req, res) => res.json(listRepos(db, config)));
 
-  const switchRepo = transaction(db, ({ repo, replace, method, tokenEnc, defaultBranch }) => {
-    if (replace) clearProjectData(db);
-    db.prepare(`UPDATE project_settings SET tracked_repo = ?, last_sync_at = NULL, last_sync_error = NULL, last_sync_added = NULL,
-      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(repo);
-    db.exec('DELETE FROM tracked_repos');
+  const connectRepo = transaction(db, ({ repo, method, tokenEnc, defaultBranch }) => {
+    showRepo(db, repo);
+    db.prepare('DELETE FROM tracked_repos WHERE repo = ?').run(repo);
     if (method === 'poll') {
       db.prepare('INSERT INTO tracked_repos (repo, token_enc, default_branch) VALUES (?, ?, ?)').run(repo, tokenEnc, defaultBranch);
     }
   });
 
+  /** Fetch what was missed while a repo was paused (or just connected). */
+  async function catchUpRepo(repo) {
+    const row = pollRow(repo);
+    if (row) return pollOneRepo({ db, config, row });
+    return syncTrackedRepo({ db, config, repo });
+  }
+
   router.post('/repository', requireAdmin, async (req, res) => {
     const body = req.body || {};
-    const repo = String(body.repo || '').trim().toLowerCase();
+    const repo = norm(body.repo);
     // 'public' = no token at all: scan the public repo through GitHub's API now and
     // every few minutes. It is stored like 'webhook' (no saved token), so a webhook
     // can be added later for instant updates without reconnecting.
@@ -315,21 +380,19 @@ function createApiRouter({ db, config, mailer = null }) {
     if (!REPO_RE.test(repo)) return res.status(400).json({ error: 'Repository must look like owner/name.' });
     if (!method) return res.status(400).json({ error: 'method must be "public", "webhook" or "poll".' });
 
-    // A different project already has data here: ask before clearing it.
-    const others = otherReposWithData(db, repo);
+    // Single mode follows one repository: confirm before the current one is paused.
     const current = trackedRepo(db, config);
-    const switching = others.length > 0 || (current && current !== repo);
-    if (switching && body.replace !== true) {
-      const commits = others.reduce((n, r) => n + r.commits, 0);
+    const replacing = repoMode(db) === 'single' && current && current !== repo ? current : null;
+    if (replacing && body.replace !== true) {
       return res.status(409).json({
-        error: `Commit Doctor follows one repository. Switching to ${repo} clears the history of ${current || others[0].repo}.`,
+        error: `Commit Doctor is set to follow one repository. Connecting ${repo} pauses and hides ${current}; its history is kept, and you can switch back to it later.`,
         needs_replace: true,
-        current: current || others[0].repo,
-        commits,
+        current,
+        commits: db.prepare('SELECT COUNT(*) AS c FROM commits WHERE repo = ?').get(current).c,
       });
     }
 
-    // Everything that can fail runs before anything is cleared.
+    // Everything that can fail runs before anything changes.
     let tokenEnc = null;
     let defaultBranch = null;
     let hook = null;
@@ -368,21 +431,35 @@ function createApiRouter({ db, config, mailer = null }) {
       }
     }
 
-    switchRepo({ repo, replace: switching, method, tokenEnc, defaultBranch });
-    if (method === 'poll') await pollOneRepo({ db, config, row: pollRow() });
+    connectRepo({ repo, method, tokenEnc, defaultBranch });
+    if (method === 'poll') await pollOneRepo({ db, config, row: pollRow(repo) });
     // First scan right away (no token needed), so the dashboard isn't empty until the next push.
     else if (requested === 'public' || config.syncIntervalMs) await syncTrackedRepo({ db, config, repo });
 
-    return res.status(200).json({ ...repositoryState(), cleared: switching, hook_created: hook ? hook.created : null });
+    return res.status(200).json({ ...repositoryState(), paused: replacing, hook_created: hook ? hook.created : null });
   });
 
-  // Scan the connected public repo now instead of waiting for the next timer.
+  // Hop to another connected repository. Never deletes anything; in single mode the
+  // repo shown before is paused and hidden until switched back to.
+  router.post('/repository/active', requireAdmin, async (req, res) => {
+    const repo = norm(req.body && req.body.repo);
+    if (!db.prepare('SELECT 1 FROM repositories WHERE repo = ?').get(repo)) {
+      return res.status(404).json({ error: `${repo || 'That repository'} is not connected. Connect it first.` });
+    }
+    const wasActive = Boolean(db.prepare('SELECT active FROM repositories WHERE repo = ?').get(repo).active);
+    transaction(db, () => showRepo(db, repo))();
+    // A repo that was paused missed pushes; pull them now (the lookback covers 14 days).
+    if (!wasActive) await catchUpRepo(repo).catch(() => {});
+    return res.json(repositoryState());
+  });
+
+  // Scan the shown repo now instead of waiting for the next timer.
   let scanning = false;
   router.post('/repository/scan', requireAdmin, async (_req, res) => {
     const repo = trackedRepo(db, config);
     if (!repo) return res.status(400).json({ error: 'No repository is connected.' });
-    if (pollRow()) {
-      await pollOneRepo({ db, config, row: pollRow() });
+    if (pollRow(repo)) {
+      await pollOneRepo({ db, config, row: pollRow(repo) });
     } else if (!scanning) {
       scanning = true;
       try { await syncTrackedRepo({ db, config, repo }); } finally { scanning = false; }
@@ -390,13 +467,43 @@ function createApiRouter({ db, config, mailer = null }) {
     return res.json(repositoryState());
   });
 
-  // Stop following the repository. Its data stays until another repo is connected;
-  // the stored token is deleted.
+  // After the shown repo is paused or removed, show another followed one (or none).
+  const showNext = () => {
+    const next = db.prepare('SELECT repo FROM repositories WHERE active = 1 ORDER BY created_at DESC, repo LIMIT 1').get();
+    db.prepare(`UPDATE project_settings SET tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(next ? next.repo : null);
+  };
+
+  // Stop following the shown repository. Its data stays (it can be shown again
+  // later); the stored token is deleted.
   router.delete('/repository', requireAdmin, (_req, res) => {
-    db.exec('DELETE FROM tracked_repos');
-    db.prepare(`UPDATE project_settings SET tracked_repo = NULL, last_sync_at = NULL, last_sync_error = NULL, last_sync_added = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run();
+    const repo = trackedRepo(db, config);
+    transaction(db, () => {
+      if (repo) {
+        db.prepare('DELETE FROM tracked_repos WHERE repo = ?').run(repo);
+        setActive(db, repo, false);
+      }
+      showNext();
+    })();
     return res.json(repositoryState());
   });
+
+  // Remove a repository and everything recorded for it (commits, summaries, flags,
+  // subscribers, deadline, token). Audit logs are kept.
+  router.delete('/repositories/:owner/:name', requireAdmin, (req, res) => {
+    const repo = norm(`${req.params.owner}/${req.params.name}`);
+    if (!db.prepare('SELECT 1 FROM repositories WHERE repo = ?').get(repo)) {
+      return res.status(404).json({ error: `${repo} is not connected.` });
+    }
+    transaction(db, () => {
+      const shown = trackedRepo(db, config) === repo;
+      deleteRepoData(db, repo);
+      if (shown) showNext();
+    })();
+    return res.json(repositoryState());
+  });
+
+  // Lets the dashboard tell whether changes need the admin token, without changing anything.
+  router.post('/admin/ping', requireAdmin, (_req, res) => res.json({ ok: true }));
 
   // Contributors with any history up to a day, for the Team view.
   router.get('/contributors', (req, res) => {
@@ -406,17 +513,17 @@ function createApiRouter({ db, config, mailer = null }) {
     const rows = db.prepare(
       `SELECT contributor AS name, MAX(author_name) AS display_name, MAX(committed_date) AS last_date,
               SUM(CASE WHEN committed_date >= ? THEN 1 ELSE 0 END) AS commits_7d
-       FROM commits WHERE committed_date <= ? GROUP BY contributor ORDER BY last_date DESC, name`
-    ).all(weekStart, date);
+       FROM commits WHERE committed_date <= ? AND ${IN_REPO} GROUP BY contributor ORDER BY last_date DESC, name`
+    ).all({ repo: trackedRepo(db, config) }, weekStart, date);
     res.json(rows.map((r) => ({ ...r, idle_days: daysBetween(r.last_date, date) })));
   });
 
-  // --- Subscribers (notification recipients; storage + CRUD only, nothing sends email yet) ---
+  // --- Subscribers: notification recipients of the shown repository (each repo has its own list) ---
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   router.get('/subscribers', (_req, res) => {
-    res.json(db.prepare('SELECT id, name, email, created_at FROM subscribers ORDER BY id').all()
+    res.json(db.prepare('SELECT id, name, email, created_at FROM subscribers WHERE repo = ? ORDER BY id').all(trackedRepo(db, config))
       .map((r) => ({ ...r, email: maskEmail(r.email) })));
   });
 
@@ -426,11 +533,11 @@ function createApiRouter({ db, config, mailer = null }) {
     if (!name) return res.status(400).json({ error: 'name is required.' });
     if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'A valid email is required.' });
     try {
-      const info = db.prepare('INSERT INTO subscribers (name, email) VALUES (?, ?)').run(name, email);
+      const info = db.prepare('INSERT INTO subscribers (repo, name, email) VALUES (?, ?, ?)').run(trackedRepo(db, config), name, email);
       const row = db.prepare('SELECT id, name, email, created_at FROM subscribers WHERE id = ?').get(info.lastInsertRowid);
       return res.status(201).json(row);
     } catch (err) {
-      if (String(err.message).includes('UNIQUE')) return res.status(409).json({ error: 'That email is already subscribed.' });
+      if (String(err.message).includes('UNIQUE')) return res.status(409).json({ error: 'That email is already subscribed to this repository.' });
       throw err;
     }
   });
@@ -438,7 +545,7 @@ function createApiRouter({ db, config, mailer = null }) {
   router.delete('/subscribers/:id', requireAdmin, (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'id must be a whole number.' });
-    const info = db.prepare('DELETE FROM subscribers WHERE id = ?').run(id);
+    const info = db.prepare('DELETE FROM subscribers WHERE id = ? AND repo = ?').run(id, trackedRepo(db, config));
     if (info.changes === 0) return res.status(404).json({ error: 'Subscriber not found.' });
     return res.status(204).end();
   });
@@ -462,11 +569,12 @@ function createApiRouter({ db, config, mailer = null }) {
 
   router.get('/flags', (req, res) => {
     const limit = clamp(req.query.limit, 1, 200, 30);
+    const repo = trackedRepo(db, config);
     if (req.query.date) {
       if (!isDateStr(req.query.date)) return res.status(400).json({ error: 'date must look like 2026-09-20.' });
-      return res.json(db.prepare('SELECT * FROM flags WHERE date = ? ORDER BY id DESC').all(req.query.date));
+      return res.json(db.prepare('SELECT * FROM flags WHERE repo = ? AND date = ? ORDER BY id DESC').all(repo, req.query.date));
     }
-    return res.json(db.prepare('SELECT * FROM flags ORDER BY date DESC, id DESC LIMIT ?').all(limit));
+    return res.json(db.prepare('SELECT * FROM flags WHERE repo = ? ORDER BY date DESC, id DESC LIMIT ?').all(repo, limit));
   });
 
   // The prototype's own activity record (deliveries received, summaries generated).

@@ -115,31 +115,149 @@ test('scanning a private or missing repo without a token explains what to do', a
   } finally { server.close(); }
 });
 
-test('switching repositories needs confirmation, then clears the old project', async () => {
+test('in single mode, connecting another repo needs confirmation, then pauses and hides the old one', async () => {
   const ctx = makeCtx();
   const { server, call } = await listen(ctx);
   try {
     await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
     addCommits(ctx, 'team/one', [{ day: '2026-09-20', who: 'alice' }, { day: '2026-09-21', who: 'bob' }]);
-    ctx.db.prepare("INSERT INTO summaries (date, total_commits, data, trigger, generated_at) VALUES ('2026-09-20', 1, '{}', 'manual', 'x')").run();
-    ctx.db.prepare("INSERT INTO subscribers (name, email) VALUES ('A', 'a@example.com')").run();
+    ctx.db.prepare("INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at) VALUES ('team/one', '2026-09-20', 1, '{}', 'manual', 'x')").run();
 
     const ask = await call('POST', '/api/repository', { repo: 'team/two', method: 'webhook' });
     assert.equal(ask.status, 409);
     assert.equal(ask.body.needs_replace, true);
     assert.equal(ask.body.commits, 2);
-    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM commits').get().c, 2, 'nothing cleared without confirmation');
 
     const ok = await call('POST', '/api/repository', { repo: 'team/two', method: 'webhook', replace: true });
     assert.equal(ok.status, 200);
-    assert.equal(ok.body.cleared, true);
-    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM commits').get().c, 0);
-    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM summaries').get().c, 0);
-    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM subscribers').get().c, 1, 'subscribers are kept');
+    assert.equal(ok.body.paused, 'team/one');
+    assert.equal(ok.body.repo, 'team/two');
+    assert.equal(ok.body.commits, 0, 'the dashboard now shows only team/two');
+    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM commits').get().c, 2, 'team/one history is kept');
+    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM summaries').get().c, 1);
+    const one = ok.body.repositories.find((r) => r.repo === 'team/one');
+    assert.equal(one.active, false, 'the old repo is paused');
+    // A paused repo's pushes are no longer stored.
+    assert.equal(addCommits(ctx, 'team/one', [{ day: '2026-09-22', who: 'carla' }]), 0);
 
     // Reconnecting the same repo (e.g. changing method) never needs confirmation.
     assert.equal((await call('POST', '/api/repository', { repo: 'team/two', method: 'webhook' })).status, 200);
+
+    // Switching back brings the old data back and pauses team/two.
+    const back = await call('POST', '/api/repository/active', { repo: 'team/one' });
+    assert.equal(back.status, 200);
+    assert.equal(back.body.repo, 'team/one');
+    assert.equal(back.body.commits, 2);
+    assert.equal(back.body.repositories.find((r) => r.repo === 'team/two').active, false);
+    assert.equal((await call('POST', '/api/repository/active', { repo: 'nobody/here' })).status, 404);
   } finally { server.close(); }
+});
+
+test('in multi mode every connected repo is followed and the dashboard hops between them', async () => {
+  const ctx = makeCtx();
+  const { server, call } = await listen(ctx);
+  try {
+    assert.equal((await call('POST', '/api/settings', { repo_mode: 'multi' })).body.repo_mode, 'multi');
+    await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
+    const two = await call('POST', '/api/repository', { repo: 'team/two', method: 'webhook' });
+    assert.equal(two.status, 200, 'no confirmation needed in multi mode');
+    assert.deepEqual(two.body.repositories.map((r) => [r.repo, r.active, r.shown]).sort(), [['team/one', true, false], ['team/two', true, true]]);
+
+    // Both repos keep receiving commits.
+    assert.equal(addCommits(ctx, 'team/one', [{ day: '2026-09-20', who: 'alice' }, { day: '2026-09-20', who: 'bob' }]), 2);
+    assert.equal(addCommits(ctx, 'team/two', [{ day: '2026-09-20', who: 'zoe' }]), 1);
+    assert.equal(addCommits(ctx, 'someone/else', [{ day: '2026-09-20', who: 'eve' }]), 0);
+
+    // Each repo has its own deadline and subscribers.
+    await call('POST', '/api/settings', { deadline_date: '2026-12-01' });
+    await call('POST', '/api/subscribers', { name: 'Zoe', email: 'zoe@example.com' });
+    assert.equal((await call('GET', '/api/commits?date=2026-09-20')).body.length, 1);
+    assert.equal((await call('GET', '/api/summaries/2026-09-20')).body.total_commits, 1);
+
+    await call('POST', '/api/repository/active', { repo: 'team/one' });
+    const settings = (await call('GET', '/api/settings')).body;
+    assert.equal(settings.tracked_repo, 'team/one');
+    assert.equal(settings.deadline_date, null, 'team/two deadline does not leak');
+    assert.equal((await call('GET', '/api/subscribers')).body.length, 0);
+    assert.equal((await call('GET', '/api/commits?date=2026-09-20')).body.length, 2);
+    assert.equal((await call('GET', '/api/overview')).body.totals.commits, 2);
+    assert.equal((await call('GET', '/api/repository')).body.repositories.every((r) => r.active), true, 'hopping pauses nothing in multi mode');
+    // The same email may subscribe to two repos.
+    assert.equal((await call('POST', '/api/subscribers', { name: 'Zoe', email: 'zoe@example.com' })).status, 201);
+
+    // Back to single mode: only the shown repo stays followed.
+    await call('POST', '/api/settings', { repo_mode: 'single' });
+    const state = (await call('GET', '/api/repository')).body;
+    assert.deepEqual(state.repositories.filter((r) => r.active).map((r) => r.repo), ['team/one']);
+    assert.equal(ctx.db.prepare("SELECT COUNT(*) AS c FROM commits WHERE repo = 'team/two'").get().c, 1, 'nothing deleted');
+  } finally { server.close(); }
+});
+
+test('summaries and flags are saved per repository', () => {
+  const ctx = makeCtx();
+  ctx.db.prepare("UPDATE project_settings SET repo_mode = 'multi'").run();
+  ctx.db.prepare("INSERT INTO repositories (repo) VALUES ('team/one'), ('team/two')").run();
+  ctx.db.prepare("UPDATE project_settings SET tracked_repo = 'team/one'").run();
+  addCommits(ctx, 'team/one', [{ day: '2026-09-20', who: 'alice' }, { day: '2026-09-20', who: 'bob' }]);
+  addCommits(ctx, 'team/two', [{ day: '2026-09-20', who: 'zoe' }]);
+  const { generateSummary, getSummary } = require('../src/summary');
+  assert.equal(generateSummary(ctx.db, ctx.config, '2026-09-20', 'manual', { repo: 'team/one' }).summary.total_commits, 2);
+  assert.equal(generateSummary(ctx.db, ctx.config, '2026-09-20', 'manual', { repo: 'team/two' }).summary.total_commits, 1);
+  const rows = ctx.db.prepare('SELECT repo, total_commits FROM summaries ORDER BY repo').all();
+  assert.deepEqual(rows.map((r) => [r.repo, r.total_commits]), [['team/one', 2], ['team/two', 1]]);
+  assert.equal(getSummary(ctx.db, ctx.config, '2026-09-20', Date.parse('2026-10-01'), 'team/two').total_commits, 1);
+});
+
+test('removing a repository deletes only its own data', async () => {
+  const ctx = makeCtx();
+  const { server, call } = await listen(ctx);
+  try {
+    await call('POST', '/api/settings', { repo_mode: 'multi' });
+    await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
+    await call('POST', '/api/subscribers', { name: 'A', email: 'a@example.com' });
+    await call('POST', '/api/repository', { repo: 'team/two', method: 'webhook' });
+    addCommits(ctx, 'team/one', [{ day: '2026-09-20', who: 'alice' }]);
+    addCommits(ctx, 'team/two', [{ day: '2026-09-20', who: 'zoe' }]);
+
+    const r = await call('DELETE', '/api/repositories/team/two');
+    assert.equal(r.status, 200);
+    assert.equal(r.body.repo, 'team/one', 'the next followed repo is shown');
+    assert.deepEqual(r.body.repositories.map((x) => x.repo), ['team/one']);
+    assert.deepEqual(ctx.db.prepare('SELECT DISTINCT repo FROM commits').all().map((x) => x.repo), ['team/one']);
+    assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM subscribers').get().c, 1);
+    assert.equal((await call('DELETE', '/api/repositories/team/two')).status, 404);
+  } finally { server.close(); }
+});
+
+test('a commit can be looked up by its short SHA within the shown repository', async () => {
+  const ctx = makeCtx();
+  ctx.db.prepare("UPDATE project_settings SET tracked_repo = 'team/one'").run();
+  createStore(ctx.db, ctx.config).addMany(['abc1', 'def2'].map((p, i) => ({
+    sha: p.padEnd(40, '0'), repo: 'team/one', authorName: 'alice', authorUsername: 'alice', message: 'work',
+    timestamp: `2026-09-2${i}T02:00:00Z`,
+  })));
+  const first = { sha: 'abc1'.padEnd(40, '0') };
+  const { server, call } = await listen(ctx);
+  try {
+    const r = await call('GET', `/api/commits/${first.sha.slice(0, 12)}`);
+    assert.equal(r.status, 200);
+    assert.equal(r.body.sha, first.sha);
+    assert.equal(r.body.date, '2026-09-20');
+    assert.equal(r.body.related.length, 1);
+    assert.equal((await call('GET', '/api/commits/zzzz')).status, 400);
+    assert.equal((await call('GET', '/api/commits/ffffffff')).status, 404);
+  } finally { server.close(); }
+});
+
+test('/api/admin/ping tells whether changes need the admin token', async () => {
+  const { server, call } = await listen(makeCtx({ adminToken: 'adm' }));
+  try {
+    assert.equal((await call('POST', '/api/admin/ping', {})).status, 401);
+  } finally { server.close(); }
+  const open = await listen(makeCtx());
+  try {
+    assert.equal((await open.call('POST', '/api/admin/ping', {})).status, 200, 'no token: open from the server machine');
+  } finally { open.server.close(); }
 });
 
 test('commits from any other repository are never stored', () => {
@@ -190,16 +308,56 @@ test('the repository cannot be changed through /api/settings anymore', async () 
   } finally { server.close(); }
 });
 
-test('an older database with several polled repos is reduced to the tracked one', () => {
+test('an older single-repository database is upgraded without losing data', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'comdoc-'));
   const file = path.join(dir, 'old.db');
   try {
+    // The tables as the single-repository version created them.
+    const { DatabaseSync } = require('node:sqlite');
+    const old = new DatabaseSync(file);
+    old.exec(`
+      CREATE TABLE commits (id INTEGER PRIMARY KEY AUTOINCREMENT, sha TEXT NOT NULL UNIQUE, repo TEXT NOT NULL, branch TEXT,
+        author_name TEXT NOT NULL, author_username TEXT, author_email TEXT, contributor TEXT NOT NULL, message TEXT NOT NULL,
+        url TEXT, is_merge INTEGER NOT NULL DEFAULT 0, committed_at TEXT NOT NULL, committed_date TEXT NOT NULL,
+        committed_hour INTEGER NOT NULL, delivery_id TEXT, received_at TEXT NOT NULL DEFAULT 'x');
+      CREATE TABLE summaries (date TEXT PRIMARY KEY, total_commits INTEGER NOT NULL, data TEXT NOT NULL, trigger TEXT NOT NULL, generated_at TEXT NOT NULL);
+      CREATE TABLE summary_runs (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, trigger TEXT NOT NULL, outcome TEXT NOT NULL,
+        total_commits INTEGER NOT NULL DEFAULT 0, run_at TEXT NOT NULL DEFAULT 'x');
+      CREATE TABLE subscribers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT 'x');
+      CREATE TABLE project_settings (id INTEGER PRIMARY KEY CHECK (id = 1), deadline_date TEXT, tracked_repo TEXT, webhook_secret TEXT,
+        updated_at TEXT NOT NULL DEFAULT 'x', last_sync_at TEXT, last_sync_error TEXT, last_sync_added INTEGER);
+      CREATE TABLE flags (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, type TEXT NOT NULL, detail TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT 'x');
+      CREATE TABLE notifications_sent (key TEXT PRIMARY KEY, sent_at TEXT NOT NULL DEFAULT 'x');
+      CREATE TABLE tracked_repos (id INTEGER PRIMARY KEY AUTOINCREMENT, repo TEXT NOT NULL UNIQUE, token_enc TEXT NOT NULL, default_branch TEXT,
+        last_since TEXT, last_polled_at TEXT, last_error TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT 'x');
+      INSERT INTO project_settings (id, deadline_date, tracked_repo, last_sync_at) VALUES (1, '2026-12-01', 'team/b', '2026-09-20T00:00:00Z');
+      INSERT INTO commits (sha, repo, author_name, contributor, message, committed_at, committed_date, committed_hour)
+        VALUES ('${'a'.repeat(40)}', 'Team/B', 'al', 'al', 'm', '2026-09-20T02:00:00Z', '2026-09-20', 10);
+      INSERT INTO summaries VALUES ('2026-09-20', 1, '{}', 'scheduled', 'x');
+      INSERT INTO summary_runs (date, trigger, outcome) VALUES ('2026-09-20', 'scheduled', 'saved');
+      INSERT INTO flags (date, type, detail) VALUES ('2026-09-20', 'activity_above_baseline', 'd');
+      INSERT INTO subscribers (name, email) VALUES ('A', 'a@example.com');
+      INSERT INTO notifications_sent (key) VALUES ('2026-09-20: final');
+      INSERT INTO tracked_repos (repo, token_enc) VALUES ('team/a', 'x'), ('team/b', 'x');`);
+    old.close();
+
     const db = openDb(file);
-    db.prepare("UPDATE project_settings SET tracked_repo = 'team/b'").run();
-    for (const r of ['team/a', 'team/b', 'team/c']) db.prepare("INSERT INTO tracked_repos (repo, token_enc) VALUES (?, 'x')").run(r);
+    const one = (sql) => db.prepare(sql).get();
+    assert.equal(one('SELECT repo FROM commits').repo, 'team/b', 'repo names are lowercased');
+    assert.equal(one('SELECT repo FROM summaries').repo, 'team/b');
+    assert.equal(one('SELECT repo FROM summary_runs').repo, 'team/b');
+    assert.equal(one('SELECT repo FROM flags').repo, 'team/b');
+    assert.equal(one('SELECT repo FROM subscribers').repo, 'team/b');
+    assert.equal(one('SELECT key FROM notifications_sent').key, 'team/b|2026-09-20: final');
+    const repos = db.prepare('SELECT repo, active, deadline_date, last_sync_at FROM repositories ORDER BY repo').all();
+    assert.deepEqual(repos.map((r) => [r.repo, r.active, r.deadline_date]), [['team/a', 0, null], ['team/b', 1, '2026-12-01']]);
+    assert.equal(repos[1].last_sync_at, '2026-09-20T00:00:00Z');
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM tracked_repos').get().c, 2, 'tokens are kept; team/a is paused');
     db.close();
+    // Running the upgrade again changes nothing.
     const again = openDb(file);
-    assert.deepEqual(again.prepare('SELECT repo FROM tracked_repos').all().map((r) => r.repo), ['team/b']);
+    assert.equal(again.prepare('SELECT key FROM notifications_sent').get().key, 'team/b|2026-09-20: final');
+    assert.equal(again.prepare('SELECT COUNT(*) AS c FROM repositories').get().c, 2);
     again.close();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
@@ -335,11 +493,138 @@ test('answers are scored on the server, and results and CSV summarize them', asy
     assert.equal(res.criteria.sus_at_least_68, true);
 
     const csv = (await call('GET', '/api/study/export.csv')).text;
-    assert.match(csv, /^participant,completed_at,sus_score/);
+    assert.match(csv, /^participant,repository,completed_at,sus_score/);
     assert.equal(csv.trim().split('\r\n').length, 11);
     assert.ok(csv.includes(`"'=HYPERLINK(""x"")"`), 'formula injection is neutralized');
 
     assert.equal((await call('DELETE', `/api/study/sessions/${s.id}`)).status, 204);
     assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM study_tasks').get().c, 0);
   } finally { server.close(); }
+});
+
+// --- analytics -------------------------------------------------------------------------
+
+test('analytics: baseline, weekly work mix, churn, contributors and pace per day', async () => {
+  const { buildAnalytics, weekStart } = require('../src/analytics');
+  const ctx = makeCtx();
+  const { server, call } = await listen(ctx);
+  try {
+    await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
+    const store = createStore(ctx.db, ctx.config);
+    const add = (day, who, message, lines) => store.addCommit({
+      sha: require('crypto').randomBytes(20).toString('hex'), repo: 'team/one', authorName: who, authorUsername: who,
+      message, timestamp: `${day}T02:00:00Z`, ...(lines ? { linesAdded: lines[0], linesDeleted: lines[1] } : {}),
+    });
+    // 2026-09-01 is a Tuesday. Two commits a day for a week, then a quiet day with a flag.
+    for (let i = 0; i < 7; i++) { add(addDays('2026-09-01', i), 'alice', 'fix: crash on save'); add(addDays('2026-09-01', i), 'bob', 'add export button'); }
+    ctx.db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-09-08', 'activity_below_baseline', 'x')").run();
+    const now = Date.parse('2026-09-08T06:00:00Z');
+
+    const a = buildAnalytics(ctx.db, ctx.config, { days: 30, now });
+    assert.equal(a.daily.length, 30);
+    assert.equal(a.end, '2026-09-08');
+    const last = a.daily.at(-1);
+    assert.deepEqual([last.commits, last.baseline, last.flags], [0, 2, ['activity_below_baseline']]);
+    assert.equal(a.daily.find((d) => d.date === '2026-09-01').baseline, null, 'no history before the first commit');
+    assert.equal(weekStart('2026-09-03'), '2026-08-31');
+    const wk = a.weeks.find((w) => w.start === '2026-08-31');
+    assert.equal(wk.commits, 12);
+    assert.equal(wk.intents.fix, 6);
+    assert.equal(a.weeks[0].start, a.start, 'the first week starts with the range');
+    assert.deepEqual([a.weeks.at(-1).start, a.weeks.at(-1).end, a.weeks.at(-1).partial], ['2026-09-07', '2026-09-08', true], 'the current week is cut at today');
+    assert.equal(a.churn_basis, 'files');
+    assert.deepEqual(a.contributors.map((c) => [c.name, c.commits, c.idle_days]), [['alice', 7, 1], ['bob', 7, 1]]);
+    assert.equal(a.pace, null, 'no deadline, no pace chart');
+
+    await call('POST', '/api/settings', { deadline_date: '2026-10-01' });
+    const b = buildAnalytics(ctx.db, ctx.config, { days: 30, now });
+    assert.equal(b.pace.length, 30);
+    assert.equal(b.pace.at(-1).status, 'insufficient-data');
+    assert.equal(b.deadline_date, '2026-10-01');
+
+    assert.equal((await call('GET', '/api/analytics?days=60')).status, 200);
+    assert.equal((await call('GET', '/api/analytics?days=7')).status, 400);
+  } finally { server.close(); }
+});
+
+// --- understandability fixes ----------------------------------------------------------
+
+test('one person, one contributor: name-only commits join the username with the same git name', async () => {
+  const ctx = makeCtx();
+  const { server, call } = await listen(ctx);
+  try {
+    await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
+    const store = createStore(ctx.db, ctx.config);
+    const add = (day, extra) => store.addCommit({ sha: require('crypto').randomBytes(20).toString('hex'), repo: 'team/one', message: 'work', timestamp: `${day}T02:00:00Z`, ...extra });
+    // Early commits carry only the git name; a stale inactivity flag was raised about it.
+    add('2026-09-01', { authorName: 'Mirai' });
+    add('2026-09-02', { authorName: 'Mirai' });
+    ctx.db.prepare("INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at) VALUES ('team/one', '2026-09-01', 1, ?, 'scheduled', 'x')")
+      .run(JSON.stringify({ headline: 'old', contributors: [{ name: 'Mirai', commits: 1 }], contributor_count: 1 }));
+    ctx.db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-09-20', 'contributor_inactive', 'Mirai has had no commits since Sep 2 (18 days).')").run();
+    // Then the same person commits with a linked GitHub account.
+    add('2026-09-21', { authorName: 'mirai', authorUsername: 'notsyou' });
+    const people = ctx.db.prepare("SELECT DISTINCT contributor FROM commits WHERE repo = 'team/one'").all().map((r) => r.contributor);
+    assert.deepEqual(people, ['notsyou']);
+    assert.equal(ctx.db.prepare("SELECT COUNT(*) AS n FROM flags WHERE type = 'contributor_inactive'").get().n, 0, 'the false inactivity flag is gone');
+    const saved = JSON.parse(ctx.db.prepare("SELECT data FROM summaries WHERE date = '2026-09-01'").get().data);
+    assert.equal(saved.contributors[0].name, 'notsyou');
+    // Later name-only commits join straight away.
+    add('2026-09-22', { authorName: 'Mirai' });
+    assert.equal(ctx.db.prepare("SELECT COUNT(*) AS n FROM commits WHERE contributor = 'notsyou'").get().n, 4);
+    // Two accounts sharing a git name are never merged.
+    add('2026-09-23', { authorName: 'Sam', authorUsername: 'sam-a' });
+    add('2026-09-23', { authorName: 'Sam', authorUsername: 'sam-b' });
+    add('2026-09-24', { authorName: 'Sam' });
+    assert.equal(ctx.db.prepare("SELECT contributor FROM commits WHERE committed_date = '2026-09-24'").get().contributor, 'Sam');
+  } finally { server.close(); }
+});
+
+test('startup repairs contributors and old flag wording in an existing database', () => {
+  const ctx = makeCtx();
+  const db = ctx.db;
+  db.prepare("INSERT INTO repositories (repo) VALUES ('team/one')").run();
+  db.prepare("UPDATE project_settings SET tracked_repo = 'team/one'").run();
+  const ins = db.prepare("INSERT INTO commits (sha, repo, author_name, author_username, contributor, message, committed_at, committed_date, committed_hour) VALUES (?, 'team/one', ?, ?, ?, 'work', ?, ?, 10)");
+  ins.run('a'.repeat(40), 'Mirai', null, 'Mirai', '2026-09-01T02:00:00Z', '2026-09-01');
+  ins.run('b'.repeat(40), 'Mirai', 'notsyou', 'notsyou', '2026-09-21T02:00:00Z', '2026-09-21');
+  db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-11-21', 'activity_above_baseline', '13 commits, 4450% above the 7-day average.')").run();
+  db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-10-28', 'deadline_at_risk', 'Recent commit pace is 63% of the project''s earlier pace, with 1 day(s) left until the deadline.')").run();
+  createApp(ctx);
+  assert.deepEqual(db.prepare('SELECT DISTINCT contributor FROM commits').all().map((r) => r.contributor), ['notsyou']);
+  assert.deepEqual(db.prepare('SELECT detail FROM flags ORDER BY id').all().map((r) => r.detail), [
+    '13 commits, well above the usual 0.3 a day.',
+    "Recent commit pace is 63% of the project's earlier pace, with 1 day left until the deadline.",
+  ]);
+});
+
+test('GITHUB_REPO only seeds the shown repo; once stopped it stays stopped', async () => {
+  const ctx = makeCtx({ repo: 'Team/Env' });
+  const { server, call } = await listen(ctx);
+  try {
+    assert.equal((await call('GET', '/api/repository')).body.repo, 'team/env');
+    assert.equal((await call('DELETE', '/api/repository')).status, 200);
+    assert.equal((await call('GET', '/api/repository')).body.repo, null, 'no silent fallback to GITHUB_REPO');
+    createApp(ctx); // a restart doesn't bring it back either
+    assert.equal((await call('GET', '/api/repository')).body.repo, null);
+  } finally { server.close(); }
+});
+
+test('small differences are "about the usual", and quiet repos get readable comparisons', () => {
+  const { buildSummary } = require('../src/summary');
+  const ctx = makeCtx();
+  const store = createStore(ctx.db, ctx.config);
+  const add = (day, n) => { for (let i = 0; i < n; i++) store.addCommit({ sha: require('crypto').randomBytes(20).toString('hex'), repo: 'team/one', authorName: 'a', authorUsername: 'a', message: 'work', timestamp: `${day}T0${i % 9}:00:00Z` }); };
+  for (let i = 0; i < 7; i++) add(addDays('2026-09-01', i), 2);
+  add('2026-09-08', 3); // 3 vs. a usual 2: +50%, but only one commit more
+  const steady = buildSummary(ctx.db, ctx.config, '2026-09-08', 'team/one');
+  assert.equal(steady.comparison.trend, 'steady');
+  assert.match(steady.headline, /about the usual for the last 7 days/);
+  add('2026-09-09', 8);
+  assert.match(buildSummary(ctx.db, ctx.config, '2026-09-09', 'team/one').headline, /about 4× the usual 2\.1 a day/);
+  add('2026-09-27', 2); // the week before: 2 commits, so the usual is 0.3 a day
+  add('2026-09-30', 9);
+  const quiet = buildSummary(ctx.db, ctx.config, '2026-09-30', 'team/one');
+  assert.equal(quiet.comparison.trend, 'above');
+  assert.match(quiet.headline, /^9 commits from 1 contributor, well above the usual 0\.\d a day\./);
 });

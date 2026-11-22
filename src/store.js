@@ -1,8 +1,9 @@
 'use strict';
+const { usernameFor, linkName } = require('./identity');
 const { localDate, localHour } = require('./time');
 const { transaction } = require('./db');
 const { maskEmail } = require('./privacy');
-const { trackedRepo } = require('./repository');
+const { acceptsRepo, norm } = require('./repository');
 
 const MERGE_RE = /^Merge (pull request|branch|remote-tracking branch)\b/i;
 
@@ -32,19 +33,21 @@ function createStore(db, config) {
    * undefined when not known — stored as NULL, not 0.
    */
   function addCommit(c) {
-    // Single-repository scope: never mix in commits from another repo.
-    const tracked = trackedRepo(db, config);
-    if (tracked && String(c.repo || '').toLowerCase() !== tracked) return 0;
+    // Only repositories that are being followed; never a stranger's pushes.
+    if (!acceptsRepo(db, config, c.repo)) return 0;
     const when = new Date(c.timestamp);
     if (Number.isNaN(when.getTime())) return 0;
     // The committer's email is never stored (data minimization: nothing reads it).
     // It's used only as a last-resort label, masked, when a commit has no name.
-    const contributor = c.authorUsername || c.authorName || (c.authorEmail ? maskEmail(c.authorEmail) : 'unknown');
+    // A name-only commit joins the username that already uses this git name here
+    // (src/identity.js), so one person isn't counted twice.
+    const repo = norm(c.repo);
+    const contributor = c.authorUsername || usernameFor(db, repo, c.authorName) || c.authorName || (c.authorEmail ? maskEmail(c.authorEmail) : 'unknown');
     const message = String(c.message || '').trim();
     const numOrNull = (v) => (Number.isFinite(v) ? v : null);
-    return insert.run({
+    const added = insert.run({
       sha: c.sha,
-      repo: c.repo,
+      repo,
       branch: c.branch || null,
       author_name: c.authorName || contributor,
       author_username: c.authorUsername || null,
@@ -63,6 +66,9 @@ function createStore(db, config) {
       lines_added: numOrNull(c.linesAdded),
       lines_deleted: numOrNull(c.linesDeleted),
     }).changes;
+    // A username arriving for a git name seen before claims the earlier name-only commits.
+    if (added && c.authorUsername && c.authorName) linkName(db, config, repo, c.authorName, c.authorUsername);
+    return added;
   }
 
   const addMany = transaction(db, (list) => list.reduce((n, c) => n + addCommit(c), 0));
