@@ -8,9 +8,10 @@
   const SAVE_KEY = 'commitdoctor.study';
   const SCALE = ['Strongly disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly agree'];
 
-  // s: { id, token, code, blocks, blockIdx, taskIdx }; admin token stays in memory only.
+  // s: { id, token, code, blocks, blockIdx, taskIdx }. The admin token is the dashboard's
+  // (kept for this browser tab only, see js/api.js).
+  const T = window.ComDocApi.token;
   let s = null;
-  let adminToken = null;
   let shownAt = 0;
 
   const save = () => { try { window.sessionStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* ignore */ } };
@@ -19,21 +20,20 @@
 
   async function api(path, opts = {}) {
     const headers = { Accept: 'application/json' };
-    if (opts.admin && adminToken) headers.Authorization = `Bearer ${adminToken}`;
+    if (opts.admin && T.get()) headers.Authorization = `Bearer ${T.get()}`;
     let body;
     if (opts.body !== undefined) { headers['Content-Type'] = 'application/json'; body = JSON.stringify(opts.body); }
     const res = await fetch(path, { method: opts.method || 'GET', headers, body });
     if (opts.raw && res.ok) return res;
     const data = res.status === 204 ? {} : await res.json().catch(() => ({}));
-    if (!res.ok) { const e = new Error(data.error || res.statusText); e.status = res.status; throw e; }
+    if (!res.ok) { const e = new Error(data.error || res.statusText); e.status = res.status; e.noToken = /^No ADMIN_TOKEN/.test(data.error || ''); throw e; }
     return data;
   }
   async function asAdmin(fn) {
     try { return await fn(); } catch (err) {
-      if (err.status !== 401) throw err;
-      const t = window.prompt('Enter the admin token:');
+      if (err.status !== 401 || err.noToken) throw err;
+      const t = await window.ComDocApi.promptToken({ message: T.get() ? 'Token rejected.' : '' });
       if (!t) throw err;
-      adminToken = t;
       return fn();
     }
   }
@@ -43,7 +43,9 @@
     for (const n of SCREENS) $(`#screen-${n}`).hidden = n !== name;
     const total = s ? s.blocks.reduce((n, b) => n + b.tasks.length, 0) : 0;
     const done = s ? s.blocks.slice(0, s.blockIdx).reduce((n, b) => n + b.tasks.length, 0) + (name === 'task' ? s.taskIdx : 0) : 0;
-    $('#progress').textContent = s && name !== 'done' ? `${s.code} · ${name === 'sus' ? 'questionnaire' : `${done} of ${total} answered`}` : '';
+    const prog = $('#progress');
+    prog.textContent = s && name !== 'done' ? `${s.code} · ${name === 'sus' ? 'questionnaire' : `${done} of ${total} answered`}` : '';
+    prog.hidden = !prog.textContent;
     const focusable = $(`#screen-${name} h1`);
     if (focusable) { focusable.tabIndex = -1; focusable.focus(); }
   }
@@ -86,10 +88,10 @@
     $('#task-reminder').textContent = b.condition === 'github' ? 'Use GitHub only.' : 'Use Commit Doctor only.';
     const host = $('#task-input');
     if (t.kind === 'number') {
-      host.innerHTML = '<input type="number" id="answer-number" class="field narrow" min="0" step="1" inputmode="numeric" aria-label="Your answer">';
+      host.innerHTML = '<input type="number" id="answer-number" class="input" style="max-width:200px" min="0" step="1" inputmode="numeric" aria-label="Your answer">';
     } else {
       const opts = t.kind === 'yesno' ? [['yes', 'Yes'], ['no', 'No']] : t.options.map((o) => [o, o]);
-      host.innerHTML = `<fieldset class="choice answers"><legend class="sr-only">${esc(t.prompt)}</legend>${opts
+      host.innerHTML = `<fieldset class="choice answers"><legend class="visually-hidden">${esc(t.prompt)}</legend>${opts
         .map(([v, label]) => `<label><input type="radio" name="answer" value="${esc(v)}"> ${esc(label)}</label>`).join('')}</fieldset>`;
     }
     $('#task-next').disabled = true;
@@ -177,10 +179,10 @@
       const g = r.by_condition.github;
       const c = r.by_condition.comdoc;
       const val = (v, unit = '') => (v == null ? '—' : `${v}${unit}`);
-      const yes = (v) => (v == null ? '—' : v ? '<span class="pill-ok">yes</span>' : '<span class="pill-bad">no</span>');
+      const yes = (v) => (v == null ? '—' : v ? '<span class="pill" style="--c:#34D399">yes</span>' : '<span class="pill" style="--c:#F87171">no</span>');
       body.innerHTML = `
         <p>${r.participants.completed} of ${r.participants.started} participant(s) finished. Only finished sessions are counted.</p>
-        <div class="tbl-wrap"><table>
+        <div class="table-wrap"><table class="log-table">
           <thead><tr><th></th><th>GitHub only</th><th>Commit Doctor</th></tr></thead>
           <tbody>
             <tr><td>Answers</td><td>${g.answers}</td><td>${c.answers}</td></tr>
@@ -191,13 +193,14 @@
         <p>Mean SUS score for Commit Doctor: <strong>${val(r.sus_mean)}</strong> (68 is the usual "above average" benchmark).</p>
         <p>Success criteria: as accurate ${yes(r.criteria && r.criteria.as_accurate)} · faster ${yes(r.criteria && r.criteria.faster)} · SUS ≥ 68 ${yes(r.criteria && r.criteria.sus_at_least_68)}</p>
         <p><button type="button" class="btn" id="csv-btn">Download all answers (CSV)</button></p>
-        <h3>Sessions</h3>
-        <div class="tbl-wrap"><table><thead><tr><th>Code</th><th>Started</th><th>Finished</th><th>SUS</th><th></th></tr></thead><tbody>
-          ${r.sessions.map((x) => `<tr><td>${esc(x.code)}</td><td>${esc(new Date(x.created_at).toLocaleString())}</td><td>${x.completed_at ? 'yes' : 'no'}</td><td>${val(x.sus_score)}</td>
-            <td><button type="button" class="text-btn del-session" data-id="${x.id}" data-code="${esc(x.code)}">Delete</button></td></tr>`).join('') || '<tr><td colspan="5">None yet.</td></tr>'}
+        <h3 class="stat-label">Sessions</h3>
+        <div class="table-wrap"><table class="log-table"><thead><tr><th>Code</th><th>Repository</th><th>Started</th><th>Finished</th><th>SUS</th><th></th></tr></thead><tbody>
+          ${r.sessions.map((x) => `<tr><td>${esc(x.code)}</td><td>${esc(x.repo || '')}</td><td>${esc(new Date(x.created_at).toLocaleString())}</td><td>${x.completed_at ? 'yes' : 'no'}</td><td>${val(x.sus_score)}</td>
+            <td><button type="button" class="text-btn del-session" data-id="${x.id}" data-code="${esc(x.code)}">Delete</button></td></tr>`).join('') || '<tr><td colspan="6">None yet.</td></tr>'}
         </tbody></table></div>`;
     } catch (err) {
       body.innerHTML = `<p class="form-error">${esc(err.message)}</p>`;
+      return;
     }
   }
 

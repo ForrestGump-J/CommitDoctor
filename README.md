@@ -1,9 +1,9 @@
 # Commit Doctor (ComDoc)
 
-A GitHub webhook receiver that records commits from **one repository** and turns each
+A GitHub webhook receiver that records commits from **one repository** (or, optionally, several) and turns each
 day's activity into a short summary on a web dashboard: who committed, how many commits,
 when, and how the day compares with recent days. It also tracks a user-set project
-deadline and flags notable deviations from the recent-activity baseline.
+deadline per repository and flags notable deviations from the recent-activity baseline.
 
 **Stack:** Node.js + Express, SQLite (Node's built-in `node:sqlite`, so nothing native to compile), and a plain HTML/CSS/JS dashboard (no framework, no build step).
 
@@ -58,13 +58,14 @@ Commit Doctor needs a long-running process (scheduler, poller) and a writable di
 ## How it works
 
 
-- **One repo at a time.** Everything on the dashboard (summary, trend, contributors, flags, deadline prediction) is scoped to the tracked repo, and saved summaries and flags are stored per repo. Switching repos switches the view; with nothing tracked, all stored commits are shown combined.
+- **One repo at a time (default), or several.** In **single** mode Commit Doctor follows one repository. Connecting another one pauses and hides the old one; its history is kept, and it can be switched back to from Settings (switching back catches up on the commits it missed). In **multiple** mode every connected repository keeps receiving commits, daily summaries, flags and emails, and the top bar's selector hops between them. There is no combined view: everything on the dashboard (summary, trend, contributors, flags, deadline prediction) is scoped to the shown repository, and saved summaries, flags, deadlines and subscribers are stored per repository. Removing a repository deletes all of its data.
 - **Signature check.** Every delivery is verified with HMAC-SHA256 (`X-Hub-Signature-256`) against the raw body. Unsigned or wrongly signed requests get `401` and are logged.
 - **No double counting.** `UNIQUE(sha)` means redeliveries and repeated pushes store a commit once. Commits GitHub flags `distinct: false` (already in the repo, e.g. branch commits re-listed when a PR is merged) are skipped. Merge commits are stored and flagged.
 - **What a "day" is.** A calendar day in `TIMEZONE` (default `Asia/Manila`), based on the commit's own timestamp.
 - **Daily summary.** A small scheduler notices when the local date changes and saves the finished day. If the server was off at midnight, a catch-up pass on the next start summarizes the missed days. Today is always shown live; past days show the saved snapshot.
 - **Rolling-baseline flags.** Each time a summary is (re)generated, the day is compared against the average of the preceding `SUMMARY_COMPARISON_DAYS` days. Notable deviations (activity clearly above/below baseline, or a contributor gone quiet for a full comparison window) are stored as discrete flags rather than just embedded in the summary text.
-- **Deadline tracking.** A team enters a deadline date (and, optionally, which repo to track) via `POST /api/settings`; `GET /api/settings` returns days remaining.
+- **Deadline tracking.** Each repository has its own deadline, set in Settings (`POST /api/settings` with `deadline_date`). `GET /api/prediction` judges whether the recent pace will make it.
+- **Notifications.** Each repository has its own subscriber list. Flags and deadline reminders are emailed to it; on the dashboard, "unread" is remembered per browser.
 - **Privacy.** Committer emails from push payloads are never stored; a commit with no name or username is labelled with a masked email (`j***@example.com`). Subscriber emails are masked in the API and in logs.
 - **Commit intent (NLP).** Each commit message is labelled feature, fix, docs, refactor, test or chore by a TF-IDF + logistic-regression model trained in `nlp/` and run in Node by `src/intent.js` (no Python needed at runtime). Low-confidence labels are shown with a `?`, and the daily summary says what kind of work dominated.
 - **Background sync.** A webhook-tracked public repo is also re-pulled through GitHub's API every `SYNC_INTERVAL_MS` (5 min), so the dashboard stays current even when webhooks can't reach the server.
@@ -90,29 +91,49 @@ Commit Doctor needs a long-running process (scheduler, poller) and a writable di
 | Method and path | Returns |
 |---|---|
 | `POST /webhook/github` | GitHub delivery endpoint |
-| `GET /api/overview` | Repo, timezone, totals, last push, active rules, current settings |
+| `GET /api/overview` | Shown repo, `repo_mode`, followed repositories, timezone, totals, last push, active rules, settings |
 | `GET /api/trend?days=14` | Commits per day, zero-filled |
 | `GET /api/summaries/:date` | Summary for a day (`source`: `saved` or `live`) |
 | `GET /api/summaries?limit=30` | Saved summaries, newest first |
 | `POST /api/summaries/:date/generate` | Save (or re-save) a summary now — admin |
 | `GET /api/commits?date=YYYY-MM-DD` | Commits of a day |
-| `GET /api/settings` | Current deadline and tracked repo, plus days remaining |
-| `POST /api/settings` | Set/clear `deadline_date` and/or `tracked_repo` (`null` untracks: pushes are ignored until a repo is tracked again) — admin |
+| `GET /api/commits/:sha` | One commit (4–40 hex characters of its SHA), with its day and related commits by the same contributor |
+| `GET /api/contributors?date=YYYY-MM-DD` | Everyone who has committed, with last commit and 7-day count |
+| `GET /api/prediction` | Deadline pace for the shown repo |
+| `GET /api/settings` | The shown repo's deadline, plus `repo_mode` |
+| `POST /api/settings` | Set/clear `deadline_date` (optional `repo`, default the shown one) and/or set `repo_mode` (`single` or `multi`; switching to single pauses the other repos) — admin |
+| `GET /api/repository` | Shown repo, how it's connected (webhook / poll), sync status, mode and all repositories |
+| `GET /api/repositories` | Every known repository: followed, paused or hidden |
+| `POST /api/repository` | Connect a repo (`repo`, `method`: `public`, `webhook` or `poll`, optional `token`, `payload_url`). In single mode, replacing a shown repo needs `replace: true` (otherwise `409 needs_replace`) — admin |
+| `POST /api/repository/active` | Show (and follow) a known repo (`repo`); a paused one catches up first — admin |
+| `POST /api/repository/scan` | Pull the shown repo's recent commits now — admin |
+| `DELETE /api/repository` | Stop following the shown repo (history kept, poll token deleted) — admin |
+| `DELETE /api/repositories/:owner/:name` | Remove a repo and delete all of its data — admin |
 | `GET /api/webhook-setup` | Secret and values to paste into GitHub — admin |
-| `POST /api/webhook-setup/sync` | Pull the tracked repo's recent commits now (public repos; `token` optional) — admin |
-| `GET /api/subscribers` | Notification recipients |
-| `POST /api/subscribers` | Add a recipient (`name`, `email`) — admin |
+| `POST /api/admin/ping` | `{ok:true}` if the caller may make changes; used by the dashboard to show Open / Locked / Unlocked — admin |
+| `GET /api/subscribers` | The shown repo's notification recipients |
+| `POST /api/subscribers` | Add a recipient (`name`, `email`) to the shown repo — admin |
 | `DELETE /api/subscribers/:id` | Remove a recipient — admin |
-| `GET /api/flags?date=YYYY-MM-DD` | Rolling-baseline deviations, optionally filtered by day |
+| `GET /api/flags?date=YYYY-MM-DD` | Rolling-baseline deviations of the shown repo, optionally filtered by day (`limit` for the newest) |
 | `GET /api/activity` | Webhook deliveries, summary runs and emails (the prototype's own log) |
+| `POST /api/views/events`, `GET /api/views/stats` | Anonymous usage of the Digest / Team / Timeline views |
+| `/api/study/*` | Feasibility study: sessions, answers, SUS, results and `export.csv` (results are admin) |
 
 ## Database
 
 `commits` (one row per unique SHA), `summaries` (one JSON snapshot per repo per day),
 `webhook_events` (every delivery: accepted, ignored or rejected), `summary_runs`
 (every summary attempt: saved or skipped, and what triggered it), `subscribers`
-(notification recipients), `project_settings` (single row: deadline and tracked
-repo), `flags` (discrete rolling-baseline deviations, one row per flag per day),
+(notification recipients, per repo), `repositories` (every known repo: followed or
+paused, its deadline and sync status), `project_settings` (single row: shown repo and
+`repo_mode`), `flags` (discrete rolling-baseline deviations, one row per flag per day),
 `notifications` (every email attempt: sent, failed or skipped) and `tracked_repos` (private repos checked with a token).
 
 ## Layout
+
+- `src/`: server (`server.js`, `api.js`, `webhook.js`, `repository.js` for single/multi repo state, `summary.js`, `predict.js`, `notify.js`, `scheduler.js`, `study.js`, `views.js`, `db.js`).
+- `public/`: the dashboard, plain HTML/CSS/JS with no build step.
+  - Pages: `index.html` (Dashboard: the day's summary, Digest / Team / Timeline views, commits per day, notable changes), `repository.html`, `commit.html` (a day's commits, or one commit with `?sha=`), `notifications.html` (flags, daily and weekly digests), `settings.html` (repositories, mode, deadline, email alerts, admin token, system log) and `study.html` (the standalone feasibility study).
+  - `css/styles.css`; `js/api.js` (fetch wrapper and admin-token prompt), `js/core.js` (shared shell and helpers) and one script per page.
+- `test/`: `npm test`.
+- `nlp/`: training for the commit-intent model.

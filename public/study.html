@@ -1,30 +1,29 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Commit Doctor Study</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1 13h6l2-7 4 13 2-6h8' fill='none' stroke='%23d22b47' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feasibility study · Commit Doctor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M22 12h-4l-3 9L9 3l-3 9H2' fill='none' stroke='%236366F1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="study">
-  <header class="top">
-    <a class="brand" href="/">
-      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M1 13h6l2-7 4 13 2-6h8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Commit Doctor · Feasibility study</span>
-    </a>
-    <p class="status" id="progress" aria-live="polite"></p>
+<body>
+  <!-- No dashboard navigation here, so participants in the GitHub-only part aren't shown Commit Doctor. -->
+  <header class="study-top">
+    <div class="logo"><span class="logo-tile"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span><span class="name">Feasibility study</span></div>
+    <span class="spacer"></span>
+    <span class="pill" id="progress" style="--c:#6366F1" aria-live="polite" hidden></span>
   </header>
 
   <main class="study-main">
     <!-- 1. Facilitator: participant code and consent -->
-    <section class="study-card" id="screen-start">
+    <section class="card" id="screen-start">
+      <p class="eyebrow">Facilitator</p>
       <h1 class="study-title">Before we begin</h1>
-      <p class="hint">Facilitator: read this to the participant, then enter their code. Codes identify participants instead of names (for example P01, P02…).</p>
+      <p class="hint">Read this to the participant, then enter their code. Codes identify participants instead of names (for example P01, P02…).</p>
       <div class="consent" id="consent-text">
         <h2>Consent</h2>
         <p>You are invited to try Commit Doctor, a tool that summarizes a team's GitHub commits. You will answer ten short questions about recent activity in a repository: five using GitHub's own commit history and five using Commit Doctor. Then you will rate Commit Doctor on ten statements.</p>
@@ -33,67 +32,69 @@
         <p><strong>Your rights:</strong> taking part is voluntary. You may stop at any time, and you may ask for your answers to be deleted, under the Data Privacy Act of 2012 (RA 10173).</p>
       </div>
       <form id="start-form" novalidate>
-        <label class="field-label" for="code-input">Participant code</label>
-        <input type="text" id="code-input" class="field narrow" maxlength="16" autocomplete="off" spellcheck="false" placeholder="P01">
+        <div class="field" style="max-width:220px"><label for="code-input">Participant code</label><input type="text" id="code-input" maxlength="16" autocomplete="off" spellcheck="false" placeholder="P01"></div>
         <label class="check"><input type="checkbox" id="consent-input"> The participant has read this and agrees to take part.</label>
-        <div class="form-actions"><button type="submit" class="btn btn-primary">Start</button></div>
+        <div class="dialog-actions" style="justify-content:flex-start"><button type="submit" class="btn btn-primary">Start</button></div>
         <p class="form-error" id="start-error" role="alert" hidden></p>
       </form>
     </section>
 
     <!-- 2. Instructions for one part -->
-    <section class="study-card" id="screen-block" hidden>
+    <section class="card" id="screen-block" hidden>
       <p class="eyebrow" id="block-eyebrow"></p>
       <h1 class="study-title" id="block-title"></h1>
       <p class="lead" id="block-text"></p>
       <p><a class="btn" id="block-link" target="_blank" rel="noopener"></a></p>
-      <p class="hint">Keep that tab open next to this one. Each question is timed from when it appears, so take your time but don't wait between them.</p>
-      <div class="form-actions"><button type="button" class="btn btn-primary" id="block-start">Show the first question</button></div>
+      <p class="hint" style="margin-top:12px">Keep that tab open next to this one. Each question is timed from when it appears, so take your time but don't wait between them.</p>
+      <div class="dialog-actions" style="justify-content:flex-start;margin-top:16px"><button type="button" class="btn btn-primary" id="block-start">Show the first question</button></div>
     </section>
 
     <!-- 3. One question at a time -->
-    <section class="study-card" id="screen-task" hidden>
+    <section class="card" id="screen-task" hidden>
       <p class="eyebrow" id="task-eyebrow"></p>
       <form id="task-form" novalidate>
         <h1 class="study-q" id="task-prompt"></h1>
         <div id="task-input"></div>
         <p class="hint" id="task-reminder"></p>
-        <div class="form-actions"><button type="submit" class="btn btn-primary" id="task-next" disabled>Next</button></div>
+        <div class="dialog-actions" style="justify-content:flex-start;margin-top:16px"><button type="submit" class="btn btn-primary" id="task-next" disabled>Next</button></div>
         <p class="form-error" id="task-error" role="alert" hidden></p>
       </form>
     </section>
 
     <!-- 4. SUS questionnaire -->
-    <section class="study-card" id="screen-sus" hidden>
+    <section class="card" id="screen-sus" hidden>
+      <p class="eyebrow">Last step</p>
       <h1 class="study-title">About Commit Doctor</h1>
       <p class="hint">How much do you agree with each statement? Answer quickly; your first reaction is best.</p>
       <form id="sus-form" novalidate>
         <ol class="sus" id="sus-items"></ol>
-        <label class="field-label" for="c-helped">What helped you most in Commit Doctor?</label>
-        <textarea id="c-helped" class="field area" rows="2" maxlength="2000"></textarea>
-        <label class="field-label" for="c-confusing">What was confusing or missing?</label>
-        <textarea id="c-confusing" class="field area" rows="2" maxlength="2000"></textarea>
-        <label class="field-label" for="c-other">Anything else?</label>
-        <textarea id="c-other" class="field area" rows="2" maxlength="2000"></textarea>
-        <div class="form-actions"><button type="submit" class="btn btn-primary">Finish</button></div>
+        <div class="field"><label for="c-helped">What helped you most in Commit Doctor?</label><textarea id="c-helped" rows="2" maxlength="2000"></textarea></div>
+        <div class="field"><label for="c-confusing">What was confusing or missing?</label><textarea id="c-confusing" rows="2" maxlength="2000"></textarea></div>
+        <div class="field"><label for="c-other">Anything else?</label><textarea id="c-other" rows="2" maxlength="2000"></textarea></div>
+        <div class="dialog-actions" style="justify-content:flex-start"><button type="submit" class="btn btn-primary">Finish</button></div>
         <p class="form-error" id="sus-error" role="alert" hidden></p>
       </form>
     </section>
 
     <!-- 5. Done -->
-    <section class="study-card" id="screen-done" hidden>
+    <section class="card" id="screen-done" hidden>
       <h1 class="study-title">Thank you!</h1>
       <p class="lead">That's everything. Please hand the device back to the facilitator.</p>
-      <div class="form-actions"><button type="button" class="btn" id="next-participant">Start the next participant</button></div>
+      <div class="dialog-actions" style="justify-content:flex-start"><button type="button" class="btn" id="next-participant">Start the next participant</button></div>
     </section>
 
     <!-- Facilitator results -->
-    <details class="log" id="results">
-      <summary>Facilitator: results</summary>
-      <div id="results-body" class="results-body"><p class="muted">Open to load. Needs the admin token if one is set.</p></div>
-    </details>
+    <section class="card solid">
+      <details class="disclosure" id="results">
+        <summary>Facilitator: results</summary>
+        <div id="results-body" class="section-gap" style="margin-top:12px"><p class="note">Open to load. Needs the admin token if one is set.</p></div>
+      </details>
+    </section>
+    <p class="footnote"><a class="link" href="index.html">Back to the dashboard</a> (facilitator only)</p>
   </main>
 
-  <script src="study.js"></script>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="js/api.js"></script>
+  <script src="js/study.js"></script>
 </body>
 </html>
