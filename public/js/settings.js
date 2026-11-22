@@ -29,7 +29,7 @@
       ${CD.isLocal() ? `<p class="hint">GitHub can't reach <code>localhost</code>. Run <code>npx smee-client --target ${esc(window.location.origin)}/webhook/github</code> and use the address it prints, or reconnect with a token instead.</p>` : ''}</details>` : '';
 
     main.innerHTML = `${CD.pageHead('Settings', o.repo ? `Settings for ${o.repo} and how repositories are followed` : 'Connect a repository to get started')}
-      <section class="card solid"><div class="card-head"><h2>Repositories</h2><button class="btn btn-primary" data-open="connect">${ic('plus', 14)} Connect repository</button></div>
+      <section class="card solid" data-tour="settings-repos"><div class="card-head"><h2>Repositories</h2><button class="btn btn-primary" data-open="connect">${ic('plus', 14)} Connect repository</button></div>
         <div class="field-row" style="margin-bottom:8px"><span class="sub">Follow</span><div class="seg" role="group" aria-label="How many repositories to follow">
           <button type="button" data-mode="single" aria-pressed="${!multi}">One repository</button><button type="button" data-mode="multi" aria-pressed="${multi}">Multiple repositories</button></div></div>
         <p class="hint">${multi
@@ -41,7 +41,7 @@
         ${hidden.length ? `<h3 class="stat-label" style="margin:20px 0 4px">${multi ? 'Paused' : 'Hidden'}</h3><p class="note">Not followed right now. Their history is kept; switching back pulls in the last 14 days of commits.</p>${hidden.map(repoRow).join('')}` : ''}</section>
 
       <div class="cols cols-2">
-        <section class="card"><div class="card-head"><h2>Deadline${CD.help('pace')}</h2></div>
+        <section class="card" data-tour="deadline"><div class="card-head"><h2>Deadline${CD.help('pace')}</h2></div>
           ${o.repo ? `<p class="hint">Each repository has its own deadline. It's used to judge whether the current pace will make it, and for reminder emails.</p>
           <div class="field-row" style="margin:12px 0"><label class="visually-hidden" for="deadline">Deadline for ${esc(o.repo)}</label><input type="date" id="deadline" class="input" value="${esc(prediction.deadline_date || '')}" style="color-scheme:dark">
             <button class="btn btn-primary" id="deadline-set">Set</button>${prediction.deadline_date ? '<button class="btn" id="deadline-clear">Clear</button>' : ''}</div>
@@ -49,14 +49,14 @@
           <p class="note" style="margin-top:8px">Rule-based: the last ${plural(o.rules.comparison_days, 'day')} vs. the earlier pace (75% or more is on pace, 40–75% at risk, below 40% behind); heavy rework (over 60% removals in 21 days) lowers "on pace" to "at risk".</p>`
           : '<p class="hint">Connect a repository first.</p>'}</section>
 
-        <section class="card"><div class="card-head"><h2>Email alerts</h2></div>
+        <section class="card" data-tour="alerts"><div class="card-head"><h2>Email alerts</h2></div>
           ${o.repo ? `<p class="hint">People who get deadline reminders and flag alerts for <strong>${esc(o.repo)}</strong>. Each repository has its own list.</p>
           <div id="subs" style="margin:8px 0">${subscribers.length ? subscribers.map((s) => `<div class="repo-row"><div class="grow"><strong>${esc(s.name)}</strong><span class="note">${esc(s.email)}</span></div><button class="btn" data-unsub="${s.id}" aria-label="Remove ${esc(s.name)}">Remove</button></div>`).join('') : '<p class="note">Nobody yet.</p>'}</div>
           <form id="sub-form" class="field-row" novalidate><input class="input" id="sub-name" placeholder="Name" aria-label="Name" autocomplete="off"><input class="input" id="sub-email" type="email" placeholder="Email" aria-label="Email" autocomplete="off"><button class="btn btn-primary" type="submit">Add</button></form>`
           : '<p class="hint">Connect a repository first.</p>'}</section>
       </div>
 
-      <section class="card"><div class="card-head"><h2>Admin access</h2><span class="pill" id="auth-pill-2"></span></div>
+      <section class="card" data-tour="admin"><div class="card-head"><h2>Admin access</h2><span class="pill" id="auth-pill-2"></span></div>
         <p class="hint">Changes (connecting repositories, deadlines, subscribers, saving summaries) need the server's <code>ADMIN_TOKEN</code>. If none is set, changes are only accepted from the server machine itself. The token you enter is kept for this browser tab only.</p>
         <p style="margin-top:12px" class="field-row"><button class="btn" id="enter-token">Enter admin token</button><button class="btn" id="forget-token">Forget token</button></p></section>
 

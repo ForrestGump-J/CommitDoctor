@@ -38,7 +38,7 @@
           ${prediction.deadline_date ? pill(`Deadline ${CD.dayMed(prediction.deadline_date)} · ${pred[0]}`, pred[1]) : '<a class="link" href="settings.html">Set a deadline →</a>'}</div>
         <p class="note">Times in ${esc(o.timezone)}. Days are compared with the previous ${plural(quietAfter, 'day')}.</p></section>
       <div class="cols cols-wide">
-        <section class="card solid" data-tabs><div class="tabs pills" role="tablist" aria-label="Repository views">
+        <section class="card solid" data-tabs data-tour="repo-tabs"><div class="tabs pills" role="tablist" aria-label="Repository views">
           <button role="tab" id="t-tl" aria-selected="true" aria-controls="p-tl">Timeline</button><button role="tab" id="t-sm" aria-selected="false" aria-controls="p-sm">Summaries</button><button role="tab" id="t-pp" aria-selected="false" aria-controls="p-pp">Contributors</button></div>
           <div role="tabpanel" id="p-tl" aria-labelledby="t-tl">${timeline}</div>
           <div role="tabpanel" id="p-sm" aria-labelledby="t-sm" hidden>${sums}</div>

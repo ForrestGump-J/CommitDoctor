@@ -45,6 +45,7 @@
     save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
     calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
     file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+    guide: '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
   };
   const ic = (k, size, color) => `<svg class="ic" width="${size || 18}" height="${size || 18}" viewBox="0 0 24 24" fill="none" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k] || ''}</svg>`;
 
@@ -331,7 +332,7 @@
   /** A card whose body can be hidden; the choice is remembered in this browser. */
   function hideable(title, bodyHtml, note) {
     const on = filesShown();
-    return `<section class="card solid" data-hideable><div class="card-head"><h2>${esc(title)}</h2>
+    return `<section class="card solid" data-hideable data-tour="files"><div class="card-head"><h2>${esc(title)}</h2>
       <button type="button" class="btn" data-toggle-files aria-expanded="${on}">${on ? 'Hide' : 'Show'} file details</button></div>
       <div data-hideable-body ${on ? '' : 'hidden'}>${bodyHtml}${note ? `<p class="note" style="margin-top:12px">${note}</p>` : ''}</div>
       ${on ? '' : '<p class="note" data-hideable-off>Hidden. File counts per commit come from GitHub; individual file names are not recorded.</p>'}</section>`;
@@ -341,7 +342,7 @@
   const NAV = [
     ['dashboard', 'Dashboard', 'index.html', 'dash'], ['repository', 'Repositories', 'repository.html', 'repo'],
     ['commits', 'Commits', 'commit.html', 'commit'], ['notifications', 'Notifications', 'notifications.html', 'bell'],
-    ['analytics', 'Analytics', 'analytics.html', 'chart'], ['settings', 'Settings', 'settings.html', 'gear'], ['study', 'Study', 'study.html', 'flask'],
+    ['analytics', 'Analytics', 'analytics.html', 'chart'], ['settings', 'Settings', 'settings.html', 'gear'], ['tutorial', 'Tutorial', 'tour', 'guide'], ['study', 'Study', 'study.html', 'flask'],
   ];
 
   function repoSelect(o) {
@@ -349,8 +350,8 @@
     // Single mode shows only the followed repo (others are hidden; switch back in Settings).
     // Multi mode lists every followed repo, and the dashboard hops between them.
     const list = o.repo_mode === 'multi' ? repos.filter((r) => r.active || r.shown) : repos.filter((r) => r.shown);
-    if (!o.repo) return `<button type="button" class="btn btn-primary" data-open="connect">${ic('plus', 14)} Connect repository</button>`;
-    return `<div class="select-wrap">${ic('branch', 16)}<label class="visually-hidden" for="repo-select">Repository</label>
+    if (!o.repo) return `<button type="button" class="btn btn-primary" data-open="connect" data-tour="repo">${ic('plus', 14)} Connect repository</button>`;
+    return `<div class="select-wrap" data-tour="repo">${ic('branch', 16)}<label class="visually-hidden" for="repo-select">Repository</label>
       <select id="repo-select"${list.length < 2 ? ' title="Only one repository is followed. Add more in Settings › Multiple repositories."' : ''}>
       ${list.map((r) => `<option value="${esc(r.repo)}"${r.shown ? ' selected' : ''}>${esc(r.repo)}</option>`).join('')}</select></div>`;
   }
@@ -359,6 +360,8 @@
     const o = CD.ctx.overview;
     const st = repoStatus(CD.ctx.repository, o);
     const nav = NAV.map(([key, label, href, icon]) => {
+      // The guided tour (js/tour.js) starts from here; it isn't a page of its own.
+      if (href === 'tour') return `<button type="button" class="nav-item" data-tour-start data-tour="tutorial-nav" title="${label}: a guided tour of Commit Doctor">${ic(icon, 20)}<span class="label">${label}</span></button>`;
       if (!href) return `<span class="nav-item is-disabled" aria-disabled="true" title="Coming soon">${ic(icon, 20)}<span class="label">${label}</span><span class="soon">Soon</span></span>`;
       const badge = key === 'notifications' && unread ? `<span class="pill badge" style="--c:#6366F1" aria-label="${unread} unread">${unread}</span>` : '';
       return `<a class="nav-item" href="${href}"${key === page ? ' aria-current="page"' : ''} title="${label}">${ic(icon, 20)}<span class="label">${label}</span>${badge}</a>`;
@@ -393,7 +396,7 @@
     if (d === today()) u.searchParams.delete('date'); else u.searchParams.set('date', d);
     window.history.replaceState(null, '', u);
   }
-  const dayNav = (d) => `<div class="daynav" role="group" aria-label="Choose a day">
+  const dayNav = (d) => `<div class="daynav" role="group" aria-label="Choose a day" data-tour="daynav">
     <button type="button" data-day="-1" aria-label="Previous day">${ic('left', 16)}</button>
     <span class="daypick"><button type="button" id="day-btn" aria-label="Choose a day (showing ${esc(dayLong(d))})">${ic('calendar', 14)} ${esc(dayName(d))}</button>
       <input type="date" id="day-input" tabindex="-1" aria-hidden="true" value="${d}" max="${today()}"></span>
@@ -653,6 +656,9 @@
       console.error(err);
       $('#main').insertAdjacentHTML('beforeend', `<section class="card"><h2>Something went wrong</h2><p class="hint">${esc(err.message)}</p></section>`);
     }
+    // The page is drawn; the guided tour (js/tour.js) waits for this.
+    CD.page = page;
+    document.dispatchEvent(new CustomEvent('comdoc:ready', { detail: { page } }));
   }
 
   const CD = {

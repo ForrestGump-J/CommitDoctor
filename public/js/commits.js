@@ -20,7 +20,7 @@
       draw();
     };
     main.innerHTML = `${CD.pageHead('Commits', '')}
-      <section class="card solid"><div class="card-head"><h2 id="commit-count"></h2>
+      <section class="card solid" data-tour="commit-list"><div class="card-head"><h2 id="commit-count"></h2>
         <label class="field-row" style="flex:0 1 320px"><span class="visually-hidden">Filter commits</span><input id="filter" class="input" type="search" placeholder="Filter by message, author, SHA or intent" autocomplete="off"></label></div>
         <div id="commit-list"></div></section>`;
     $('#filter').addEventListener('input', draw);

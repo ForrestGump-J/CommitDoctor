@@ -48,7 +48,7 @@
   /* ---------- repository area: single panel or several cards ---------- */
   function repoArea(o, r) {
     if (!o.repo) {
-      return `<section class="card"><div class="card-head"><h2>Connect your repository</h2></div>
+      return `<section class="card" data-tour="status"><div class="card-head"><h2>Connect your repository</h2></div>
         <p class="hint">Commit Doctor follows a GitHub repository and turns each day's commits into a short summary. Public repositories need no token.</p>
         <p style="margin-top:12px"><button class="btn btn-primary" data-open="connect">${ic('plus', 14)} Connect repository</button></p>
         <p class="note" style="margin-top:12px">Just trying it out? Run <code>npm run seed</code> to load two weeks of demo data.</p></section>`;
@@ -58,10 +58,10 @@
         <div class="repo-top"><strong>${esc(x.repo)}</strong><span class="status-dot${x.shown ? '' : ' idle'}" aria-hidden="true"></span></div>
         <div class="repo-lang"><i style="--c:${x.method === 'poll' ? '#A855F7' : '#22D3EE'}"></i>${x.method === 'poll' ? 'Checked with a token' : 'Webhook / public scan'}</div>
         <div class="note">${plural(x.commits, 'commit')}${x.last_commit_at ? ` · last ${esc(CD.ago(x.last_commit_at))}` : ''}${x.shown ? ' · showing' : ''}</div></button>`).join('');
-      return `<section class="rail" aria-label="Repositories">${cards}<button class="repo-add" data-open="connect">${ic('plus', 20)}<span>Connect repository</span></button></section>`;
+      return `<section class="rail" aria-label="Repositories" data-tour="status">${cards}<button class="repo-add" data-open="connect">${ic('plus', 20)}<span>Connect repository</span></button></section>`;
     }
     const st = CD.repoStatus(r, o);
-    return `<section class="card"><div class="status-line"><span class="status-dot ${st.tone === 'ok' ? '' : st.tone}" aria-hidden="true"></span>
+    return `<section class="card" data-tour="status"><div class="status-line"><span class="status-dot ${st.tone === 'ok' ? '' : st.tone}" aria-hidden="true"></span>
       <div style="flex:1;min-width:0"><a href="https://github.com/${CD.repoPath(o.repo)}" target="_blank" rel="noopener"><strong>${esc(o.repo)}</strong></a>
       <span class="hint" style="display:block">${esc(st.text)}</span></div>
       <div class="field-row">${r.method ? '<button type="button" class="btn" id="scan-btn">' + ic('refresh', 14) + ' Check now</button>' : ''}<a class="btn" href="settings.html">${ic('gear', 14)} Manage</a></div></div></section>`;
@@ -87,7 +87,7 @@
     const pred = CD.PRED[p.status] || [p.status, '#9AA3B5'];
     const people = s.contributors.slice(0, 4).map((x) => avatar(x.name, 24)).join('');
     const ctxNote = '<div class="note">Context only · not a performance measure</div>';
-    return `<section class="stats" aria-label="This day at a glance">
+    return `<section class="stats" aria-label="This day at a glance" data-tour="stats">
       <article class="card stat"><div class="stat-label">Commits${CD.help('baseline')}</div><div class="stat-row"><div class="stat-value">${s.total_commits}</div>${CD.spark(v.trend.map((d) => d.commits), '#60A5FA')}</div><div class="note ${vsCls}">${esc(vs)}</div></article>
       <article class="card stat"><div class="stat-label">Code churn${CD.help('churn')}</div><div class="stat-row"><div class="stat-value">${churn}</div>${ic('file', 22, '#A855F7')}</div><div class="note">${esc(churnNote)}</div></article>
       <article class="card stat"><div class="stat-label">Contributors</div><div class="stat-row"><div class="stat-value">${s.contributor_count}<small>active</small></div><span class="stack">${people}</span></div>${ctxNote}</article>
@@ -108,7 +108,7 @@
     else if (state.date >= o.today) prov = 'Live · saved after midnight';
     else prov = 'Computed live (not saved)';
     const canSave = o.totals.commits > 0 && s.total_commits > 0;
-    return `<section class="ai" aria-labelledby="sum-h"><div class="ai-title"><span class="ai-icon">${ic('note', 18)}</span><h2 id="sum-h">Daily summary</h2>${CD.help('summary')}${pill(prov, '#9AA3B5')}</div>
+    return `<section class="ai" aria-labelledby="sum-h" data-tour="summary"><div class="ai-title"><span class="ai-icon">${ic('note', 18)}</span><h2 id="sum-h">Daily summary</h2>${CD.help('summary')}${pill(prov, '#9AA3B5')}</div>
       <p id="sum-text">${esc(s.headline)}</p>
       <div class="ai-foot">${CD.intentPills(s.intents)}${Object.keys(s.intents || {}).length ? CD.help('intent') : ''}<span class="spacer"></span>
         ${canSave ? `<button class="btn" id="save-btn">${ic('save', 14)} ${s.source === 'saved' ? 'Update saved summary' : 'Save summary now'}</button>` : ''}
@@ -198,7 +198,7 @@
   /* ---------- side: commits per day and notable changes ---------- */
   function trendCard(v) {
     const seg = RANGES.map((n) => `<button type="button" data-range="${n}" aria-pressed="${n === state.range}">${n}d</button>`).join('');
-    return `<section class="card"><div class="card-head"><h2>Commits per day</h2><div class="seg" role="group" aria-label="Range">${seg}</div></div>
+    return `<section class="card" data-tour="trend"><div class="card-head"><h2>Commits per day</h2><div class="seg" role="group" aria-label="Range">${seg}</div></div>
       ${CD.dayBars(v.trend, state.date)}<p class="note" style="margin-top:14px">Select a day to read it. A green dot means its summary was saved.</p></section>`;
   }
   function notable(v) {
@@ -206,7 +206,7 @@
       const [label, icon, color] = CD.flagMeta(f.type);
       return `<a class="notif" href="index.html?date=${esc(f.date)}"><span class="tile" style="--c:${color}">${ic(icon, 16)}</span><div><b>${esc(label)}</b><small>${esc(CD.dayMed(f.date))} · ${esc(f.detail)}</small></div>${f.id > CD.seenId() ? '<span class="unread-dot" title="Unread"></span>' : ''}</a>`;
     }).join('') : '<p class="note" style="padding:8px 0">No flags yet. They appear when a saved day stands out from the recent baseline.</p>';
-    return `<section class="card glass"><div class="card-head"><h2>Notable changes${CD.help('flag')}</h2></div>${list}<div style="padding-top:12px"><a class="link" href="notifications.html">View all notifications →</a></div></section>`;
+    return `<section class="card glass" data-tour="notable"><div class="card-head"><h2>Notable changes${CD.help('flag')}</h2></div>${list}<div style="padding-top:12px"><a class="link" href="notifications.html">View all notifications →</a></div></section>`;
   }
 
   /* ---------- file changes (hideable) ---------- */
@@ -230,7 +230,7 @@
   function intro(o) {
     if (CD.store.get('comdoc.introDismissed') === '1') return '';
     const n = o.rules.comparison_days;
-    return `<section class="card glass" id="intro" aria-labelledby="intro-h"><div class="card-head"><h2 id="intro-h">How Commit Doctor works</h2><button type="button" class="btn" id="intro-close">Got it, hide this</button></div>
+    return `<section class="card glass" id="intro" aria-labelledby="intro-h"><div class="card-head"><h2 id="intro-h">How Commit Doctor works</h2><div class="field-row"><button type="button" class="btn btn-primary" data-tour-start>${ic('guide', 14)} Take the tour</button><button type="button" class="btn" id="intro-close">Got it, hide this</button></div></div>
       <div class="intro">
         <div><h3>1. Commits come in</h3><p>From GitHub, instantly by webhook or by checking every few minutes. Only commit details are kept (who, when, message, file counts), never the code.</p></div>
         <div><h3>2. Each day gets a summary</h3><p>Written by fixed rules, not AI. Today stays live and is saved after midnight. Read it three ways with the Digest, Team and Timeline tabs.</p></div>
@@ -248,7 +248,7 @@
     main.innerHTML = CD.pageHead(CD.dayLong(state.date), o.repo ? `${o.repo} · times in ${o.timezone}` : `Times in ${o.timezone}`, CD.dayNav(state.date)) +
       (o.repo ? intro(o) : '') + repoArea(o, v.repository) +
       (o.repo || o.totals.commits ? stats(v) + summaryCard(v) +
-        `<div class="cols cols-feed"><section class="card solid" aria-label="Day views"><div class="card-head"><div class="tabs pills" role="tablist" aria-label="How to show this day">${tabs}</div></div>${panels}
+        `<div class="cols cols-feed"><section class="card solid" aria-label="Day views" data-tour="views"><div class="card-head"><div class="tabs pills" role="tablist" aria-label="How to show this day">${tabs}</div></div>${panels}
           <div class="feedback" id="feedback"><span id="fb-q"></span><button type="button" class="fb-btn" data-value="1" aria-pressed="false" aria-label="Yes, helpful">👍</button><button type="button" class="fb-btn" data-value="0" aria-pressed="false" aria-label="No, not helpful">👎</button><span id="fb-thanks" hidden>Thanks!</span></div></section>
           <div class="stack-col">${trendCard(v)}${notable(v)}</div></div>` + filesCard(v) : '') +
       '<p class="footnote">Commit Doctor helps your team stay in sync. It never scores or ranks people.</p>';

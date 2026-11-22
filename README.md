@@ -137,6 +137,6 @@ paused, its deadline and sync status), `project_settings` (single row: shown rep
 - `src/`: server (`server.js`, `api.js`, `webhook.js`, `repository.js` for single/multi repo state, `analytics.js`, `summary.js`, `predict.js`, `notify.js`, `scheduler.js`, `study.js`, `views.js`, `db.js`).
 - `public/`: the dashboard, plain HTML/CSS/JS with no build step.
   - Pages: `index.html` (Dashboard: the day's summary, Digest / Team / Timeline views, commits per day, notable changes), `repository.html`, `commit.html` (a day's commits, or one commit with `?sha=`), `notifications.html` (flags, daily and weekly digests), `analytics.html` (activity vs. baseline, work mix, pace vs. deadline, code churn, contributor activity over 30/60/90 days), `settings.html` (repositories, mode, deadline, email alerts, admin token, system log) and `study.html` (the standalone feasibility study).
-  - `css/styles.css`; `js/api.js` (fetch wrapper and admin-token prompt), `js/core.js` (shared shell and helpers) and one script per page.
+  - `css/styles.css`; `js/api.js` (fetch wrapper and admin-token prompt), `js/core.js` (shared shell and helpers), `js/tour.js` (the guided tour: offered once on the first visit, replayable from **Tutorial** in the sidebar; it walks Dashboard → Repositories → Commits → Notifications → Analytics → Settings and points at elements marked `data-tour`) and one script per page.
 - `test/`: `npm test`.
 - `nlp/`: training for the commit-intent model.

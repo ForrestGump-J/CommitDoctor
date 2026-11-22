@@ -91,7 +91,7 @@
     };
     const body = grid(h, top, step, (v) => v, y0) + bars + (path ? `<path d="${path}" fill="none" stroke="#E8EAF0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".8"/>` : '') + marks
       + xLabels(d, cx, h, (x) => CD.dayMed(x.date)) + hits(d.length, slot, h, tip);
-    return `<section class="card solid"><div class="card-head"><div><h2>Activity over time${CD.help('baseline')}</h2><p class="sub">Commits per day, against the ${a.rules.comparison_days}-day baseline each day's summary is compared with</p></div></div>
+    return `<section class="card solid" data-tour="analytics"><div class="card-head"><div><h2>Activity over time${CD.help('baseline')}</h2><p class="sub">Commits per day, against the ${a.rules.comparison_days}-day baseline each day's summary is compared with</p></div></div>
       ${legend([['Commits', '#6366F1'], [`${a.rules.comparison_days}-day baseline`, '#E8EAF0', 'line'], ...Object.entries(kinds).map(([k, n]) => [`${CD.flagMeta(k)[0]} (${n})`, CD.flagMeta(k)[2], 'dot'])])}
       ${svg(h, `Commits per day from ${CD.dayMed(a.start)} to ${CD.dayMed(a.end)}, ${plural(a.totals.commits, 'commit')} in total, with the rolling baseline and ${plural(flagged, 'flagged day')}`, body)}
       <p class="note">A flag is raised when a saved day is well above or below its baseline, or someone goes quiet. Hover a day for details; click it to open that day.</p>
