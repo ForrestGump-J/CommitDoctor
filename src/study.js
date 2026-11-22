@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 const express = require('express');
 const { localDate, addDays } = require('./time');
-const { trackedRepo } = require('./repository');
+const { trackedRepo, IN_REPO } = require('./repository');
 
 /**
  * Research question 6: a small within-subjects feasibility test.
@@ -43,15 +43,15 @@ const longDay = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', {
   timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric',
 });
 
-/** Five parallel questions about one day of activity. */
-function tasksForDay(db, day, options) {
-  const rows = db.prepare('SELECT contributor, committed_at FROM commits WHERE committed_date = ? ORDER BY committed_at').all(day);
+/** Five parallel questions about one day of activity in one repository. */
+function tasksForDay(db, repo, day, options) {
+  const rows = db.prepare(`SELECT contributor, committed_at FROM commits WHERE committed_date = ? AND ${IN_REPO} ORDER BY committed_at`).all({ repo }, day);
   const counts = new Map();
   for (const r of rows) counts.set(r.contributor, (counts.get(r.contributor) || 0) + 1);
   const max = Math.max(...counts.values());
   const top = [...counts].filter(([, n]) => n === max).map(([name]) => name);
   const asked = pickRandom(options);
-  const weekTotal = db.prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date BETWEEN ? AND ?').get(addDays(day, -6), day).c;
+  const weekTotal = db.prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date BETWEEN ? AND ? AND ${IN_REPO}`).get({ repo }, addDays(day, -6), day).c;
   const label = longDay(day);
   return [
     { prompt: `Who made the most commits on ${label}?`, kind: 'choice', options, key: top },
@@ -108,11 +108,11 @@ function createStudyRouter({ db, config, requireAdmin }) {
 
     const today = localDate(Date.now(), tz);
     const days = db.prepare(
-      'SELECT committed_date AS d FROM commits WHERE committed_date < ? GROUP BY committed_date ORDER BY committed_date DESC LIMIT 2'
-    ).all(today).map((r) => r.d);
+      `SELECT committed_date AS d FROM commits WHERE committed_date < ? AND ${IN_REPO} GROUP BY committed_date ORDER BY committed_date DESC LIMIT 2`
+    ).all({ repo }, today).map((r) => r.d);
     if (days.length < 2) return res.status(409).json({ error: 'Not enough data yet: the study needs at least two past days with commits.' });
 
-    const contributors = db.prepare('SELECT contributor FROM commits GROUP BY contributor ORDER BY COUNT(*) DESC LIMIT 8').all().map((r) => r.contributor);
+    const contributors = db.prepare(`SELECT contributor FROM commits WHERE ${IN_REPO} GROUP BY contributor ORDER BY COUNT(*) DESC LIMIT 8`).all({ repo }).map((r) => r.contributor);
     const sets = { A: days[0], B: days[1] };
 
     // Counterbalance by participant number: order of conditions x which set goes first.
@@ -126,15 +126,15 @@ function createStudyRouter({ db, config, requireAdmin }) {
     db.exec('BEGIN');
     let sessionId;
     try {
-      sessionId = Number(db.prepare('INSERT INTO study_sessions (code, token_hash, plan, consent_at) VALUES (?, ?, ?, ?)')
-        .run(code, sha256(token), JSON.stringify(plan), nowIso).lastInsertRowid);
+      sessionId = Number(db.prepare('INSERT INTO study_sessions (repo, code, token_hash, plan, consent_at) VALUES (?, ?, ?, ?, ?)')
+        .run(repo, code, sha256(token), JSON.stringify(plan), nowIso).lastInsertRowid);
       const insertTask = db.prepare(
         `INSERT INTO study_tasks (session_id, block, condition, task_set, position, prompt, kind, options, answer_key)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       );
       for (const b of plan) {
-        const dayOptions = [...new Set([...contributors, ...db.prepare('SELECT DISTINCT contributor FROM commits WHERE committed_date = ?').all(b.day).map((r) => r.contributor)])].sort();
-        tasksForDay(db, b.day, dayOptions).forEach((t, i) => {
+        const dayOptions = [...new Set([...contributors, ...db.prepare(`SELECT DISTINCT contributor FROM commits WHERE committed_date = ? AND ${IN_REPO}`).all({ repo }, b.day).map((r) => r.contributor)])].sort();
+        tasksForDay(db, repo, b.day, dayOptions).forEach((t, i) => {
           insertTask.run(sessionId, b.block, b.condition, b.task_set, i + 1, t.prompt, t.kind, t.options ? JSON.stringify(t.options) : null, JSON.stringify(t.key));
         });
       }
@@ -198,7 +198,7 @@ function createStudyRouter({ db, config, requireAdmin }) {
   // --- facilitator side (admin) ----------------------------------------------------
 
   router.get('/results', requireAdmin, (_req, res) => {
-    const sessions = db.prepare('SELECT id, code, completed_at, sus_score, created_at FROM study_sessions ORDER BY id').all();
+    const sessions = db.prepare('SELECT id, repo, code, completed_at, sus_score, created_at FROM study_sessions ORDER BY id').all();
     const byCondition = {};
     for (const condition of ['github', 'comdoc']) {
       const rows = db.prepare(
@@ -233,15 +233,15 @@ function createStudyRouter({ db, config, requireAdmin }) {
 
   router.get('/export.csv', requireAdmin, (_req, res) => {
     const rows = db.prepare(
-      `SELECT s.code, s.completed_at, s.sus_score, s.comments, t.block, t.condition, t.task_set, t.position,
+      `SELECT s.code, s.repo, s.completed_at, s.sus_score, s.comments, t.block, t.condition, t.task_set, t.position,
               t.prompt, t.response, t.correct, t.ms, t.answered_at
        FROM study_tasks t JOIN study_sessions s ON s.id = t.session_id ORDER BY s.id, t.block, t.position`
     ).all();
-    const header = ['participant', 'completed_at', 'sus_score', 'block', 'condition', 'task_set', 'question', 'prompt', 'response', 'correct', 'seconds', 'answered_at', 'comments'];
+    const header = ['participant', 'repository', 'completed_at', 'sus_score', 'block', 'condition', 'task_set', 'question', 'prompt', 'response', 'correct', 'seconds', 'answered_at', 'comments'];
     const lines = [header.join(',')];
     for (const r of rows) {
       lines.push([
-        r.code, r.completed_at, r.sus_score, r.block, r.condition, r.task_set, r.position, r.prompt, r.response,
+        r.code, r.repo, r.completed_at, r.sus_score, r.block, r.condition, r.task_set, r.position, r.prompt, r.response,
         r.correct, r.ms == null ? '' : (r.ms / 1000).toFixed(1), r.answered_at, r.position === 1 && r.block === 1 ? r.comments : '',
       ].map(csvCell).join(','));
     }

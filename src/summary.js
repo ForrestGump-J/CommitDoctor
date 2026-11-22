@@ -2,20 +2,24 @@
 const { addDays, daysBetween, localDate, localTime } = require('./time');
 const { predictDeadline } = require('./predict');
 const { classify } = require('./intent');
+const { IN_REPO, trackedRepo } = require('./repository');
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const hourLabel = (h) => `${String(h).padStart(2, '0')}:00`;
+
+// Every function below works on one repository. `repo` defaults to the one the
+// dashboard is showing; the scheduler passes each followed repo in turn.
 
 /**
  * Turn the commits of one calendar day into a summary object.
  * Pure aggregation over SQLite; no side effects, so it can be used both for the
  * "live" view of today and for the snapshot saved at the end of a day.
  */
-function buildSummary(db, config, date) {
+function buildSummary(db, config, date, repo = trackedRepo(db, config)) {
   const tz = config.timezone;
   const rows = db
-    .prepare('SELECT * FROM commits WHERE committed_date = ? ORDER BY committed_at')
-    .all(date);
+    .prepare(`SELECT * FROM commits WHERE committed_date = ? AND ${IN_REPO} ORDER BY committed_at`)
+    .all({ repo }, date);
   const total = rows.length;
 
   // --- who, how many, when -------------------------------------------------
@@ -66,7 +70,7 @@ function buildSummary(db, config, date) {
   // never reaching back before the first commit ever recorded (otherwise a new
   // installation would look permanently "busy" against empty history).
   const n = config.summary.comparisonDays;
-  const firstDate = db.prepare('SELECT MIN(committed_date) AS d FROM commits').get().d;
+  const firstDate = db.prepare(`SELECT MIN(committed_date) AS d FROM commits WHERE ${IN_REPO}`).get({ repo }).d;
   let start = addDays(date, -n);
   if (firstDate && firstDate > start) start = firstDate;
   const baselineDays = Math.max(0, daysBetween(start, date));
@@ -74,8 +78,8 @@ function buildSummary(db, config, date) {
   let comparison = { baseline_days: 0, average: null, delta_pct: null, trend: 'no-baseline' };
   if (baselineDays > 0) {
     const sum = db
-      .prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date < ?')
-      .get(start, date).c;
+      .prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date < ? AND ${IN_REPO}`)
+      .get({ repo }, start, date).c;
     const average = sum / baselineDays;
     let trend = 'steady';
     if (average === 0) trend = total > 0 ? 'above' : 'steady';
@@ -90,6 +94,7 @@ function buildSummary(db, config, date) {
   }
 
   const summary = {
+    repo: repo || null,
     date,
     timezone: tz,
     total_commits: total,
@@ -150,7 +155,7 @@ function writeHeadline(s) {
  * gone quiet for a full comparison window as of this date ("extended inactivity").
  * Pure function of the summary + commit history; storage happens in generateSummary.
  */
-function detectFlags(db, config, date, summaryData) {
+function detectFlags(db, config, date, summaryData, repo = trackedRepo(db, config)) {
   const flags = [];
   const c = summaryData.comparison;
 
@@ -174,18 +179,18 @@ function detectFlags(db, config, date, summaryData) {
   const quiet = db
     .prepare(
       `SELECT contributor, MAX(committed_date) AS last_date FROM commits
-       WHERE committed_date <= ?
+       WHERE committed_date <= ? AND ${IN_REPO}
        GROUP BY contributor
        HAVING last_date <= ?`
     )
-    .all(date, cutoff);
+    .all({ repo }, date, cutoff);
     // Only flag once per stretch of inactivity (same contributor + same last commit
   // date), not on every following day.
   const alreadyFlagged = db.prepare(
-    `SELECT 1 FROM flags WHERE type = 'contributor_inactive' AND date < ? AND instr(detail, ?) = 1 LIMIT 1`
+    `SELECT 1 FROM flags WHERE repo = ? AND type = 'contributor_inactive' AND date < ? AND instr(detail, ?) = 1 LIMIT 1`
   );
   for (const row of quiet) {
-    if (alreadyFlagged.get(date, `${row.contributor} has had no commits since ${row.last_date} `)) continue;
+    if (alreadyFlagged.get(repo, date, `${row.contributor} has had no commits since ${row.last_date} `)) continue;
     const idleDays = daysBetween(row.last_date, date);
     flags.push({
       type: 'contributor_inactive',
@@ -202,8 +207,8 @@ function detectFlags(db, config, date, summaryData) {
  * and the commit history up to `date`. Returns [] when there's no deadline set,
  * not enough history yet, or the projection is on-pace (nothing worth flagging).
  */
-function detectDeadlineFlag(db, config, date) {
-  const p = predictDeadline(db, config, date);
+function detectDeadlineFlag(db, config, date, repo = trackedRepo(db, config)) {
+  const p = predictDeadline(db, config, date, repo);
   if (p.status !== 'at-risk' && p.status !== 'behind') return [];
   const pct = Math.round(p.pace_ratio * 100);
   let detail = `Recent commit pace is ${pct}% of the project's earlier pace, with ${p.days_remaining} day(s) left until the deadline.`;
@@ -214,22 +219,23 @@ function detectDeadlineFlag(db, config, date) {
 }
 
 /** Replaces the stored flags for a day with freshly detected ones. Returns how many. */
-function saveFlags(db, config, date, data) {
-  db.prepare('DELETE FROM flags WHERE date = ?').run(date);
-  const insertFlag = db.prepare('INSERT INTO flags (date, type, detail) VALUES (?, ?, ?)');
-  const flags = [...detectFlags(db, config, date, data), ...detectDeadlineFlag(db, config, date)];
-  for (const f of flags) insertFlag.run(date, f.type, f.detail);
+function saveFlags(db, config, date, data, repo) {
+  db.prepare('DELETE FROM flags WHERE repo = ? AND date = ?').run(repo, date);
+  const insertFlag = db.prepare('INSERT INTO flags (repo, date, type, detail) VALUES (?, ?, ?, ?)');
+  const flags = [...detectFlags(db, config, date, data, repo), ...detectDeadlineFlag(db, config, date, repo)];
+  for (const f of flags) insertFlag.run(repo, date, f.type, f.detail);
   return flags.length;
 }
 // --- saving ----------------------------------------------------------------
 
-function generateSummary(db, config, date, trigger, { force = false } = {}) {
-  const total = db.prepare('SELECT COUNT(*) AS c FROM commits WHERE committed_date = ?').get(date).c;
-  const logRun = db.prepare('INSERT INTO summary_runs (date, trigger, outcome, total_commits) VALUES (?, ?, ?, ?)');
+function generateSummary(db, config, date, trigger, { force = false, repo = trackedRepo(db, config) } = {}) {
+  const total = db.prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date = ? AND ${IN_REPO}`).get({ repo }, date).c;
+  const insertRun = db.prepare('INSERT INTO summary_runs (repo, date, trigger, outcome, total_commits) VALUES (?, ?, ?, ?, ?)');
+  const logRun = { run: (...args) => insertRun.run(repo, ...args) };
 
   if (total === 0) {
     // No summary to save, but a silent day can still be worth flagging.
-    const flagCount = saveFlags(db, config, date, buildSummary(db, config, date));
+    const flagCount = saveFlags(db, config, date, buildSummary(db, config, date, repo), repo);
     logRun.run(date, trigger, 'skipped', 0);
     return { saved: false, flagged: flagCount > 0, reason: 'No commits on this day.' };
   }
@@ -238,15 +244,15 @@ function generateSummary(db, config, date, trigger, { force = false } = {}) {
     return { saved: false, reason: `Only ${total} commit(s); the minimum is ${config.summary.minCommits}.` };
   }
 
-  const data = buildSummary(db, config, date);
+  const data = buildSummary(db, config, date, repo);
   const generatedAt = new Date().toISOString();
   db.prepare(
-    `INSERT INTO summaries (date, total_commits, data, trigger, generated_at) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(date) DO UPDATE SET total_commits = excluded.total_commits, data = excluded.data,
+    `INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(repo, date) DO UPDATE SET total_commits = excluded.total_commits, data = excluded.data,
        trigger = excluded.trigger, generated_at = excluded.generated_at`
-  ).run(date, total, JSON.stringify(data), trigger, generatedAt);
+  ).run(repo, date, total, JSON.stringify(data), trigger, generatedAt);
 
-  saveFlags(db, config, date, data);
+  saveFlags(db, config, date, data, repo);
   
   logRun.run(date, trigger, 'saved', total);
   return { saved: true, summary: { ...data, source: 'saved', trigger, generated_at: generatedAt } };
@@ -257,13 +263,13 @@ function generateSummary(db, config, date, trigger, { force = false } = {}) {
  * today (or later) is always computed live; past days use the saved snapshot
  * if one exists and fall back to a live computation if not.
  */
-function getSummary(db, config, date, now = Date.now()) {
+function getSummary(db, config, date, now = Date.now(), repo = trackedRepo(db, config)) {
   const today = localDate(now, config.timezone);
   if (date < today) {
-    const row = db.prepare('SELECT * FROM summaries WHERE date = ?').get(date);
+    const row = db.prepare('SELECT * FROM summaries WHERE repo = ? AND date = ?').get(repo, date);
     if (row) return { ...JSON.parse(row.data), source: 'saved', trigger: row.trigger, generated_at: row.generated_at };
   }
-  return { ...buildSummary(db, config, date), source: 'live', trigger: null, generated_at: null };
+  return { ...buildSummary(db, config, date, repo), source: 'live', trigger: null, generated_at: null };
 }
 
 /**
@@ -272,35 +278,35 @@ function getSummary(db, config, date, now = Date.now()) {
  * commit made Friday but pushed Monday). Days skipped for being under the minimum are
  * left alone until their commit count changes.
  */
-function catchUp(db, config, now = Date.now()) {
+function catchUp(db, config, now = Date.now(), repo = trackedRepo(db, config)) {
   const today = localDate(now, config.timezone);
   const stale = db
     .prepare(
       `SELECT c.d AS d FROM (
-         SELECT committed_date AS d, COUNT(*) AS n FROM commits WHERE committed_date < ? GROUP BY committed_date
+         SELECT committed_date AS d, COUNT(*) AS n FROM commits WHERE committed_date < ? AND ${IN_REPO} GROUP BY committed_date
        ) c
-       LEFT JOIN summaries s ON s.date = c.d
+       LEFT JOIN summaries s ON s.repo = @repo AND s.date = c.d
        WHERE (s.date IS NULL AND NOT EXISTS (
-                SELECT 1 FROM summary_runs r WHERE r.date = c.d AND r.outcome = 'skipped' AND r.total_commits = c.n))
+                SELECT 1 FROM summary_runs r WHERE r.repo = @repo AND r.date = c.d AND r.outcome = 'skipped' AND r.total_commits = c.n))
           OR (s.date IS NOT NULL AND s.total_commits <> c.n)
        ORDER BY c.d`
     )
-    .all(today)
+    .all({ repo }, today)
     .map((r) => r.d);
-  return stale.map((d) => ({ date: d, ...generateSummary(db, config, d, 'catchup') }));
+  return stale.map((d) => ({ date: d, ...generateSummary(db, config, d, 'catchup', { repo }) }));
 }
 
 /** Commits per day for the last `days` days ending today, zero-filled. */
-function getTrend(db, config, days = 14, now = Date.now()) {
+function getTrend(db, config, days = 14, now = Date.now(), repo = trackedRepo(db, config)) {
   const today = localDate(now, config.timezone);
   const start = addDays(today, -(days - 1));
   const counts = new Map(
     db
-      .prepare('SELECT committed_date AS d, COUNT(*) AS c, COUNT(DISTINCT contributor) AS p FROM commits WHERE committed_date >= ? GROUP BY committed_date')
-      .all(start)
+      .prepare(`SELECT committed_date AS d, COUNT(*) AS c, COUNT(DISTINCT contributor) AS p FROM commits WHERE committed_date >= ? AND ${IN_REPO} GROUP BY committed_date`)
+      .all({ repo }, start)
       .map((r) => [r.d, r])
   );
-  const saved = new Set(db.prepare('SELECT date FROM summaries WHERE date >= ?').all(start).map((r) => r.date));
+  const saved = new Set(db.prepare('SELECT date FROM summaries WHERE repo = ? AND date >= ?').all(repo, start).map((r) => r.date));
   return Array.from({ length: days }, (_, i) => {
     const date = addDays(start, i);
     const r = counts.get(date);

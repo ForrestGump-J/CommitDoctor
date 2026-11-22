@@ -4,16 +4,18 @@ const path = require('path');
 // Node's built-in SQLite (Node 22.13+). No native compilation, nothing extra to install.
 const { DatabaseSync } = require('node:sqlite');
 const { maskEmail } = require('./privacy');
-const { migrateSingleRepo } = require('./repository');
+const { migrateMultiRepo } = require('./repository');
 
-// Eight tables:
+// Main tables (every per-project table carries a lowercase `repo` column, so
+// several repositories can be followed side by side; '' means "no repo set"):
+//   repositories     every repository connected so far, its deadline and sync status
 //   commits          the raw material (one row per unique commit SHA)
-//   summaries        one saved summary per day (JSON snapshot)
+//   summaries        one saved summary per repo per day (JSON snapshot)
 //   webhook_events   every delivery GitHub sent us, accepted or not
 //   summary_runs     every attempt to generate a summary, saved or skipped
-//   subscribers      notification recipients (storage + CRUD only for now)
-//   project_settings single row holding the user-entered project deadline and
-//                    the single push-webhook repo (the original tracking path)
+//   subscribers      notification recipients, per repo
+//   project_settings single row: the repo the dashboard is showing (tracked_repo),
+//                    the single/multiple layout mode and the webhook secret
 //   flags            discrete rolling-baseline deviations, one row per flag per day
 //   tracked_repos    repos tracked by polling GitHub's API with a per-repo token
 //                    (the newer path; works for private repos, no public webhook needed)
@@ -50,11 +52,13 @@ CREATE TABLE IF NOT EXISTS commits (
 CREATE INDEX IF NOT EXISTS idx_commits_date ON commits(committed_date);
 
 CREATE TABLE IF NOT EXISTS summaries (
-  date          TEXT PRIMARY KEY,
+  repo          TEXT NOT NULL DEFAULT '',
+  date          TEXT NOT NULL,
   total_commits INTEGER NOT NULL,
   data          TEXT    NOT NULL,
   trigger       TEXT    NOT NULL,
-  generated_at  TEXT    NOT NULL
+  generated_at  TEXT    NOT NULL,
+  PRIMARY KEY (repo, date)
 );
 
 CREATE TABLE IF NOT EXISTS webhook_events (
@@ -71,6 +75,7 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 
 CREATE TABLE IF NOT EXISTS summary_runs (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo          TEXT NOT NULL DEFAULT '',
   date          TEXT NOT NULL,
   trigger       TEXT NOT NULL,
   outcome       TEXT NOT NULL,
@@ -78,22 +83,27 @@ CREATE TABLE IF NOT EXISTS summary_runs (
   run_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
--- Notification recipients. Storage + CRUD only for now; nothing sends email yet.
+-- Notification recipients. Each repository has its own list.
 CREATE TABLE IF NOT EXISTS subscribers (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo       TEXT NOT NULL DEFAULT '',
   name       TEXT NOT NULL,
-  email      TEXT NOT NULL UNIQUE,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  email      TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  UNIQUE (repo, email)
 );
 
--- Single row (id is always 1). Deadline is global. tracked_repo here is only the
--- ORIGINAL push-webhook tracking path (one public/own repo, no token needed);
--- it overrides GITHUB_REPO from .env when set. Multi-repo, token-based tracking
--- lives in tracked_repos below instead.
+-- Single row (id is always 1). tracked_repo is the repository the dashboard is
+-- showing right now (overrides GITHUB_REPO from .env when set). deadline_date is
+-- only used while no repository is set; each repository keeps its own deadline
+-- in the repositories table.
 CREATE TABLE IF NOT EXISTS project_settings (
   id            INTEGER PRIMARY KEY CHECK (id = 1),
   deadline_date TEXT,
   tracked_repo  TEXT,
+  -- 'single': one repository is followed, others are kept but hidden and paused.
+  -- 'multi': every connected repository is followed; the dashboard hops between them.
+  repo_mode     TEXT NOT NULL DEFAULT 'single',
   -- Auto-generated webhook secret, used only when GITHUB_WEBHOOK_SECRET is empty.
   webhook_secret TEXT,
   updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
@@ -103,6 +113,7 @@ CREATE TABLE IF NOT EXISTS project_settings (
 -- inactivity, etc). Regenerated each time that day's summary is generated/saved.
 CREATE TABLE IF NOT EXISTS flags (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo       TEXT NOT NULL DEFAULT '',
   date       TEXT NOT NULL,
   type       TEXT NOT NULL,
   detail     TEXT NOT NULL,
@@ -142,6 +153,7 @@ CREATE TABLE IF NOT EXISTS view_feedback (
 -- Participants are identified only by a facilitator-assigned code such as P01.
 CREATE TABLE IF NOT EXISTS study_sessions (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  repo         TEXT    NOT NULL DEFAULT '', -- the repository the questions were drawn from
   code         TEXT    NOT NULL UNIQUE,
   token_hash   TEXT    NOT NULL,        -- sha256 of the per-session token given to the browser
   plan         TEXT    NOT NULL,        -- JSON: block order, sets, days
@@ -170,9 +182,22 @@ CREATE TABLE IF NOT EXISTS study_tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_study_tasks_session ON study_tasks(session_id);
 
--- Repos tracked by polling the GitHub REST API with a per-repo personal access
+-- Every repository connected so far. active = 1 means it is being followed
+-- (webhook pushes accepted, background sync/polling on). In single mode only the
+-- shown repository is active; the others keep their data, hidden, until switched back to.
+CREATE TABLE IF NOT EXISTS repositories (
+  repo            TEXT PRIMARY KEY,         -- lowercase owner/name
+  active          INTEGER NOT NULL DEFAULT 1,
+  deadline_date   TEXT,
+  last_sync_at    TEXT,                     -- token-free scans of a public repo (src/hooks.js)
+  last_sync_error TEXT,
+  last_sync_added INTEGER,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+-- Repositories followed by polling the GitHub REST API with a personal access
 -- token (encrypted at rest — see src/crypto.js), instead of a public webhook.
--- Works for private repos and repos behind NAT/firewalls.
+-- Works for private repos and repos behind NAT/firewalls. One row per repo.
 CREATE TABLE IF NOT EXISTS tracked_repos (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   repo           TEXT    NOT NULL UNIQUE,
@@ -206,6 +231,39 @@ function migrate(db) {
   addColumn('project_settings', 'last_sync_error', 'TEXT');
   addColumn('project_settings', 'last_sync_added', 'INTEGER');
 
+  // Multi-repository support: per-project tables gain a repo column. Existing rows
+  // get '' here and are assigned to the tracked repo by migrateMultiRepo().
+  addColumn('project_settings', 'repo_mode', "TEXT NOT NULL DEFAULT 'single'");
+  addColumn('summary_runs', 'repo', "TEXT NOT NULL DEFAULT ''");
+  addColumn('flags', 'repo', "TEXT NOT NULL DEFAULT ''");
+  addColumn('study_sessions', 'repo', "TEXT NOT NULL DEFAULT ''");
+  // summaries and subscribers change their key/unique constraint, which SQLite can
+  // only do by rebuilding the table.
+  if (!columnExists('summaries', 'repo')) {
+    db.exec(`
+      ALTER TABLE summaries RENAME TO summaries_old;
+      CREATE TABLE summaries (
+        repo TEXT NOT NULL DEFAULT '', date TEXT NOT NULL, total_commits INTEGER NOT NULL,
+        data TEXT NOT NULL, trigger TEXT NOT NULL, generated_at TEXT NOT NULL, PRIMARY KEY (repo, date));
+      INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at)
+        SELECT '', date, total_commits, data, trigger, generated_at FROM summaries_old;
+      DROP TABLE summaries_old;`);
+  }
+  if (!columnExists('subscribers', 'repo')) {
+    db.exec(`
+      ALTER TABLE subscribers RENAME TO subscribers_old;
+      CREATE TABLE subscribers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, repo TEXT NOT NULL DEFAULT '', name TEXT NOT NULL, email TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), UNIQUE (repo, email));
+      INSERT INTO subscribers (id, repo, name, email, created_at) SELECT id, '', name, email, created_at FROM subscribers_old;
+      DROP TABLE subscribers_old;`);
+  }
+  // Repo names are compared lowercase everywhere; webhooks deliver GitHub's casing.
+  db.exec('UPDATE commits SET repo = lower(repo) WHERE repo <> lower(repo)');
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_commits_repo_date ON commits(repo, committed_date);
+    CREATE INDEX IF NOT EXISTS idx_flags_repo_date ON flags(repo, date);`);
+
   // Older versions stored committer emails and could use one as the contributor
   // label. Drop the stored emails and mask any email-shaped labels. Idempotent.
   db.exec('UPDATE commits SET author_email = NULL WHERE author_email IS NOT NULL');
@@ -224,7 +282,7 @@ function openDb(file) {
   db.exec(SCHEMA);
   migrate(db);
   db.exec("INSERT OR IGNORE INTO project_settings (id, deadline_date) VALUES (1, NULL);");
-  migrateSingleRepo(db);
+  migrateMultiRepo(db);
   return db;
 }
 

@@ -3,10 +3,12 @@
 const{localDate} = require('./time');
 const{predictDeadline} = require('./predict');
 const { maskEmail } = require('./privacy');
+const { trackedRepo } = require('./repository');
 
 const RETRY_AFTER_FAILURE_MS = 15 * 60_000;
 const failedAttempts = new WeakMap(); // db -> Map(key -> timestamp of last failed attempt)
-const dedupeKey = (date, tier) => `${date}: ${tier}`;
+// One email per repo, per day, per tier. Format: "<repo>|<date>: <tier>".
+const dedupeKey = (repo, date, tier) => `${repo}|${date}: ${tier}`;
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', 
@@ -15,12 +17,13 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
     '"': '&quot;', 
     "'": '&#39;'}[c]));
 
-function getSubscriberEmails(db){
-    return db.prepare('SELECT email FROM subscribers').all().map((r) => r.email);
+// Each repository has its own subscriber list.
+function getSubscriberEmails(db, repo){
+    return db.prepare('SELECT email FROM subscribers WHERE repo = ?').all(repo).map((r) => r.email);
 }
 
-async function sendToAllSubscribers(db, mailer, { subject, html }, log){
-    const emails = getSubscriberEmails(db);
+async function sendToAllSubscribers(db, mailer, { subject, html }, log, repo){
+    const emails = getSubscriberEmails(db, repo);
     if (!emails.length) return {sent: false, reason: 'no-subscribers'};
 
     let delivered = 0;
@@ -36,21 +39,22 @@ async function sendToAllSubscribers(db, mailer, { subject, html }, log){
     return {sent:delivered > 0, count: delivered, attempted: emails.length}
 }
 
-function renderFlagsEmail(date, flags){
+function renderFlagsEmail(date, flags, repo){
     const items = flags.map((f) => `<li><strong>${escapeHtml(f.type)}</strong>: ${escapeHtml(f.detail)}</li>`).join('');
+    const where = repo ? ` in <strong>${escapeHtml(repo)}</strong>` : '';
 
     return{
-        subject: `Commit Doctor: ${flags.length} flag(s) for ${date}`,
-        html: `<p>Commit Doctor noticed the following for <strong>${date}</strong>:</p><ul>${items}</ul>`,
+        subject: `Commit Doctor: ${flags.length} flag(s) for ${date}${repo ? ` (${repo})` : ''}`,
+        html: `<p>Commit Doctor noticed the following for <strong>${date}</strong>${where}:</p><ul>${items}</ul>`,
     };
 }
 
-async function notifyFlags(db, config, mailer, date, flags, log = console){
+async function notifyFlags(db, config, mailer, date, flags, log = console, repo = trackedRepo(db, config)){
     if (!flags.length) return {sent: false, reason: 'no-flags'}
     
-    const result = await sendToAllSubscribers(db, mailer, renderFlagsEmail(date, flags), log);
+    const result = await sendToAllSubscribers(db, mailer, renderFlagsEmail(date, flags, repo), log, repo);
 
-    if (result.sent) log.info(`[notify] sent ${flags.length} flag(s) for ${date} to ${result.count} subscriber(s)`);
+    if (result.sent) log.info(`[notify] sent ${flags.length} flag(s) for ${repo || 'all'} ${date} to ${result.count} subscriber(s)`);
     return result;
 }
 
@@ -72,20 +76,21 @@ function renderDeadlineEmail(p){
     const churnLine = worried && p.churn_ratio != null
         ? `<p>Recent changes are ${Math.round(p.churn_ratio * 100)}% deletions/rework (by ${escapeHtml(p.churn_basis)}).</p>` : '';
 
+    const project = p.repo ? ` for ${escapeHtml(p.repo)}` : '';
     return{
-        subject: `Commit Doctor - ${label}: deadline ${left}${worried ? ` (${p.status})` : ''}`,
-        html: `<p><strong>${label}:</strong> the project deadline (${escapeHtml(p.deadline_date)}) is ${left}.</p>
+        subject: `Commit Doctor - ${label}: deadline ${left}${worried ? ` (${p.status})` : ''}${p.repo ? ` - ${p.repo}` : ''}`,
+        html: `<p><strong>${label}:</strong> the project deadline${project} (${escapeHtml(p.deadline_date)}) is ${left}.</p>
         <p>${STATUS_TEXT[p.status] || ''}</p>${paceLine}${churnLine}`,
     };
 }
 
-async function checkDeadlineUrgency(db, config, mailer, log = console){
+async function checkDeadlineUrgency(db, config, mailer, log = console, repo = trackedRepo(db, config)){
     const today = localDate(Date.now(), config.timezone);
-    const prediction = predictDeadline(db, config, today);
+    const prediction = predictDeadline(db, config, today, repo);
 
     if (!prediction.urgency || prediction.urgency === 'none') return {sent: false, reason: 'no-escalation-needed'};
 
-    const key = dedupeKey(today, prediction.urgency);
+    const key = dedupeKey(repo, today, prediction.urgency);
     if (db.prepare('SELECT 1 FROM notifications_sent WHERE key = ?').get(key)) return { sent: false, reason: 'already-sent-today' };
 
     if (!failedAttempts.has(db)) failedAttempts.set(db, new Map());
@@ -93,11 +98,11 @@ async function checkDeadlineUrgency(db, config, mailer, log = console){
     const lastFail = failures.get(key);
     if (lastFail && Date.now() - lastFail < RETRY_AFTER_FAILURE_MS) return { sent: false, reason: 'retry-backoff' };
 
-    const result = await sendToAllSubscribers(db, mailer, renderDeadlineEmail(prediction), log);
+    const result = await sendToAllSubscribers(db, mailer, renderDeadlineEmail(prediction), log, repo);
     if (result.sent){
         db.prepare('INSERT OR IGNORE INTO notifications_sent (key) VALUES (?)').run(key);
         failures.delete(key);
-        log.info(`[notify] sent deadline "${prediction.urgency}" notice to ${result.count} subscriber(s)`);
+        log.info(`[notify] sent deadline "${prediction.urgency}" notice for ${repo || 'all'} to ${result.count} subscriber(s)`);
     } else if (result.attempted){
         failures.set(key, Date.now());
     }

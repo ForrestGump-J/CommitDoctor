@@ -1,6 +1,7 @@
 'use strict';
 const crypto = require('crypto');
 const express = require('express');
+const { acceptsRepo, followedRepos } = require('./repository');
 const { createStore } = require('./store');
 
 /** Constant-time check of GitHub's X-Hub-Signature-256 header against the raw request body. */
@@ -37,7 +38,6 @@ function parsePushCommit(c, payload, deliveryId) {
 function createWebhookRouter({ db, config }) {
   const router = express.Router();
   const store = createStore(db, config);
-  const getTrackedRepo = db.prepare('SELECT tracked_repo FROM project_settings WHERE id = 1');
   const logEvent = db.prepare(
     `INSERT INTO webhook_events (delivery_id, event, repo, status, detail, commits_received, commits_new)
      VALUES (@delivery_id, @event, @repo, @status, @detail, @received, @added)`
@@ -78,12 +78,11 @@ function createWebhookRouter({ db, config }) {
       record(base, 'rejected', 'Push payload has no repository');
       return res.status(400).json({ error: 'Malformed push payload.' });
     }
-    // The dashboard's "Track" button can set this at runtime; .env's GITHUB_REPO
-    // is only the fallback default so upgrading doesn't require re-entering it.
-    const row = getTrackedRepo.get();
-    const trackedRepo = (row && row.tracked_repo) || config.repo || '';
-    if (trackedRepo && payload.repository.full_name.toLowerCase() !== trackedRepo) {
-      record(base, 'ignored', `Repository is not ${trackedRepo}`);
+    // Only repositories connected on the dashboard (or GITHUB_REPO from .env) are
+    // followed. A paused repo (hidden in single mode) is ignored like a stranger.
+    if (!acceptsRepo(db, config, payload.repository.full_name)) {
+      const followed = followedRepos(db, config);
+      record(base, 'ignored', `Repository is not ${followed.length === 1 ? followed[0] : `one of ${followed.join(', ')}`}`);
       return res.status(202).json({ ok: true, ignored: 'other repository' });
     }
 
