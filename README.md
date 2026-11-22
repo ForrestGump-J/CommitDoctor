@@ -114,6 +114,7 @@ Commit Doctor needs a long-running process (scheduler, poller) and a writable di
 | `GET /api/subscribers` | The shown repo's notification recipients |
 | `POST /api/subscribers` | Add a recipient (`name`, `email`) to the shown repo — admin |
 | `DELETE /api/subscribers/:id` | Remove a recipient — admin |
+| `GET /api/analytics?days=30\|60\|90` | For the shown repo: commits per day with the rolling baseline and flags, the weekly work mix (intent labels) and churn, each contributor's commits per week, and (with a deadline) the pace prediction recomputed for every day |
 | `GET /api/flags?date=YYYY-MM-DD` | Rolling-baseline deviations of the shown repo, optionally filtered by day (`limit` for the newest) |
 | `GET /api/activity` | Webhook deliveries, summary runs and emails (the prototype's own log) |
 | `POST /api/views/events`, `GET /api/views/stats` | Anonymous usage of the Digest / Team / Timeline views |
@@ -131,9 +132,9 @@ paused, its deadline and sync status), `project_settings` (single row: shown rep
 
 ## Layout
 
-- `src/`: server (`server.js`, `api.js`, `webhook.js`, `repository.js` for single/multi repo state, `summary.js`, `predict.js`, `notify.js`, `scheduler.js`, `study.js`, `views.js`, `db.js`).
+- `src/`: server (`server.js`, `api.js`, `webhook.js`, `repository.js` for single/multi repo state, `analytics.js`, `summary.js`, `predict.js`, `notify.js`, `scheduler.js`, `study.js`, `views.js`, `db.js`).
 - `public/`: the dashboard, plain HTML/CSS/JS with no build step.
-  - Pages: `index.html` (Dashboard: the day's summary, Digest / Team / Timeline views, commits per day, notable changes), `repository.html`, `commit.html` (a day's commits, or one commit with `?sha=`), `notifications.html` (flags, daily and weekly digests), `settings.html` (repositories, mode, deadline, email alerts, admin token, system log) and `study.html` (the standalone feasibility study).
+  - Pages: `index.html` (Dashboard: the day's summary, Digest / Team / Timeline views, commits per day, notable changes), `repository.html`, `commit.html` (a day's commits, or one commit with `?sha=`), `notifications.html` (flags, daily and weekly digests), `analytics.html` (activity vs. baseline, work mix, pace vs. deadline, code churn, contributor activity over 30/60/90 days), `settings.html` (repositories, mode, deadline, email alerts, admin token, system log) and `study.html` (the standalone feasibility study).
   - `css/styles.css`; `js/api.js` (fetch wrapper and admin-token prompt), `js/core.js` (shared shell and helpers) and one script per page.
 - `test/`: `npm test`.
 - `nlp/`: training for the commit-intent model.

@@ -1,4 +1,5 @@
 'use strict';
+const { buildAnalytics } = require('./analytics');
 const crypto = require('crypto');
 const express = require('express');
 const { localDate, localTime, addDays, daysBetween, isDateStr } = require('./time');
@@ -158,6 +159,13 @@ function createApiRouter({ db, config, mailer = null }) {
       activity_log: activityCounts,
       settings,
     });
+  });
+
+  // Analytics page: activity, work mix, pace, churn and contributors over 30/60/90 days.
+  router.get('/analytics', (req, res) => {
+    const days = Number(req.query.days || 30);
+    if (![30, 60, 90].includes(days)) return res.status(400).json({ error: 'days must be 30, 60 or 90.' });
+    return res.json(buildAnalytics(db, config, { days }));
   });
 
   router.get('/trend', (req, res) => {

@@ -245,7 +245,7 @@
   const NAV = [
     ['dashboard', 'Dashboard', 'index.html', 'dash'], ['repository', 'Repositories', 'repository.html', 'repo'],
     ['commits', 'Commits', 'commit.html', 'commit'], ['notifications', 'Notifications', 'notifications.html', 'bell'],
-    ['analytics', 'Analytics', null, 'chart'], ['settings', 'Settings', 'settings.html', 'gear'], ['study', 'Study', 'study.html', 'flask'],
+    ['analytics', 'Analytics', 'analytics.html', 'chart'], ['settings', 'Settings', 'settings.html', 'gear'], ['study', 'Study', 'study.html', 'flask'],
   ];
 
   function repoSelect(o) {

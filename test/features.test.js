@@ -501,3 +501,48 @@ test('answers are scored on the server, and results and CSV summarize them', asy
     assert.equal(ctx.db.prepare('SELECT COUNT(*) AS c FROM study_tasks').get().c, 0);
   } finally { server.close(); }
 });
+
+// --- analytics -------------------------------------------------------------------------
+
+test('analytics: baseline, weekly work mix, churn, contributors and pace per day', async () => {
+  const { buildAnalytics, weekStart } = require('../src/analytics');
+  const ctx = makeCtx();
+  const { server, call } = await listen(ctx);
+  try {
+    await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
+    const store = createStore(ctx.db, ctx.config);
+    const add = (day, who, message, lines) => store.addCommit({
+      sha: require('crypto').randomBytes(20).toString('hex'), repo: 'team/one', authorName: who, authorUsername: who,
+      message, timestamp: `${day}T02:00:00Z`, ...(lines ? { linesAdded: lines[0], linesDeleted: lines[1] } : {}),
+    });
+    // 2026-09-01 is a Tuesday. Two commits a day for a week, then a quiet day with a flag.
+    for (let i = 0; i < 7; i++) { add(addDays('2026-09-01', i), 'alice', 'fix: crash on save'); add(addDays('2026-09-01', i), 'bob', 'add export button'); }
+    ctx.db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-09-08', 'activity_below_baseline', 'x')").run();
+    const now = Date.parse('2026-09-08T06:00:00Z');
+
+    const a = buildAnalytics(ctx.db, ctx.config, { days: 30, now });
+    assert.equal(a.daily.length, 30);
+    assert.equal(a.end, '2026-09-08');
+    const last = a.daily.at(-1);
+    assert.deepEqual([last.commits, last.baseline, last.flags], [0, 2, ['activity_below_baseline']]);
+    assert.equal(a.daily.find((d) => d.date === '2026-09-01').baseline, null, 'no history before the first commit');
+    assert.equal(weekStart('2026-09-03'), '2026-08-31');
+    const wk = a.weeks.find((w) => w.start === '2026-08-31');
+    assert.equal(wk.commits, 12);
+    assert.equal(wk.intents.fix, 6);
+    assert.equal(a.weeks[0].start, a.start, 'the first week starts with the range');
+    assert.deepEqual([a.weeks.at(-1).start, a.weeks.at(-1).end, a.weeks.at(-1).partial], ['2026-09-07', '2026-09-08', true], 'the current week is cut at today');
+    assert.equal(a.churn_basis, 'files');
+    assert.deepEqual(a.contributors.map((c) => [c.name, c.commits, c.idle_days]), [['alice', 7, 1], ['bob', 7, 1]]);
+    assert.equal(a.pace, null, 'no deadline, no pace chart');
+
+    await call('POST', '/api/settings', { deadline_date: '2026-10-01' });
+    const b = buildAnalytics(ctx.db, ctx.config, { days: 30, now });
+    assert.equal(b.pace.length, 30);
+    assert.equal(b.pace.at(-1).status, 'insufficient-data');
+    assert.equal(b.deadline_date, '2026-10-01');
+
+    assert.equal((await call('GET', '/api/analytics?days=60')).status, 200);
+    assert.equal((await call('GET', '/api/analytics?days=7')).status, 400);
+  } finally { server.close(); }
+});
