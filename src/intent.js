@@ -97,7 +97,11 @@ function classify(message) {
   };
 }
 
-/** Below this the label is shown as uncertain rather than asserted. */
-const CONFIDENT = 0.35;
+/**
+ * Below this the label is shown as a guess ("fix?") rather than asserted. On the
+ * held-out test set (nlp/out/results.json) labels at or above 0.45 were right 83%
+ * of the time (35% of commits); below it, about half the time.
+ */
+const CONFIDENT = 0.45;
 
 module.exports = { classify, preprocess, CONFIDENT, classes: model.classes };

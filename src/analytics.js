@@ -68,6 +68,7 @@ function buildAnalytics(db, config, { days = 30, now = Date.now(), repo = tracke
       lines_added: 0,
       lines_deleted: 0,
       line_commits: 0,
+      file_commits: 0,
       files_added: 0,
       files_modified: 0,
       files_removed: 0,
@@ -91,6 +92,7 @@ function buildAnalytics(db, config, { days = 30, now = Date.now(), repo = tracke
       w.lines_deleted += r.lines_deleted;
       w.line_commits += 1;
     }
+    if (r.files_added != null || r.files_modified != null || r.files_removed != null) w.file_commits += 1;
     w.files_added += r.files_added || 0;
     w.files_modified += r.files_modified || 0;
     w.files_removed += r.files_removed || 0;

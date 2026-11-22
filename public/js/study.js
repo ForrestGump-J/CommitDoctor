@@ -220,9 +220,10 @@
     if (!window.confirm(`Delete all answers from ${code}? Use this for pilot runs or if the participant withdraws.`)) return;
     try {
       await asAdmin(() => api(`/api/study/sessions/${id}`, { method: 'DELETE', admin: true }));
+      showError('#results-error', '');
       loadResults();
     } catch (err) {
-      window.alert(err.message);
+      showError('#results-error', `Couldn't delete ${code}: ${err.message}`);
     }
   }
 
@@ -235,7 +236,10 @@
   $('#next-participant').addEventListener('click', reset);
   $('#results').addEventListener('toggle', (e) => { if (e.target.open) loadResults(); });
   $('#results-body').addEventListener('click', (e) => {
-    if (e.target.id === 'csv-btn') downloadCsv().catch((err) => window.alert(err.message));
+    if (e.target.id === 'csv-btn') {
+      showError('#results-error', '');
+      downloadCsv().catch((err) => showError('#results-error', `Couldn't download the answers: ${err.message}`));
+    }
     const del = e.target.closest('.del-session');
     if (del) deleteSession(del.dataset.id, del.dataset.code);
   });

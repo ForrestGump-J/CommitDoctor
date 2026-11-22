@@ -546,3 +546,85 @@ test('analytics: baseline, weekly work mix, churn, contributors and pace per day
     assert.equal((await call('GET', '/api/analytics?days=7')).status, 400);
   } finally { server.close(); }
 });
+
+// --- understandability fixes ----------------------------------------------------------
+
+test('one person, one contributor: name-only commits join the username with the same git name', async () => {
+  const ctx = makeCtx();
+  const { server, call } = await listen(ctx);
+  try {
+    await call('POST', '/api/repository', { repo: 'team/one', method: 'webhook' });
+    const store = createStore(ctx.db, ctx.config);
+    const add = (day, extra) => store.addCommit({ sha: require('crypto').randomBytes(20).toString('hex'), repo: 'team/one', message: 'work', timestamp: `${day}T02:00:00Z`, ...extra });
+    // Early commits carry only the git name; a stale inactivity flag was raised about it.
+    add('2026-09-01', { authorName: 'Mirai' });
+    add('2026-09-02', { authorName: 'Mirai' });
+    ctx.db.prepare("INSERT INTO summaries (repo, date, total_commits, data, trigger, generated_at) VALUES ('team/one', '2026-09-01', 1, ?, 'scheduled', 'x')")
+      .run(JSON.stringify({ headline: 'old', contributors: [{ name: 'Mirai', commits: 1 }], contributor_count: 1 }));
+    ctx.db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-09-20', 'contributor_inactive', 'Mirai has had no commits since Sep 2 (18 days).')").run();
+    // Then the same person commits with a linked GitHub account.
+    add('2026-09-21', { authorName: 'mirai', authorUsername: 'notsyou' });
+    const people = ctx.db.prepare("SELECT DISTINCT contributor FROM commits WHERE repo = 'team/one'").all().map((r) => r.contributor);
+    assert.deepEqual(people, ['notsyou']);
+    assert.equal(ctx.db.prepare("SELECT COUNT(*) AS n FROM flags WHERE type = 'contributor_inactive'").get().n, 0, 'the false inactivity flag is gone');
+    const saved = JSON.parse(ctx.db.prepare("SELECT data FROM summaries WHERE date = '2026-09-01'").get().data);
+    assert.equal(saved.contributors[0].name, 'notsyou');
+    // Later name-only commits join straight away.
+    add('2026-09-22', { authorName: 'Mirai' });
+    assert.equal(ctx.db.prepare("SELECT COUNT(*) AS n FROM commits WHERE contributor = 'notsyou'").get().n, 4);
+    // Two accounts sharing a git name are never merged.
+    add('2026-09-23', { authorName: 'Sam', authorUsername: 'sam-a' });
+    add('2026-09-23', { authorName: 'Sam', authorUsername: 'sam-b' });
+    add('2026-09-24', { authorName: 'Sam' });
+    assert.equal(ctx.db.prepare("SELECT contributor FROM commits WHERE committed_date = '2026-09-24'").get().contributor, 'Sam');
+  } finally { server.close(); }
+});
+
+test('startup repairs contributors and old flag wording in an existing database', () => {
+  const ctx = makeCtx();
+  const db = ctx.db;
+  db.prepare("INSERT INTO repositories (repo) VALUES ('team/one')").run();
+  db.prepare("UPDATE project_settings SET tracked_repo = 'team/one'").run();
+  const ins = db.prepare("INSERT INTO commits (sha, repo, author_name, author_username, contributor, message, committed_at, committed_date, committed_hour) VALUES (?, 'team/one', ?, ?, ?, 'work', ?, ?, 10)");
+  ins.run('a'.repeat(40), 'Mirai', null, 'Mirai', '2026-09-01T02:00:00Z', '2026-09-01');
+  ins.run('b'.repeat(40), 'Mirai', 'notsyou', 'notsyou', '2026-09-21T02:00:00Z', '2026-09-21');
+  db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-11-21', 'activity_above_baseline', '13 commits, 4450% above the 7-day average.')").run();
+  db.prepare("INSERT INTO flags (repo, date, type, detail) VALUES ('team/one', '2026-10-28', 'deadline_at_risk', 'Recent commit pace is 63% of the project''s earlier pace, with 1 day(s) left until the deadline.')").run();
+  createApp(ctx);
+  assert.deepEqual(db.prepare('SELECT DISTINCT contributor FROM commits').all().map((r) => r.contributor), ['notsyou']);
+  assert.deepEqual(db.prepare('SELECT detail FROM flags ORDER BY id').all().map((r) => r.detail), [
+    '13 commits, well above the usual 0.3 a day.',
+    "Recent commit pace is 63% of the project's earlier pace, with 1 day left until the deadline.",
+  ]);
+});
+
+test('GITHUB_REPO only seeds the shown repo; once stopped it stays stopped', async () => {
+  const ctx = makeCtx({ repo: 'Team/Env' });
+  const { server, call } = await listen(ctx);
+  try {
+    assert.equal((await call('GET', '/api/repository')).body.repo, 'team/env');
+    assert.equal((await call('DELETE', '/api/repository')).status, 200);
+    assert.equal((await call('GET', '/api/repository')).body.repo, null, 'no silent fallback to GITHUB_REPO');
+    createApp(ctx); // a restart doesn't bring it back either
+    assert.equal((await call('GET', '/api/repository')).body.repo, null);
+  } finally { server.close(); }
+});
+
+test('small differences are "about the usual", and quiet repos get readable comparisons', () => {
+  const { buildSummary } = require('../src/summary');
+  const ctx = makeCtx();
+  const store = createStore(ctx.db, ctx.config);
+  const add = (day, n) => { for (let i = 0; i < n; i++) store.addCommit({ sha: require('crypto').randomBytes(20).toString('hex'), repo: 'team/one', authorName: 'a', authorUsername: 'a', message: 'work', timestamp: `${day}T0${i % 9}:00:00Z` }); };
+  for (let i = 0; i < 7; i++) add(addDays('2026-09-01', i), 2);
+  add('2026-09-08', 3); // 3 vs. a usual 2: +50%, but only one commit more
+  const steady = buildSummary(ctx.db, ctx.config, '2026-09-08', 'team/one');
+  assert.equal(steady.comparison.trend, 'steady');
+  assert.match(steady.headline, /about the usual for the last 7 days/);
+  add('2026-09-09', 8);
+  assert.match(buildSummary(ctx.db, ctx.config, '2026-09-09', 'team/one').headline, /about 4× the usual 2\.1 a day/);
+  add('2026-09-27', 2); // the week before: 2 commits, so the usual is 0.3 a day
+  add('2026-09-30', 9);
+  const quiet = buildSummary(ctx.db, ctx.config, '2026-09-30', 'team/one');
+  assert.equal(quiet.comparison.trend, 'above');
+  assert.match(quiet.headline, /^9 commits from 1 contributor, well above the usual 0\.\d a day\./);
+});

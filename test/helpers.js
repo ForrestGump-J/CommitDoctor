@@ -7,7 +7,7 @@ const SECRET = 'test-secret';
 
 function makeCtx(overrides = {}) {
   const config = { ...loadConfig({}), timezone: 'Asia/Manila', webhookSecret: SECRET, repo: '', adminToken: '', syncIntervalMs: 0, ...overrides };
-  config.summary = { minCommits: 1, comparisonDays: 7, ...(overrides.summary || {}) };
+  config.summary = { ...loadConfig({}).summary, minCommits: 1, comparisonDays: 7, ...(overrides.summary || {}) };
   return { db: openDb(':memory:'), config };
 }
 

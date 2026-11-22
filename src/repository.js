@@ -28,7 +28,9 @@ const getSetting = (db) => db.prepare('SELECT tracked_repo, repo_mode FROM proje
 
 /** The repo the dashboard is showing, or '' if none is set yet. */
 function trackedRepo(db, config) {
-  return norm(getSetting(db).tracked_repo || config.repo || '');
+  // GITHUB_REPO is only a starting point (see adoptEnvRepo); once someone stops
+  // following a repository it must not come back on its own.
+  return norm(getSetting(db).tracked_repo || '');
 }
 
 function repoMode(db) {
@@ -80,6 +82,19 @@ function showRepo(db, repo) {
   }
   setActive(db, r, true);
   db.prepare(`UPDATE project_settings SET tracked_repo = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1`).run(r);
+}
+
+/**
+ * GITHUB_REPO from .env seeds the shown repository on a fresh install (or an old
+ * one that relied on it), but never re-appears after it was stopped or removed.
+ */
+function adoptEnvRepo(db, config) {
+  const repo = norm(config.repo || '');
+  if (!repo || getSetting(db).tracked_repo) return false;
+  const row = db.prepare('SELECT active FROM repositories WHERE repo = ?').get(repo);
+  if (row && !row.active) return false;
+  showRepo(db, repo);
+  return true;
 }
 
 /** Every repository with its stored commit count, newest first. */
@@ -176,6 +191,7 @@ function migrateMultiRepo(db) {
 }
 
 module.exports = {
+  adoptEnvRepo,
   IN_REPO, norm, trackedRepo, repoMode, followedRepos, acceptsRepo, reposToProcess,
   ensureRepo, setActive, showRepo, listRepos, deleteRepoData, getDeadline, setDeadline, migrateMultiRepo,
 };

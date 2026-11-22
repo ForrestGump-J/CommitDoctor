@@ -4,11 +4,17 @@ const express = require('express');
 const { createWebhookRouter } = require('./webhook');
 const { createApiRouter } = require('./api');
 const { ensureWebhookSecret } = require('./hooks');
+const { adoptEnvRepo } = require('./repository');
+const { relinkAll } = require('./identity');
+const { tidyFlagText } = require('./summary');
 
 function createApp({ db, config, mailer = null }) {
   const app = express();
   app.disable('x-powered-by');
   ensureWebhookSecret(db, config);
+  adoptEnvRepo(db, config);
+  relinkAll(db, config); // one person, one contributor (src/identity.js)
+  tidyFlagText(db);
 
   // GitHub signs the exact bytes it sends, so keep them for signature checking.
   const keepRawBody = (req, _res, buf) => { req.rawBody = buf; };

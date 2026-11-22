@@ -63,11 +63,12 @@ Commit Doctor needs a long-running process (scheduler, poller) and a writable di
 - **No double counting.** `UNIQUE(sha)` means redeliveries and repeated pushes store a commit once. Commits GitHub flags `distinct: false` (already in the repo, e.g. branch commits re-listed when a PR is merged) are skipped. Merge commits are stored and flagged.
 - **What a "day" is.** A calendar day in `TIMEZONE` (default `Asia/Manila`), based on the commit's own timestamp.
 - **Daily summary.** A small scheduler notices when the local date changes and saves the finished day. If the server was off at midnight, a catch-up pass on the next start summarizes the missed days. Today is always shown live; past days show the saved snapshot.
-- **Rolling-baseline flags.** Each time a summary is (re)generated, the day is compared against the average of the preceding `SUMMARY_COMPARISON_DAYS` days. Notable deviations (activity clearly above/below baseline, or a contributor gone quiet for a full comparison window) are stored as discrete flags rather than just embedded in the summary text.
+- **Rolling-baseline flags.** Each time a summary is (re)generated, the day is compared against the average of the preceding `SUMMARY_COMPARISON_DAYS` days. A day counts as above or below that baseline only when it differs by 25% **and** by at least `SUMMARY_MIN_DIFFERENCE` commits (default 3), so a small repo isn't flagged for one extra commit. For a quiet repo the wording uses rates ("well above the usual 0.3 a day") rather than huge percentages. Notable deviations (activity clearly above/below baseline, or a contributor gone quiet for a full comparison window) are stored as discrete flags rather than just embedded in the summary text.
 - **Deadline tracking.** Each repository has its own deadline, set in Settings (`POST /api/settings` with `deadline_date`). `GET /api/prediction` judges whether the recent pace will make it.
 - **Notifications.** Each repository has its own subscriber list. Flags and deadline reminders are emailed to it; on the dashboard, "unread" is remembered per browser.
-- **Privacy.** Committer emails from push payloads are never stored; a commit with no name or username is labelled with a masked email (`j***@example.com`). Subscriber emails are masked in the API and in logs.
-- **Commit intent (NLP).** Each commit message is labelled feature, fix, docs, refactor, test or chore by a TF-IDF + logistic-regression model trained in `nlp/` and run in Node by `src/intent.js` (no Python needed at runtime). Low-confidence labels are shown with a `?`, and the daily summary says what kind of work dominated.
+- **Privacy.** Committer emails from push payloads are never stored; a commit with no name or username is labelled with a masked email (`j***@example.com`).
+- **One person, one contributor.** GitHub attaches a username only when the author's email is linked to an account, so early commits can arrive with just a git name. A name-only commit is attributed to the username whose commits in the same repo use the same git name (ignoring case), but only when exactly one username does; two accounts sharing a name stay separate. Existing data is repaired on startup (`src/identity.js`), including inactivity flags that the split had raised. Subscriber emails are masked in the API and in logs.
+- **Commit intent (NLP).** Each commit message is labelled feature, fix, docs, refactor, test or chore by a TF-IDF + logistic-regression model trained in `nlp/` and run in Node by `src/intent.js` (no Python needed at runtime). Labels below 0.45 confidence are shown with a `?` (on the held-out test set, labels at or above it were right 83% of the time), and the daily summary says what kind of work dominated.
 - **Background sync.** A webhook-tracked public repo is also re-pulled through GitHub's API every `SYNC_INTERVAL_MS` (5 min), so the dashboard stays current even when webhooks can't reach the server.
 - **Summaries are rule-based, not AI-generated.** Same commits in, same summary out, which keeps the prototype easy to evaluate.
 
@@ -76,10 +77,11 @@ Commit Doctor needs a long-running process (scheduler, poller) and a writable di
 | Variable | Default | Meaning |
 |---|---|---|
 | `GITHUB_WEBHOOK_SECRET` | auto-generated | If empty, a random secret is generated and stored in the database. |
-| `GITHUB_REPO` | any | `owner/name`. Fallback default; can be overridden at runtime via `POST /api/settings`. |
+| `GITHUB_REPO` | any | `owner/name` to show on a fresh install. After that the dashboard's Settings decide; a repo that was stopped or removed never comes back on its own. |
 | `TIMEZONE` | `Asia/Manila` | Defines where a day starts and ends. |
 | `SUMMARY_MIN_COMMITS` | `1` | Days with fewer commits are not saved (the skip is logged). |
 | `SUMMARY_COMPARISON_DAYS` | `7` | Length of the "recent days" rolling baseline, used for both the summary comparison and inactivity flags. |
+| `SUMMARY_MIN_DIFFERENCE` | `3` | Fewest commits a day must differ from its baseline to count as above/below it (and raise an activity flag). |
 | `CHURN_WINDOW_DAYS` | `21` | Rolling window for the deadline prediction's commit rate and code churn. |
 | `SYNC_INTERVAL_MS` | `300000` | Re-pull the tracked repo through GitHub's API this often (5 min), so it stays current without a working webhook. `0` turns it off. |
 | `DB_PATH` | `./data/commitdoctor.db` | SQLite file. |

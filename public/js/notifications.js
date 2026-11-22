@@ -38,7 +38,7 @@
     main.innerHTML = `${CD.pageHead('Notifications', `Flags and digests for ${CD.ctx.overview.repo || 'all repositories'}`)}
       <div data-tabs><div class="tabs underline" role="tablist" aria-label="Notification views">
         <button role="tab" id="n-imp" aria-selected="true" aria-controls="np-imp">Important updates</button><button role="tab" id="n-day" aria-selected="false" aria-controls="np-day">Daily digest</button><button role="tab" id="n-wk" aria-selected="false" aria-controls="np-wk">Weekly digest</button></div>
-        <div role="tabpanel" id="np-imp" aria-labelledby="n-imp" style="padding-top:16px"><section class="card solid"><div class="card-head"><h2>Flags</h2><div class="chips" role="group" aria-label="Filter flags" id="chips">${chips()}</div>
+        <div role="tabpanel" id="np-imp" aria-labelledby="n-imp" style="padding-top:16px"><section class="card solid"><div class="card-head"><h2>Flags${CD.help('flag')}</h2><div class="chips" role="group" aria-label="Filter flags" id="chips">${chips()}</div>
             <button class="btn" id="mark-read"${unreadCount() ? '' : ' disabled'}>Mark all as read</button></div>
           <div class="notif-list roomy" id="flag-list">${flags.map(flagRow).join('')}</div><p class="empty" id="flags-empty"${flags.length ? ' hidden' : ''}>${flags.length ? 'Nothing here. You’re all caught up.' : 'No flags yet. They are raised when a saved day stands out from the recent baseline, a contributor goes quiet, or the deadline pace slips.'}</p>
           <p class="note">Subscribers also get these by email. Manage them in <a class="link" href="settings.html">Settings</a>. Read markers are kept in this browser only.</p></section></div>

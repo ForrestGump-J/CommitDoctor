@@ -6,6 +6,30 @@ const { IN_REPO, trackedRepo } = require('./repository');
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const hourLabel = (h) => `${String(h).padStart(2, '0')}:00`;
+/** "Oct 14" (with the year when it differs from `ref`). */
+function dayText(date, ref = date) {
+  const d = new Date(`${date}T12:00:00Z`);
+  return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', ...(String(ref).slice(0, 4) !== date.slice(0, 4) ? { year: 'numeric' } : {}) });
+}
+
+/**
+ * How a day compares with its baseline, in words people can read at a glance:
+ * "40% above the 7-day average", "well above the usual 0.3 a day" (a quiet repo,
+ * where percentages explode), "about 6× the usual 1.2 a day", "after a quiet
+ * 7-day stretch". Shared by the headline and the stored flags.
+ */
+function comparisonPhrase(c, total) {
+  const avg = c.average;
+  if (c.trend === 'above') {
+    if (!avg) return `after a quiet ${c.baseline_days}-day stretch`;
+    if (avg < 1) return `well above the usual ${avg} a day`;
+    if (total / avg >= 3) return `about ${Math.round(total / avg)}× the usual ${avg} a day`;
+    return `${c.delta_pct}% above the ${c.baseline_days}-day average`;
+  }
+  if (c.trend === 'below') return `${Math.abs(c.delta_pct)}% below the ${c.baseline_days}-day average`;
+  if (c.trend === 'steady') return `about the usual for the last ${c.baseline_days} days`;
+  return '';
+}
 
 // Every function below works on one repository. `repo` defaults to the one the
 // dashboard is showing; the scheduler passes each followed repo in turn.
@@ -81,10 +105,13 @@ function buildSummary(db, config, date, repo = trackedRepo(db, config)) {
       .prepare(`SELECT COUNT(*) AS c FROM commits WHERE committed_date >= ? AND committed_date < ? AND ${IN_REPO}`)
       .get({ repo }, start, date).c;
     const average = sum / baselineDays;
+    // Above/below needs both a relative change (25%) and an absolute one
+    // (SUMMARY_MIN_DIFFERENCE commits), so tiny repos aren't flagged for 1-2 commits.
     let trend = 'steady';
-    if (average === 0) trend = total > 0 ? 'above' : 'steady';
-    else if (total > average * 1.25) trend = 'above';
-    else if (total < average * 0.75) trend = 'below';
+    const farEnough = Math.abs(total - average) >= (config.summary.minDifference ?? 3);
+    if (average === 0) trend = total > 0 && farEnough ? 'above' : 'steady';
+    else if (total > average * 1.25 && farEnough) trend = 'above';
+    else if (total < average * 0.75 && farEnough) trend = 'below';
     comparison = {
       baseline_days: baselineDays,
       average: Math.round(average * 10) / 10,
@@ -130,15 +157,8 @@ function writeHeadline(s) {
   if (s.total_commits === 0) return 'No commits were recorded this day.';
   const c = s.comparison;
   let text = `${plural(s.total_commits, 'commit')} from ${plural(s.contributor_count, 'contributor')}`;
-  if (c.trend === 'above') {
-    text += c.delta_pct != null
-      ? `, ${c.delta_pct}% above the ${c.baseline_days}-day average`
-      : `, after a quiet ${c.baseline_days}-day stretch`;
-  } else if (c.trend === 'below') {
-    text += `, ${Math.abs(c.delta_pct)}% below the ${c.baseline_days}-day average`;
-  } else if (c.trend === 'steady') {
-    text += `, in line with the ${c.baseline_days}-day average`;
-  }
+  const phrase = comparisonPhrase(c, s.total_commits);
+  if (phrase) text += `, ${phrase}`;
   text += '.';
   const top = s.contributors[0];
   text += s.contributor_count > 1
@@ -159,17 +179,10 @@ function detectFlags(db, config, date, summaryData, repo = trackedRepo(db, confi
   const flags = [];
   const c = summaryData.comparison;
 
-  if (c.trend === 'above') {
+  if (c.trend === 'above' || c.trend === 'below') {
     flags.push({
-      type: 'activity_above_baseline',
-      detail: c.delta_pct != null
-        ? `${summaryData.total_commits} commits, ${c.delta_pct}% above the ${c.baseline_days}-day average.`
-        : `${summaryData.total_commits} commits, after a quiet ${c.baseline_days}-day stretch.`,
-    });
-  } else if (c.trend === 'below') {
-    flags.push({
-      type: 'activity_below_baseline',
-      detail: `${summaryData.total_commits} commits, ${Math.abs(c.delta_pct)}% below the ${c.baseline_days}-day average.`,
+      type: c.trend === 'above' ? 'activity_above_baseline' : 'activity_below_baseline',
+      detail: `${plural(summaryData.total_commits, 'commit')}, ${comparisonPhrase(c, summaryData.total_commits)}.`,
     });
   }
 
@@ -190,11 +203,13 @@ function detectFlags(db, config, date, summaryData, repo = trackedRepo(db, confi
     `SELECT 1 FROM flags WHERE repo = ? AND type = 'contributor_inactive' AND date < ? AND instr(detail, ?) = 1 LIMIT 1`
   );
   for (const row of quiet) {
-    if (alreadyFlagged.get(repo, date, `${row.contributor} has had no commits since ${row.last_date} `)) continue;
+    const since = `${row.contributor} has had no commits since `;
+    // Older flags wrote the date as 2026-10-14; newer ones as "Oct 14".
+    if (alreadyFlagged.get(repo, date, `${since}${row.last_date} `) || alreadyFlagged.get(repo, date, `${since}${dayText(row.last_date, date)} (`)) continue;
     const idleDays = daysBetween(row.last_date, date);
     flags.push({
       type: 'contributor_inactive',
-      detail: `${row.contributor} has had no commits since ${row.last_date} (${idleDays} days).`,
+      detail: `${since}${dayText(row.last_date, date)} (${plural(idleDays, 'day')}).`,
     });
   }
 
@@ -211,7 +226,7 @@ function detectDeadlineFlag(db, config, date, repo = trackedRepo(db, config)) {
   const p = predictDeadline(db, config, date, repo);
   if (p.status !== 'at-risk' && p.status !== 'behind') return [];
   const pct = Math.round(p.pace_ratio * 100);
-  let detail = `Recent commit pace is ${pct}% of the project's earlier pace, with ${p.days_remaining} day(s) left until the deadline.`;
+  let detail = `Recent commit pace is ${pct}% of the project's earlier pace, with ${plural(p.days_remaining, 'day')} left until the deadline.`;
   if (p.churn_ratio != null && p.churn_ratio > 0.6) {
     detail += ` Recent changes lean heavily toward removals/rework (${Math.round(p.churn_ratio * 100)}% of ${p.churn_basis === 'lines' ? 'lines' : 'files'} changed).`;
   }
@@ -241,7 +256,7 @@ function generateSummary(db, config, date, trigger, { force = false, repo = trac
   }
   if (!force && total < config.summary.minCommits) {
     logRun.run(date, trigger, 'skipped', total);
-    return { saved: false, reason: `Only ${total} commit(s); the minimum is ${config.summary.minCommits}.` };
+    return { saved: false, reason: `Only ${plural(total, 'commit')}; the minimum is ${config.summary.minCommits}.` };
   }
 
   const data = buildSummary(db, config, date, repo);
@@ -314,4 +329,31 @@ function getTrend(db, config, days = 14, now = Date.now(), repo = trackedRepo(db
   });
 }
 
-module.exports = { buildSummary, generateSummary, getSummary, catchUp, getTrend, detectFlags, detectDeadlineFlag };
+/**
+ * Rewrite stored flag text from older versions into the current wording
+ * ("1 commit", "Oct 14", "well above the usual 0.3 a day" instead of "4450%").
+ * Text only: ids, types and dates stay, so read markers are unaffected. Idempotent.
+ */
+function tidyFlagText(db) {
+  const update = db.prepare('UPDATE flags SET detail = ? WHERE id = ?');
+  let changed = 0;
+  for (const f of db.prepare("SELECT id, date, type, detail FROM flags WHERE type IN ('activity_above_baseline', 'activity_below_baseline', 'contributor_inactive', 'deadline_at_risk', 'deadline_behind')").all()) {
+    let d = f.detail;
+    let m;
+    if ((m = d.match(/^(\d+) commits?, (\d+)% above the (\d+)-day average\.$/))) {
+      const total = Number(m[1]);
+      const pct = Number(m[2]);
+      const average = Math.round((total / (1 + pct / 100)) * 10) / 10;
+      d = `${plural(total, 'commit')}, ${comparisonPhrase({ trend: 'above', average, delta_pct: pct, baseline_days: Number(m[3]) }, total)}.`;
+    } else if ((m = d.match(/^(\d+) commits?, (.*)$/))) {
+      d = `${plural(Number(m[1]), 'commit')}, ${m[2]}`;
+    } else if ((m = d.match(/^(.+ has had no commits since )(\d{4}-\d{2}-\d{2}) \((\d+) days?\)\.$/))) {
+      d = `${m[1]}${dayText(m[2], f.date)} (${plural(Number(m[3]), 'day')}).`;
+    }
+    d = d.replace(/with (\d+) day\(s\) left/, (_, n) => `with ${plural(Number(n), 'day')} left`);
+    if (d !== f.detail) { update.run(d, f.id); changed += 1; }
+  }
+  return changed;
+}
+
+module.exports = { tidyFlagText, comparisonPhrase, dayText, buildSummary, generateSummary, getSummary, catchUp, getTrend, detectFlags, detectDeadlineFlag };

@@ -82,14 +82,17 @@
       return `<circle cx="${f1(cx(i))}" cy="${PAD.t - 2 + 6}" r="4.5" fill="${color}" stroke="${SURFACE}" stroke-width="2"/>`;
     }).join('');
     const flagged = d.filter((x) => x.flags.length).length;
+    // One legend entry per kind of flag shown, in the dot's own colour.
+    const kinds = {};
+    for (const x of d) if (x.flags.length) kinds[x.flags[0]] = (kinds[x.flags[0]] || 0) + 1;
     const tip = (i) => {
       const x = d[i];
       return `${CD.dayLong(x.date)}\n${plural(x.commits, 'commit')}${x.baseline != null ? ` · baseline ${x.baseline}` : ''}${x.flags.length ? `\n${x.flags.map((t) => CD.flagMeta(t)[0]).join(', ')}` : ''}`;
     };
     const body = grid(h, top, step, (v) => v, y0) + bars + (path ? `<path d="${path}" fill="none" stroke="#E8EAF0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".8"/>` : '') + marks
       + xLabels(d, cx, h, (x) => CD.dayMed(x.date)) + hits(d.length, slot, h, tip);
-    return `<section class="card solid"><div class="card-head"><div><h2>Activity over time</h2><p class="sub">Commits per day, against the ${a.rules.comparison_days}-day baseline each day's summary is compared with</p></div></div>
-      ${legend([['Commits', '#6366F1'], [`${a.rules.comparison_days}-day baseline`, '#E8EAF0', 'line'], [`Flagged day (${flagged})`, '#F59E0B', 'dot']])}
+    return `<section class="card solid"><div class="card-head"><div><h2>Activity over time${CD.help('baseline')}</h2><p class="sub">Commits per day, against the ${a.rules.comparison_days}-day baseline each day's summary is compared with</p></div></div>
+      ${legend([['Commits', '#6366F1'], [`${a.rules.comparison_days}-day baseline`, '#E8EAF0', 'line'], ...Object.entries(kinds).map(([k, n]) => [`${CD.flagMeta(k)[0]} (${n})`, CD.flagMeta(k)[2], 'dot'])])}
       ${svg(h, `Commits per day from ${CD.dayMed(a.start)} to ${CD.dayMed(a.end)}, ${plural(a.totals.commits, 'commit')} in total, with the rolling baseline and ${plural(flagged, 'flagged day')}`, body)}
       <p class="note">A flag is raised when a saved day is well above or below its baseline, or someone goes quiet. Hover a day for details; click it to open that day.</p>
       ${table(['Day', 'Commits', 'Baseline', 'Flags'], d.slice().reverse().map((x) => [esc(CD.dayMed(x.date)), x.commits, x.baseline ?? '—', esc(x.flags.map((t) => CD.flagMeta(t)[0]).join(', ') || '—')]))}</section>`;
@@ -127,17 +130,17 @@
     };
     const used = MIX.filter((k) => totals[k]);
     const body = grid(h, top, step, (v) => v, y0) + stacks + xLabels(wk, cx, h, weekLabel) + hits(wk.length, slot, h, tip);
-    return `<section class="card solid"><div class="card-head"><div><h2>Work mix</h2><p class="sub">What kind of work each week was, from the commit-message classifier</p></div></div>
+    return `<section class="card solid"><div class="card-head"><div><h2>Work mix${CD.help('intent')}</h2><p class="sub">What kind of work each week was, from the commit-message classifier</p></div></div>
       ${used.length ? legend(used.map((k) => [`${CD.INTENT_WORD[k]} · ${totals[k]}`, CD.INTENT[k]])) : ''}
       ${svg(h, `Commits per week by kind of work: ${used.map((k) => `${CD.INTENT_WORD[k]} ${totals[k]}`).join(', ') || 'none'}`, body)}
-      <p class="note">Labels are the classifier's best guess from each message, including low-confidence ones. Weeks run Monday to Sunday; * marks a part week.</p>
+      <p class="note">Labels are the classifier's best guess from each message, including ones it isn't sure about. Weeks run Monday to Sunday; * marks a part week.</p>
       ${table(['Week', 'Commits', ...MIX.map((k) => CD.INTENT_WORD[k])], wk.slice().reverse().map((w) => [esc(weekRange(w)), w.commits, ...MIX.map((k) => w.intents[k] || 0)]))}</section>`;
   }
 
   /* ---------- 4. pace vs. deadline ---------- */
   function pace(a) {
     if (!a.pace) {
-      return `<section class="card solid"><div class="card-head"><h2>Pace vs. deadline</h2></div>
+      return `<section class="card solid"><div class="card-head"><h2>Pace vs. deadline${CD.help('pace')}</h2></div>
         <p class="hint">Set a deadline for ${esc(a.repo || 'this repository')} to see how its pace changed day by day.</p><p style="margin-top:12px"><a class="btn" href="settings.html">Set a deadline</a></p></section>`;
     }
     const p = a.pace;
@@ -183,11 +186,11 @@
     for (const x of p) counts[x.status] = (counts[x.status] || 0) + 1;
     const now = p.at(-1);
     const basis = (p.find((x) => x.churn_basis) || {}).churn_basis;
-    return `<section class="card solid"><div class="card-head"><div><h2>Pace vs. deadline</h2><p class="sub">What the deadline prediction would have said on each day · due ${esc(CD.dayMed(a.deadline_date))}</p></div>
+    return `<section class="card solid"><div class="card-head"><div><h2>Pace vs. deadline${CD.help('pace')}</h2><p class="sub">What the deadline prediction would have said on each day · due ${esc(CD.dayMed(a.deadline_date))}</p></div>
         ${pill(`Today: ${(STATUS[now.status] || [now.status])[0]}`, (STATUS[now.status] || [0, '#9AA3B5'])[1])}</div>
       ${legend([['Pace (last 7 days vs. earlier)', '#60A5FA', 'line'], ...Object.keys(STATUS).filter((k) => counts[k]).map((k) => [`${STATUS[k][0]} · ${plural(counts[k], 'day')}`, STATUS[k][1]])])}
       ${svg(h1full, `Pace ratio per day with the on-pace and behind thresholds; ${Object.keys(counts).map((k) => `${(STATUS[k] || [k])[0]} ${counts[k]} days`).join(', ')}`, body1 + xl1)}
-      <h3 class="stat-label" style="margin:16px 0 4px">Rework share</h3>
+      <h3 class="stat-label" style="margin:16px 0 4px">Rework share${CD.help('rework')}</h3>
       ${legend([[`Removed out of all changes, last ${a.rules.churn_window_days} days${basis === 'files' ? ' (files)' : basis === 'lines' ? ' (lines)' : ''}`, '#A855F7', 'line']])}
       ${hasRework ? svg(h2, 'Share of changes that were removals, per day, with the heavy-rework threshold', body2) : '<p class="note" style="padding:8px 0">No file or line changes recorded in this period, so rework can\'t be measured.</p>'}
       <p class="note">Pace below ${pct(r.on_pace)} is "at risk" and below ${pct(r.at_risk)} "behind". Heavy rework turns "on pace" into "at risk". Rule-based, not a forecast.</p>
@@ -207,9 +210,10 @@
     let legendItems;
     let rows;
     let label;
-    if (!lines && !wk.some((w) => w.files_added + w.files_modified + w.files_removed)) {
-      return `<section class="card solid"><div class="card-head"><div><h2>Code churn</h2><p class="sub">Files changed per week</p></div></div>
-        <p class="note" style="padding:8px 0">No file or line changes were recorded for these commits. GitHub sends file lists with webhook pushes and token checks; commits added another way may not have them.</p></section>`;
+    const withFiles = wk.reduce((n, w) => n + w.file_commits, 0);
+    if (!lines && !withFiles) {
+      return `<section class="card solid"><div class="card-head"><div><h2>Code churn${CD.help('churn')}</h2><p class="sub">Files changed per week</p></div></div>
+        <p class="note" style="padding:8px 0">Not recorded for these ${plural(a.totals.commits, 'commit')}: they were found by scanning GitHub, which doesn't include file lists. Webhook pushes and token checks do.</p></section>`;
     }
     if (lines) {
       // Diverging: added above the axis, removed below, on one scale.
@@ -245,15 +249,15 @@
           return `<rect x="${f1(cx(i) - bw / 2)}" y="${f1(hi)}" width="${f1(bw)}" height="${f1(Math.max(0, lo - hi - (j ? 1 : 0)))}" fill="${c}"/>`;
         }).join('');
       }).join('');
-      tip = (i) => { const w = wk[i]; return `${weekRange(w)}\n${w.files_added} added · ${w.files_modified} modified · ${w.files_removed} removed`; };
+      tip = (i) => { const w = wk[i]; return `${weekRange(w)}\n${w.files_added} added · ${w.files_modified} modified · ${w.files_removed} removed${w.file_commits < w.commits ? `\nfrom ${w.file_commits} of ${plural(w.commits, 'commit')}` : ''}`; };
       legendItems = [['Files added', '#60A5FA'], ['Files modified', '#9AA3B5'], ['Files removed', '#A855F7']];
       rows = wk.slice().reverse().map((w) => [esc(weekRange(w)), w.files_added, w.files_modified, w.files_removed]);
       label = 'Files added, modified and removed per week';
     }
     body += xLabels(wk, cx, h, weekLabel) + hits(wk.length, slot, h, tip);
-    return `<section class="card solid"><div class="card-head"><div><h2>Code churn</h2><p class="sub">${lines ? 'Lines added and removed per week' : 'Files changed per week'}</p></div></div>
+    return `<section class="card solid"><div class="card-head"><div><h2>Code churn${CD.help('churn')}</h2><p class="sub">${lines ? 'Lines added and removed per week' : 'Files changed per week'}</p></div></div>
       ${legend(legendItems)}${svg(h, label, body)}
-      <p class="note">${lines ? 'Only commits with known line counts are included (repositories checked with a token).' : 'Line counts are only recorded for repositories checked with a token, so this shows files changed instead.'} Context only, not a measure of output.</p>
+      <p class="note">${lines ? 'Only commits with known line counts are included (repositories checked with a token).' : `Line counts are only recorded for repositories checked with a token, so this shows files changed instead${withFiles < a.totals.commits ? ` (known for ${withFiles} of ${plural(a.totals.commits, 'commit')}; the rest were found by a scan)` : ''}.`} Context only, not a measure of output.</p>
       ${table(lines ? ['Week', 'Added', 'Removed', 'Commits counted'] : ['Week', 'Added', 'Modified', 'Removed'], rows)}</section>`;
   }
 
@@ -274,7 +278,7 @@
         <svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(`${c.name}: commits per week, ${c.weekly.join(', ')}`)}"><line x1="0" x2="${w}" y1="${h - 0.5}" y2="${h - 0.5}" stroke="${GRID}"/>${bars}${hit}</svg>
         <div>${badge}</div></article>`;
     }).join('');
-    return `<section class="card solid"><div class="card-head"><div><h2>Contributor activity</h2><p class="sub">Commits per week for each person, on the same scale (up to ${max} a week), in name order</p></div></div>
+    return `<section class="card solid"><div class="card-head"><div><h2>Contributor activity${CD.help('inactive')}</h2><p class="sub">Commits per week for each person, on the same scale (up to ${max} a week), in name order</p></div></div>
       <div class="an-people">${cards}</div>
       <p class="note" style="margin-top:12px">Shows when each person was active, to help coordination. Not a ranking or a performance measure. "Inactive" means no commits for ${plural(quiet, 'day')} or more.</p>
       ${table(['Contributor', ...wk.map(weekLabel), 'Last commit'], a.contributors.map((c) => [esc(c.name), ...c.weekly, esc(CD.dayMed(c.last_date))]))}</section>`;

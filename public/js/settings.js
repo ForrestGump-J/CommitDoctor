@@ -41,7 +41,7 @@
         ${hidden.length ? `<h3 class="stat-label" style="margin:20px 0 4px">${multi ? 'Paused' : 'Hidden'}</h3><p class="note">Not followed right now. Their history is kept; switching back pulls in the last 14 days of commits.</p>${hidden.map(repoRow).join('')}` : ''}</section>
 
       <div class="cols cols-2">
-        <section class="card"><div class="card-head"><h2>Deadline</h2></div>
+        <section class="card"><div class="card-head"><h2>Deadline${CD.help('pace')}</h2></div>
           ${o.repo ? `<p class="hint">Each repository has its own deadline. It's used to judge whether the current pace will make it, and for reminder emails.</p>
           <div class="field-row" style="margin:12px 0"><label class="visually-hidden" for="deadline">Deadline for ${esc(o.repo)}</label><input type="date" id="deadline" class="input" value="${esc(prediction.deadline_date || '')}" style="color-scheme:dark">
             <button class="btn btn-primary" id="deadline-set">Set</button>${prediction.deadline_date ? '<button class="btn" id="deadline-clear">Clear</button>' : ''}</div>

@@ -71,7 +71,7 @@
     if (c.is_merge) return pill('merge', INTENT.merge, 'intent');
     const it = c.intent;
     if (!it) return '';
-    const title = `Commit intent, guessed from the message by the classifier: ${it.intent}, ${Math.round(it.confidence * 100)}% confidence`;
+    const title = it.sure ? `Likely ${it.intent}: the classifier's label from the commit message` : `Maybe ${it.intent}: the classifier isn't sure, so treat this as a guess`;
     return `<span class="pill intent${it.sure ? '' : ' unsure'}" style="--c:${INTENT[it.intent] || '#9AA3B5'}" title="${esc(title)}">${esc(it.intent)}${it.sure ? '' : '?'}</span>`;
   }
   /** Intent counts as pills, most common first. */
@@ -164,23 +164,38 @@
       return `<button type="button" class="daybar" data-date="${d.date}" aria-pressed="${d.date === selected}" aria-label="${esc(label)}" title="${esc(label)}">
         ${d.commits ? `<b>${d.commits}</b>` : ''}<i style="--h:${(d.commits / max) * 100}%"></i></button>`;
     }).join('');
-    const scale = trend.map((d, i) => `<span class="${d.saved ? 'saved' : ''}">${i % every === 0 || d.is_today ? esc(d.is_today ? 'Today' : String(Number(d.date.slice(8)))) : ''}</span>`).join('');
+    // Month name on the first label and wherever the month changes ("Nov 9 … 30 Dec 1 …").
+    const newMonth = (i) => i === 0 || trend[i].date.slice(5, 7) !== trend[i - 1].date.slice(5, 7);
+    const forced = trend.map((d, i) => newMonth(i));
+    const near = (i) => forced.some((f, j) => f && j !== i && Math.abs(j - i) < Math.max(2, every));
+    const label = (d, i) => {
+      if (d.is_today) return 'Today';
+      const show = forced[i] || i === 0 || (i % every === 0 && !near(i));
+      if (!show) return '';
+      return newMonth(i) ? dayMed(d.date) : String(Number(d.date.slice(8)));
+    };
+    const scale = trend.map((d, i) => `<span class="${d.saved ? 'saved' : ''}">${esc(label(d, i))}</span>`).join('');
     return `<div class="daybars" style="--n:${trend.length}">${barsHtml}</div><div class="daybar-scale" style="--n:${trend.length}" aria-hidden="true">${scale}</div>`;
   }
 
   /* ---------- shared fragments ---------- */
-  const churnText = (ch) => {
-    if (!ch) return '';
-    if (ch.lines_added != null && ch.lines_deleted != null) return `<span class="add">+${Number(ch.lines_added)}</span> <span class="del">−${Number(ch.lines_deleted)}</span>`;
-    return '<span title="Line counts are only known for repositories checked with a token">files only</span>';
+  /** "+12 −3" when line counts are known, otherwise ''. */
+  const churnText = (ch) => (ch && ch.lines_added != null && ch.lines_deleted != null
+    ? `<span class="add">+${Number(ch.lines_added)}</span> <span class="del">−${Number(ch.lines_deleted)}</span>` : '');
+  /** Files touched, or null when GitHub didn't send a file list (commits found by a scan). */
+  const fileCount = (ch) => (ch && (ch.files_added != null || ch.files_modified != null || ch.files_removed != null)
+    ? (ch.files_added || 0) + (ch.files_modified || 0) + (ch.files_removed || 0) : null);
+  const NO_FILES = 'GitHub only sends file lists with webhook pushes and token checks; this commit was found by a scan.';
+  const filesText = (ch) => {
+    const n = fileCount(ch);
+    return n == null ? `<span title="${esc(NO_FILES)}">files not recorded</span>` : plural(n, 'file');
   };
-  const fileCount = (ch) => (ch ? (ch.files_added || 0) + (ch.files_modified || 0) + (ch.files_removed || 0) : 0);
   function feedItem(c) {
     const first = String(c.message || '').split('\n')[0] || '(no message)';
     const color = c.is_merge ? INTENT.merge : INTENT[c.intent && c.intent.intent] || '#9AA3B5';
     return `<a class="feed-item" href="commit.html?sha=${encodeURIComponent(c.sha)}"><span class="node" style="--c:${color}"></span>${avatar(c.contributor)}
       <div class="fi-body"><strong>${esc(first)}</strong><div class="meta">${intentTag(c)}${pill(c.short_sha || String(c.sha).slice(0, 7), '#9AA3B5', 'mono')}
-      <span>${esc(c.contributor)}${c.branch ? ` on ${esc(c.branch)}` : ''}</span><span>${plural(fileCount(c.churn), 'file')}</span><span>${churnText(c.churn)}</span><span>${esc(c.time || '')}</span></div></div>
+      <span>${esc(c.contributor)}${c.branch ? ` on ${esc(c.branch)}` : ''}</span><span>${filesText(c.churn)}</span>${churnText(c.churn) ? `<span>${churnText(c.churn)}</span>` : ''}<span>${esc(c.time || '')}</span></div></div>
       <span class="fi-go">${ic('right', 16)}</span></a>`;
   }
   const FLAG = {
@@ -209,6 +224,74 @@
     return `${PRED[p.status][0]} for the ${when} deadline (${left} left): ${pace}.${churn}`;
   }
 
+  /* ---------- comparing a day with its baseline (same rules as src/summary.js) ---------- */
+  /** "40% above the 7-day average", "well above the usual 0.3 a day", "about 6× the usual 1.2 a day"… */
+  function comparePhrase(c, total) {
+    const avg = c.average;
+    if (c.trend === 'above') {
+      if (!avg) return `after a quiet ${c.baseline_days}-day stretch`;
+      if (avg < 1) return `well above the usual ${avg} a day`;
+      if (total / avg >= 3) return `about ${Math.round(total / avg)}× the usual ${avg} a day`;
+      return `${c.delta_pct}% above the ${c.baseline_days}-day average`;
+    }
+    if (c.trend === 'below') return `${Math.abs(c.delta_pct)}% below the ${c.baseline_days}-day average`;
+    if (c.trend === 'steady') return `about the usual for the last ${c.baseline_days} days`;
+    return '';
+  }
+  /** Short form for stat cards and tiles: [text, tone]. */
+  function compareShort(c, total) {
+    if (c.trend === 'no-baseline') return ['No baseline yet', ''];
+    const usual = c.average != null ? `${c.average}/day` : '';
+    if (c.trend === 'steady') return [`About usual (${usual})`, ''];
+    if (c.trend === 'below') return [`${c.delta_pct}% vs usual ${usual}`, 'trend-down'];
+    if (!c.average) return ['Up after a quiet stretch', 'trend-up'];
+    if (c.average < 1) return [`Well above usual (${usual})`, 'trend-up'];
+    if (total / c.average >= 3) return [`About ${Math.round(total / c.average)}× usual (${usual})`, 'trend-up'];
+    return [`+${c.delta_pct}% vs usual ${usual}`, 'trend-up'];
+  }
+
+  /* ---------- plain-language explanations ("?" next to a term) ---------- */
+  function glossary(key) {
+    const n = CD.ctx ? CD.ctx.overview.rules.comparison_days : 7;
+    return {
+      baseline: `The usual amount of activity: the average commits per day over the previous ${n} days (or since the first commit, if that's more recent). Each day is compared with it, and only differences of a few commits or more count.`,
+      flag: `A note Commit Doctor raises when a saved day stands out: activity well above or below the baseline, someone with no commits for ${n} days or more, or the deadline pace slipping. Subscribers get them by email.`,
+      churn: 'How much code changed. Lines added and removed are known for repositories checked with a token; otherwise it shows files changed. Context only, not a measure of output.',
+      rework: 'The share of recent changes that were removals (lines, or files when lines are unknown). A high share suggests rework rather than new progress.',
+      pace: 'Commits per day over the last week compared with the project\'s earlier rate. 75% or more is on pace, 40–75% at risk, under 40% behind. Heavy rework lowers "on pace" to "at risk". A simple rule, not a forecast.',
+      intent: 'What kind of work a commit is (feature, fix, docs, …), guessed from its message by a small classifier. A "?" means it isn\'t sure. Labels without "?" were right about 8 times in 10 in testing.',
+      summary: 'Written by fixed rules from the day\'s commits, not by AI: the same commits always give the same summary. Today stays live; each day is saved after midnight.',
+      inactive: `No commits for ${n} days or more. Shown to help coordination, not to judge anyone.`,
+    }[key] || '';
+  }
+  /** A small "?" that explains a term on hover, focus or tap. */
+  const help = (key) => `<button type="button" class="help" data-help="${esc(glossary(key))}" aria-label="${esc(`What does this mean? ${glossary(key)}`)}">?</button>`;
+  function wireHelp() {
+    const tip = document.createElement('div');
+    tip.className = 'help-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.hidden = true;
+    document.body.append(tip);
+    let owner = null;
+    const show = (el) => {
+      owner = el;
+      tip.textContent = el.dataset.help;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect();
+      const w = tip.offsetWidth;
+      const x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+      const below = r.bottom + 8 + tip.offsetHeight < window.innerHeight;
+      tip.style.left = `${x}px`;
+      tip.style.top = `${below ? r.bottom + 8 : r.top - tip.offsetHeight - 8}px`;
+    };
+    const hide = () => { owner = null; tip.hidden = true; };
+    document.addEventListener('pointerover', (e) => { const h = e.target.closest('.help'); if (h) show(h); else if (owner && e.pointerType === 'mouse') hide(); });
+    document.addEventListener('focusin', (e) => { const h = e.target.closest('.help'); if (h) show(h); else hide(); });
+    document.addEventListener('click', (e) => { const h = e.target.closest('.help'); if (h) { e.preventDefault(); if (owner === h && !tip.hidden) hide(); else show(h); } else hide(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+    window.addEventListener('scroll', hide, { passive: true });
+  }
+
   /* ---------- connection status of the shown repository ---------- */
   function repoStatus(r, o) {
     if (!r || !r.repo) return { tone: 'idle', text: 'No repository connected' };
@@ -220,7 +303,13 @@
     const w = r.webhook;
     if (w.state === 'failing') return { tone: 'bad', text: `GitHub reached this server but the delivery was rejected: ${w.detail || 'unknown error'}` };
     if (w.state === 'other_repo') return { tone: 'bad', text: `GitHub is sending pushes from ${w.repo_seen}, which isn't followed here` };
-    if (w.state === 'connected') return { tone: 'ok', text: `Updates instantly by webhook${o && o.last_push_at ? ` · last push ${ago(o.last_push_at)}` : ''}` };
+    if (w.state === 'connected') {
+      if (o && o.last_push_at) return { tone: 'ok', text: `Updates instantly by webhook · last push ${ago(o.last_push_at)}` };
+      // Only GitHub's test ping so far: say where commits actually come from.
+      const scan = r.sync && r.sync.last_sync_at
+        ? ` New commits are picked up by scanning GitHub${r.sync.interval_minutes ? ` every ${plural(r.sync.interval_minutes, 'minute')}` : ''} (last scan ${ago(r.sync.last_sync_at)}).` : '';
+      return { tone: scan ? 'ok' : 'warn', text: `Webhook set up${w.last_ok_at ? ` (GitHub's test ping arrived ${ago(w.last_ok_at)})` : ''}, but no pushes have arrived yet.${scan}` };
+    }
     if (r.sync && r.sync.last_error) return { tone: 'bad', text: `The last scan failed: ${r.sync.last_error}` };
     if (r.sync && r.sync.last_sync_at) return { tone: 'ok', text: `Scanned GitHub ${ago(r.sync.last_sync_at)}${r.sync.interval_minutes ? ` · every ${plural(r.sync.interval_minutes, 'minute')}, no token needed` : ''}` };
     return { tone: 'warn', text: 'Waiting for the first scan' };
@@ -229,6 +318,13 @@
   /* ---------- unread flags (per browser) and file panels ---------- */
   const seenKey = () => `comdoc.seenFlag.${CD.ctx.overview.repo || 'all'}`;
   const seenId = () => Number(store.get(seenKey()) || 0);
+  /** First visit in this browser: only the last 7 days count as unread, not the whole history. */
+  function initSeen(flags) {
+    if (store.get(seenKey()) != null || !flags.length) return;
+    const cutoff = shift(today(), -7);
+    const recent = flags.filter((f) => f.date >= cutoff).map((f) => f.id);
+    store.set(seenKey(), String(recent.length ? Math.min(...recent) - 1 : Math.max(...flags.map((f) => f.id))));
+  }
   const markSeen = (id) => { if (id > seenId()) store.set(seenKey(), String(id)); };
   const filesShown = () => store.get('comdoc.showFiles') === '1';
   const setFilesShown = (on) => store.set('comdoc.showFiles', on ? '1' : '0');
@@ -270,7 +366,7 @@
     return `<div class="app"><aside class="sidebar"><div class="logo"><span class="logo-tile">${ic('act', 18)}</span><span class="name">ComDoc</span></div>
       <nav aria-label="Primary" style="display:contents">${nav}</nav>
       <div class="sidebar-foot"><button class="btn btn-primary" data-open="connect" style="justify-content:center;padding:10px 12px">${ic('plus', 16)}<span class="btn-label">Connect repository</span></button>
-        <div class="account"><span class="status-dot ${st.tone === 'ok' ? '' : st.tone === 'bad' ? 'bad' : st.tone === 'idle' ? 'idle' : 'warn'}" aria-hidden="true"></span>
+        <div class="account" title="${esc(st.text)}"><span class="visually-hidden">${esc(st.text)}</span><span class="status-dot ${st.tone === 'ok' ? '' : st.tone === 'bad' ? 'bad' : st.tone === 'idle' ? 'idle' : 'warn'}" aria-hidden="true"></span>
         <span class="text"><b style="font-weight:500;overflow-wrap:anywhere">${esc(o.repo || 'No repository')}</b><small>${esc(o.repo_mode === 'multi' ? 'Multiple repositories' : 'Single repository')}</small></span></div></div></aside>
       <div class="main"><header class="topbar">${repoSelect(o)}<span class="spacer"></span>
         <span class="pill" id="auth-pill" role="status" hidden></span><button class="btn" id="auth-forget" type="button" hidden>Forget token</button>
@@ -285,6 +381,9 @@
 
   /* ---------- the selected day (shared through ?date=) ---------- */
   const today = () => CD.ctx.overview.today;
+  /** "Today", "Yesterday" or "Sat, Nov 21" (with the year when it isn't this year). */
+  const dayName = (d) => (d === today() ? 'Today' : d === shift(today(), -1) ? 'Yesterday'
+    : utcNoon(d).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric', ...(d.slice(0, 4) !== today().slice(0, 4) ? { year: 'numeric' } : {}) }));
   function initialDate() {
     const d = new URLSearchParams(window.location.search).get('date');
     return /^\d{4}-\d{2}-\d{2}$/.test(d || '') && d <= today() ? d : today();
@@ -296,12 +395,18 @@
   }
   const dayNav = (d) => `<div class="daynav" role="group" aria-label="Choose a day">
     <button type="button" data-day="-1" aria-label="Previous day">${ic('left', 16)}</button>
-    <input type="date" id="day-input" aria-label="Day" value="${d}" max="${today()}">
+    <span class="daypick"><button type="button" id="day-btn" aria-label="Choose a day (showing ${esc(dayLong(d))})">${ic('calendar', 14)} ${esc(dayName(d))}</button>
+      <input type="date" id="day-input" tabindex="-1" aria-hidden="true" value="${d}" max="${today()}"></span>
     <button type="button" data-day="1" aria-label="Next day"${d >= today() ? ' disabled' : ''}>${ic('right', 16)}</button>
-    <button type="button" class="today" data-day="today"${d === today() ? ' disabled' : ''}>Today</button></div>`;
+    ${d === today() ? '' : '<button type="button" class="today" data-day="today">Back to today</button>'}</div>`;
   /** Wire a dayNav inside root; onPick(date) is called with the new day. */
   function wireDayNav(root, current, onPick) {
     root.addEventListener('click', (e) => {
+      if (e.target.closest('#day-btn')) {
+        const input = $('#day-input', root);
+        try { input.showPicker(); } catch { input.classList.add('show'); input.tabIndex = 0; input.removeAttribute('aria-hidden'); input.focus(); }
+        return;
+      }
       const b = e.target.closest('[data-day]');
       if (!b || b.disabled) return;
       const v = b.dataset.day;
@@ -502,6 +607,7 @@
   async function unreadCount() {
     try {
       const flags = await get('/flags?limit=100');
+      initSeen(flags);
       return flags.filter((f) => f.id > seenId()).length;
     } catch { return 0; }
   }
@@ -538,6 +644,7 @@
     const sel = $('#repo-select');
     if (sel) sel.addEventListener('change', () => switchRepo(sel.value));
     initAuth();
+    wireHelp();
     const msg = takeFlash();
     if (msg) toast(msg);
     try {
@@ -551,7 +658,7 @@
   const CD = {
     ctx: null, $, $$, esc, plural, safeUrl, repoPath, store, ic, avatar, pill, colorFor, intentTag, intentPills, INTENT, INTENT_WORD,
     shift, dayLong, dayMed, dayShort, stamp, ago, hh, isLocal, get, send, act, toast, copyText, flash,
-    spark, area, bars, dayBars, churnText, fileCount, feedItem, flagMeta, PRED, predictionText, repoStatus,
+    spark, area, bars, dayBars, churnText, fileCount, filesText, NO_FILES, feedItem, comparePhrase, compareShort, help, dayName, flagMeta, PRED, predictionText, repoStatus,
     seenId, markSeen, hideable, pageHead, today, initialDate, setDateParam, dayNav, wireDayNav,
     switchRepo, openConnect, confirmBox, start,
   };

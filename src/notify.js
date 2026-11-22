@@ -70,7 +70,7 @@ function renderDeadlineEmail(p){
     const worried = p.status === 'at-risk' || p.status === 'behind';
     // A team that is on pace gets a calm reminder, not a warning.
     const label = worried ? (TIER_LABEL[p.urgency] || 'Notice') : 'Reminder';
-    const left = p.days_remaining === 0 ? 'today' : `in ${p.days_remaining} day(s)`;
+    const left = p.days_remaining === 0 ? 'today' : `in ${p.days_remaining} day${p.days_remaining === 1 ? '' : 's'}`;
     const paceLine = p.pace_ratio != null
         ? `<p>Recent commit pace is ${Math.round(p.pace_ratio * 100)}% of the project's earlier pace.</p>` : '';
     const churnLine = worried && p.churn_ratio != null

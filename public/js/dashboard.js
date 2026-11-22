@@ -71,24 +71,31 @@
   function stats(v) {
     const s = v.summary;
     const c = s.comparison;
-    const vs = c.trend === 'no-baseline' ? 'No baseline yet' : c.delta_pct == null ? 'Up from a quiet stretch' : `${c.delta_pct > 0 ? '+' : ''}${c.delta_pct}% vs ${c.baseline_days}-day avg`;
-    const vsCls = c.trend === 'above' ? 'trend-up' : c.trend === 'below' ? 'trend-down' : '';
-    let added = 0; let deleted = 0; let known = false; let files = 0;
+    const [vs, vsCls] = CD.compareShort(c, s.total_commits);
+    let added = 0; let deleted = 0; let known = false; let files = 0; let withFiles = 0;
     for (const cm of v.commits) {
-      files += CD.fileCount(cm.churn);
+      const n = CD.fileCount(cm.churn);
+      if (n != null) { files += n; withFiles += 1; }
       if (cm.churn.lines_added != null && cm.churn.lines_deleted != null) { known = true; added += cm.churn.lines_added; deleted += cm.churn.lines_deleted; }
     }
-    const churn = known ? `<span class="add">+${added}</span> <span class="del">−${deleted}</span>` : `${files}<small>${files === 1 ? 'file' : 'files'}</small>`;
+    let churn;
+    let churnNote;
+    if (known) { churn = `<span class="add">+${added}</span> <span class="del">−${deleted}</span>`; churnNote = 'Lines added and removed · context only'; }
+    else if (withFiles) { churn = `${files}<small>${files === 1 ? 'file' : 'files'}</small>`; churnNote = withFiles < v.commits.length ? `From ${withFiles} of ${plural(v.commits.length, 'commit')}; the rest came from a scan` : 'Files changed · line counts need a token'; }
+    else { churn = '—'; churnNote = v.commits.length ? 'Not recorded: these commits came from a scan, which has no file lists' : 'No commits'; }
     const p = v.prediction;
     const pred = CD.PRED[p.status] || [p.status, '#9AA3B5'];
     const people = s.contributors.slice(0, 4).map((x) => avatar(x.name, 24)).join('');
     const ctxNote = '<div class="note">Context only · not a performance measure</div>';
     return `<section class="stats" aria-label="This day at a glance">
-      <article class="card stat"><div class="stat-label">Commits</div><div class="stat-row"><div class="stat-value">${s.total_commits}</div>${CD.spark(v.trend.map((d) => d.commits), '#60A5FA')}</div><div class="note ${vsCls}">${esc(vs)}</div></article>
-      <article class="card stat"><div class="stat-label">Code churn</div><div class="stat-row"><div class="stat-value">${churn}</div>${ic('file', 22, '#A855F7')}</div>${known ? ctxNote : '<div class="note">Line counts need a token-checked repo; showing files changed</div>'}</article>
+      <article class="card stat"><div class="stat-label">Commits${CD.help('baseline')}</div><div class="stat-row"><div class="stat-value">${s.total_commits}</div>${CD.spark(v.trend.map((d) => d.commits), '#60A5FA')}</div><div class="note ${vsCls}">${esc(vs)}</div></article>
+      <article class="card stat"><div class="stat-label">Code churn${CD.help('churn')}</div><div class="stat-row"><div class="stat-value">${churn}</div>${ic('file', 22, '#A855F7')}</div><div class="note">${esc(churnNote)}</div></article>
       <article class="card stat"><div class="stat-label">Contributors</div><div class="stat-row"><div class="stat-value">${s.contributor_count}<small>active</small></div><span class="stack">${people}</span></div>${ctxNote}</article>
-      <article class="card stat"><div class="stat-label">Deadline</div><div class="stat-row"><div class="stat-value" style="font-size:18px">${p.deadline_date && p.days_remaining >= 0 ? `${p.days_remaining}<small>${p.days_remaining === 1 ? 'day left' : 'days left'}</small>` : esc(p.deadline_date ? CD.dayMed(p.deadline_date) : 'None')}</div>${pill(pred[0], pred[1])}</div>
-        <div class="note">${p.deadline_date ? `Due ${esc(CD.dayMed(p.deadline_date))}` : '<a class="link" href="settings.html">Set a deadline →</a>'}</div></article></section>`;
+      ${p.deadline_date
+        ? `<article class="card stat"><div class="stat-label">Deadline${CD.help('pace')}</div><div class="stat-row"><div class="stat-value" style="font-size:18px">${p.days_remaining >= 0 ? `${p.days_remaining}<small>${p.days_remaining === 1 ? 'day left' : 'days left'}</small>` : esc(CD.dayMed(p.deadline_date))}</div>${pill(pred[0], pred[1])}</div>
+          <div class="note">Due ${esc(CD.dayMed(p.deadline_date))}</div></article>`
+        : `<article class="card stat"><div class="stat-label">Deadline</div><div class="stat-row"><div class="stat-value" style="font-size:18px">No deadline</div></div>
+          <div class="note"><a class="link" href="settings.html">Set one →</a> to see if the pace will make it</div></article>`}</section>`;
   }
 
   /* ---------- daily summary card (rule-based, not AI) ---------- */
@@ -101,12 +108,12 @@
     else if (state.date >= o.today) prov = 'Live · saved after midnight';
     else prov = 'Computed live (not saved)';
     const canSave = o.totals.commits > 0 && s.total_commits > 0;
-    return `<section class="ai" aria-labelledby="sum-h"><div class="ai-title"><span class="ai-icon">${ic('note', 18)}</span><h2 id="sum-h">Daily summary</h2>${pill(prov, '#9AA3B5')}</div>
+    return `<section class="ai" aria-labelledby="sum-h"><div class="ai-title"><span class="ai-icon">${ic('note', 18)}</span><h2 id="sum-h">Daily summary</h2>${CD.help('summary')}${pill(prov, '#9AA3B5')}</div>
       <p id="sum-text">${esc(s.headline)}</p>
-      <div class="ai-foot">${CD.intentPills(s.intents)}<span class="spacer"></span>
+      <div class="ai-foot">${CD.intentPills(s.intents)}${Object.keys(s.intents || {}).length ? CD.help('intent') : ''}<span class="spacer"></span>
         ${canSave ? `<button class="btn" id="save-btn">${ic('save', 14)} ${s.source === 'saved' ? 'Update saved summary' : 'Save summary now'}</button>` : ''}
         <button class="btn" data-copy="#sum-text">${ic('copy', 14)} Copy</button></div>
-      <p class="note" style="margin-top:10px">Written by fixed rules from the day's commits (same commits, same summary). Intent tags come from the commit-message classifier.</p></section>`;
+    </section>`;
   }
 
   /* ---------- view 1: Digest ---------- */
@@ -116,11 +123,8 @@
     const items = [];
     if (s.total_commits === 0) items.push(['', 'No commits on this day.']);
     else {
-      let first = `${plural(s.total_commits, 'commit')} from ${plural(s.contributor_count, 'contributor')}`;
-      if (c.trend === 'above') first += c.delta_pct != null ? `, ${c.delta_pct}% above the usual ${c.baseline_days}-day average` : ', after a quiet stretch';
-      else if (c.trend === 'below') first += `, ${Math.abs(c.delta_pct)}% below the usual ${c.baseline_days}-day average`;
-      else if (c.trend === 'steady') first += ', about the usual amount';
-      items.push(['', `${first}.`]);
+      const phrase = CD.comparePhrase(c, s.total_commits);
+      items.push(['', `${plural(s.total_commits, 'commit')} from ${plural(s.contributor_count, 'contributor')}${phrase ? `, ${phrase}` : ''}.`]);
       const top = s.contributors[0];
       items.push(['', s.contributor_count > 1 ? `${top.name} was the most active, with ${plural(top.commits, 'commit')}.` : `All of it by ${top.name}.`]);
     }
@@ -129,8 +133,8 @@
     const p = v.prediction;
     if (p.deadline_date) items.push([p.status === 'on-pace' ? 'ok' : p.status === 'at-risk' || p.status === 'behind' ? 'bad' : '', CD.predictionText(p)]);
 
-    const vs = c.trend === 'no-baseline' ? '—' : c.delta_pct == null ? 'Up' : `${c.delta_pct > 0 ? '+' : ''}${c.delta_pct}%`;
-    const tiles = [['Commits', s.total_commits], ['Contributors', s.contributor_count], [`Vs. ${c.baseline_days || quietAfter}-day average`, vs],
+    const vs = c.trend === 'no-baseline' ? '—' : c.average != null ? `${c.average}/day` : '—';
+    const tiles = [['Commits', s.total_commits], ['Contributors', s.contributor_count], [`Usual (last ${c.baseline_days || quietAfter} days)`, vs],
       ['Days to deadline', p.deadline_date && p.days_remaining >= 0 ? p.days_remaining : '—']];
     const flags = v.flags.filter((f) => f.type !== 'contributor_inactive');
     const flagList = flags.length
@@ -138,7 +142,7 @@
       : `<p class="note" style="padding:8px 0">${s.source === 'saved' ? 'Nothing unusual on this day.' : "Activity flags are checked when the day's summary is saved."}</p>`;
     return `<ul class="digest-list">${items.map(([t, x]) => `<li${t ? ` data-tone="${t}"` : ''}>${esc(x)}</li>`).join('')}</ul>
       <div class="tiles">${tiles.map(([k, x]) => `<div class="tile-box"><b>${esc(x)}</b><span>${esc(k)}</span></div>`).join('')}</div>
-      <h3 class="stat-label" style="margin-bottom:4px">Flags</h3>${flagList}`;
+      <h3 class="stat-label" style="margin-bottom:4px">Flags${CD.help('flag')}</h3>${flagList}`;
   }
 
   /* ---------- view 2: Team (commits that day; everyone with history, 0 if none) ---------- */
@@ -171,7 +175,7 @@
         <div class="person-num"><b>${n}</b><span>${n === 1 ? 'commit' : 'commits'} this day</span></div>
         ${areas.get(p.name) ? `<div class="chips">${CD.intentPills(areas.get(p.name), 3)}</div>` : ''}
         <div class="person-meta">${[span && `<span>Active ${esc(span)}</span>`, lines, `<span>${plural(p.commits_7d, 'commit')} in the last 7 days</span>`].filter(Boolean).join('')}</div></article>`;
-    }).join('')}</div><p class="note" style="margin-top:12px">Shows who worked on what, to help coordination. Commit counts are context, not a performance measure.</p>`;
+    }).join('')}</div><p class="note" style="margin-top:12px">Shows who worked on what, to help coordination. Commit counts are context, not a performance measure. "Inactive" means no commits for ${plural(quietAfter, 'day')} or more.</p>`;
   }
 
   /* ---------- view 3: Timeline (time of day) ---------- */
@@ -202,23 +206,37 @@
       const [label, icon, color] = CD.flagMeta(f.type);
       return `<a class="notif" href="index.html?date=${esc(f.date)}"><span class="tile" style="--c:${color}">${ic(icon, 16)}</span><div><b>${esc(label)}</b><small>${esc(CD.dayMed(f.date))} · ${esc(f.detail)}</small></div>${f.id > CD.seenId() ? '<span class="unread-dot" title="Unread"></span>' : ''}</a>`;
     }).join('') : '<p class="note" style="padding:8px 0">No flags yet. They appear when a saved day stands out from the recent baseline.</p>';
-    return `<section class="card glass"><div class="card-head"><h2>Notable changes</h2></div>${list}<div style="padding-top:12px"><a class="link" href="notifications.html">View all notifications →</a></div></section>`;
+    return `<section class="card glass"><div class="card-head"><h2>Notable changes${CD.help('flag')}</h2></div>${list}<div style="padding-top:12px"><a class="link" href="notifications.html">View all notifications →</a></div></section>`;
   }
 
   /* ---------- file changes (hideable) ---------- */
   function filesCard(v) {
-    let a = 0; let m = 0; let r = 0; let la = 0; let ld = 0; let known = false;
+    let a = 0; let m = 0; let r = 0; let la = 0; let ld = 0; let known = false; let withFiles = 0;
     for (const c of v.commits) {
+      if (CD.fileCount(c.churn) != null) withFiles += 1;
       a += c.churn.files_added || 0; m += c.churn.files_modified || 0; r += c.churn.files_removed || 0;
       if (c.churn.lines_added != null && c.churn.lines_deleted != null) { known = true; la += c.churn.lines_added; ld += c.churn.lines_deleted; }
     }
     const max = Math.max(1, a, m, r);
     const row = (label, n, cls) => `<div class="file-row"><span class="${cls}">${label}</span><div class="track"><i style="--w:${Math.round((n / max) * 100)}%"></i></div><span class="count">${n}</span></div>`;
-    const body = v.commits.length
-      ? `${row('Files added', a, 'add')}${row('Files modified', m, '')}${row('Files removed', r, 'del')}
-        <p class="hint" style="margin-top:10px">${known ? `Lines: <span class="add">+${la}</span> <span class="del">−${ld}</span> (where known)` : 'Line counts are only recorded for repositories checked with a token.'}</p>`
-      : '<p class="note">No commits on this day.</p>';
+    const body = !v.commits.length ? '<p class="note">No commits on this day.</p>'
+      : !withFiles ? `<p class="hint">${esc(CD.NO_FILES.replace('this commit was', "this day's commits were"))}</p>`
+      : `${withFiles < v.commits.length ? `<p class="hint" style="margin-bottom:8px">From ${withFiles} of ${plural(v.commits.length, 'commit')}; the others came from a scan, which has no file lists.</p>` : ''}${row('Files added', a, 'add')}${row('Files modified', m, '')}${row('Files removed', r, 'del')}
+        <p class="hint" style="margin-top:10px">${known ? `Lines: <span class="add">+${la}</span> <span class="del">−${ld}</span> (where known)` : 'Line counts are only recorded for repositories checked with a token.'}</p>`;
     return CD.hideable('File changes', body, 'Counts across this day\'s commits. Only commit metadata is recorded, never file contents.');
+  }
+
+  /* ---------- first-run explainer (until dismissed in this browser) ---------- */
+  function intro(o) {
+    if (CD.store.get('comdoc.introDismissed') === '1') return '';
+    const n = o.rules.comparison_days;
+    return `<section class="card glass" id="intro" aria-labelledby="intro-h"><div class="card-head"><h2 id="intro-h">How Commit Doctor works</h2><button type="button" class="btn" id="intro-close">Got it, hide this</button></div>
+      <div class="intro">
+        <div><h3>1. Commits come in</h3><p>From GitHub, instantly by webhook or by checking every few minutes. Only commit details are kept (who, when, message, file counts), never the code.</p></div>
+        <div><h3>2. Each day gets a summary</h3><p>Written by fixed rules, not AI. Today stays live and is saved after midnight. Read it three ways with the Digest, Team and Timeline tabs.</p></div>
+        <div><h3>3. Flags point out changes</h3><p>A saved day well above or below the usual, someone with no commits for ${plural(n, 'day')}, or a slipping deadline pace. Subscribers get them by email.</p></div>
+        <div><h3>Context, not scores</h3><p>The numbers help the team stay in sync; nothing here ranks or rates people. Look for ${CD.help('baseline').replace('class="help"', 'class="help" tabindex="-1"')} next to a term for a plain explanation.</p></div>
+      </div></section>`;
   }
 
   /* ---------- render ---------- */
@@ -228,7 +246,7 @@
     const panels = [['digest', digest(v)], ['team', team(v)], ['timeline', timeline(v)]]
       .map(([x, html]) => `<div role="tabpanel" id="panel-${x}" aria-labelledby="tab-${x}" tabindex="0"${x === state.view ? '' : ' hidden'}>${html}</div>`).join('');
     main.innerHTML = CD.pageHead(CD.dayLong(state.date), o.repo ? `${o.repo} · times in ${o.timezone}` : `Times in ${o.timezone}`, CD.dayNav(state.date)) +
-      repoArea(o, v.repository) +
+      (o.repo ? intro(o) : '') + repoArea(o, v.repository) +
       (o.repo || o.totals.commits ? stats(v) + summaryCard(v) +
         `<div class="cols cols-feed"><section class="card solid" aria-label="Day views"><div class="card-head"><div class="tabs pills" role="tablist" aria-label="How to show this day">${tabs}</div></div>${panels}
           <div class="feedback" id="feedback"><span id="fb-q"></span><button type="button" class="fb-btn" data-value="1" aria-pressed="false" aria-label="Yes, helpful">👍</button><button type="button" class="fb-btn" data-value="0" aria-pressed="false" aria-label="No, not helpful">👎</button><span id="fb-thanks" hidden>Thanks!</span></div></section>
@@ -299,6 +317,7 @@
       if (t.dataset.switch && !t.hasAttribute('aria-current')) CD.switchRepo(t.dataset.switch);
       if (t.dataset.range) { state.range = Number(t.dataset.range); CD.store.set('comdoc.range', String(state.range)); refresh(main, { force: true }); }
       if (t.classList.contains('fb-btn')) { CD.store.set(fbKey(), t.dataset.value); logView('feedback', { value: Number(t.dataset.value) }); renderFeedback(); }
+      if (t.id === 'intro-close') { CD.store.set('comdoc.introDismissed', '1'); const el = $('#intro'); if (el) el.remove(); return; }
       if (t.id === 'save-btn') {
         t.disabled = true;
         const r = await act(() => send(`/summaries/${state.date}/generate`, 'POST'));
